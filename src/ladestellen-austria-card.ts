@@ -2,11 +2,10 @@
 // https://github.com/rolandzeiner/ladestellen-austria
 //
 // Lit 3 + Shadow DOM + Rollup, single-file HACS bundle.
-// The header carries the E-Control branding as a clickable link to
-// https://www.e-control.at/ — required by §3c of the ladestellen.at Terms
-// of Use. The attribution footer reads "Datenquelle: E-Control" verbatim
-// per §3d. Both are non-negotiable: removing either puts users in breach
-// of the contract they accepted at registration (€10,000 penalty under §9).
+// §3c of the ladestellen.at Terms of Use requires the E-Control brand link
+// to https://www.e-control.at/. §3d requires the verbatim "Datenquelle:
+// E-Control" attribution next to the data. Both are non-negotiable —
+// removing either is a €10,000 contract violation.
 
 import {
   LitElement,
@@ -64,6 +63,8 @@ const DEFAULT_MAX_STATIONS = 10;
 // "unmittelbar bei den von der E-Control angezeigten Daten". Do not edit.
 const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
+type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
+
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
@@ -84,8 +85,6 @@ export class LadestellenAustriaCard extends LitElement {
 
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: LadestellenAustriaCardConfig;
-  // Set of stationIds currently expanded. Replaced (not mutated) on toggle
-  // so Lit's reactivity fires via property setter.
   @state() private _expanded: Set<string> = new Set();
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
@@ -104,15 +103,9 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  // Custom shouldUpdate because _expanded is a Set and the tracked entity
-  // is looked up by id — the single-entity helper from custom-card-helpers
-  // wouldn't notice Set-reference changes or live-data-only state updates.
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     if (!this.config) return false;
-    if (
-      changedProps.has("config") ||
-      changedProps.has("_expanded")
-    ) {
+    if (changedProps.has("config") || changedProps.has("_expanded")) {
       return true;
     }
     const prev = changedProps.get("hass") as HomeAssistant | undefined;
@@ -124,12 +117,14 @@ export class LadestellenAustriaCard extends LitElement {
 
   public getCardSize(): number {
     const max = this.config?.max_stations ?? DEFAULT_MAX_STATIONS;
-    return Math.min(2 + Math.ceil(max / 2), 10);
+    return Math.min(3 + Math.ceil(max / 3), 10);
   }
 
   protected render(): TemplateResult {
     if (!this.hass || !this.config) {
-      return html`<ha-card><div class="empty-state">${localize("common.loading")}</div></ha-card>`;
+      return html`<ha-card
+        ><div class="empty-state">${localize("common.loading")}</div></ha-card
+      >`;
     }
 
     const stateObj = this.config.entity
@@ -139,9 +134,9 @@ export class LadestellenAustriaCard extends LitElement {
     if (!stateObj) {
       return html`
         <ha-card>
-          ${this._renderBrandStrip()}
+          ${this._renderHeader()}
           <div class="empty-state">${localize("card.no_entity")}</div>
-          ${this._renderAttribution(undefined)}
+          ${this._renderFooter(undefined)}
         </ha-card>
       `;
     }
@@ -153,17 +148,27 @@ export class LadestellenAustriaCard extends LitElement {
     const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
     const visible = filtered.slice(0, cap);
     const nearest = visible[0];
+    const farthestShown = visible[visible.length - 1];
 
     return html`
       <ha-card>
-        ${this._renderBrandStrip()}
-        ${this._renderSummary(nearest, filtered.length, allStations.length)}
+        ${this._renderHeader()}
+        ${this._renderHero(
+          nearest,
+          farthestShown,
+          filtered.length,
+          allStations.length,
+        )}
         ${visible.length > 0
           ? html`<ul class="stations">
               ${visible.map((s) => this._renderStation(s, liveAvailable))}
             </ul>`
-          : html`<div class="empty-state">${localize("card.no_stations")}</div>`}
-        ${this._renderAttribution(stateObj.attributes["attribution"] as string | undefined)}
+          : html`<div class="empty-state">
+              ${localize("card.no_stations")}
+            </div>`}
+        ${this._renderFooter(
+          stateObj.attributes["attribution"] as string | undefined,
+        )}
       </ha-card>
     `;
   }
@@ -201,51 +206,71 @@ export class LadestellenAustriaCard extends LitElement {
     });
   }
 
-  private _renderBrandStrip(): TemplateResult {
+  // §3c — E-Control logo-link required. Minimal top strip: brand on the
+  // left, card title on the right. Quiet, stays out of the scanning path
+  // to the data below.
+  private _renderHeader(): TemplateResult {
     const title = this.config?.name ?? "Ladestellen Austria";
     return html`
-      <div class="brand-strip">
+      <div class="header">
         <a
           class="brand-link"
           href="https://www.e-control.at/"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="E-Control"
+          @click=${(ev: Event) => ev.stopPropagation()}
         >
-          <span class="brand-logo"><span class="accent">E</span>-CONTROL</span>
+          <span class="brand-logo"
+            ><span class="accent">E</span>-CONTROL</span
+          >
         </a>
-        <span class="card-title">${title}</span>
+        <span class="header-title">${title}</span>
       </div>
     `;
   }
 
-  private _renderSummary(
+  private _renderHero(
     nearest: Station | undefined,
+    farthest: Station | undefined,
     filteredTotal: number,
     rawTotal: number,
   ): TemplateResult {
-    const km = nearest ? this._formatKm(nearest.distance) : "–";
+    if (!nearest) {
+      return html`<div class="hero hero--empty">
+        <div class="hero-label">${localize("card.no_stations")}</div>
+      </div>`;
+    }
+    const km = this._formatKm(nearest.distance);
+    const cityLabel = this._heroCity(nearest);
+    const farKm = farthest ? this._formatKm(farthest.distance) : km;
+    const rangeText = localize("card.hero_range")
+      .replace("{min}", this._formatKm(nearest.distance))
+      .replace("{max}", farKm);
     const countText =
       filteredTotal === rawTotal
-        ? localize("card.station_count").replace("{count}", String(filteredTotal))
-        : localize("card.station_count_filtered")
+        ? localize("card.hero_count").replace("{count}", String(filteredTotal))
+        : localize("card.hero_count_filtered")
             .replace("{filtered}", String(filteredTotal))
             .replace("{total}", String(rawTotal));
     return html`
-      <div class="summary">
-        <div class="summary-main">
-          <span class="summary-distance">
-            ${km}<span class="unit">km</span>
-          </span>
-          <span class="summary-label">
-            ${nearest
-              ? localize("card.nearest_label").replace("{label}", nearest.label)
-              : localize("card.no_stations")}
-          </span>
+      <div class="hero">
+        <div class="hero-value">
+          <span class="hero-number">${km}</span>
+          <span class="hero-unit">km</span>
         </div>
-        <span class="summary-count">${countText}</span>
+        <div class="hero-context">
+          <div class="hero-context-1">
+            ${localize("card.hero_context").replace("{city}", cityLabel)}
+          </div>
+          <div class="hero-context-2">${countText} · ${rangeText}</div>
+        </div>
       </div>
     `;
+  }
+
+  private _heroCity(station: Station): string {
+    return station.city || station.label || "";
   }
 
   private _renderStation(
@@ -264,20 +289,31 @@ export class LadestellenAustriaCard extends LitElement {
         ),
       ),
     );
+    const connectorSummary =
+      connectorTokens.length <= 2
+        ? connectorTokens.join(", ")
+        : `${connectorTokens.slice(0, 2).join(", ")} +${connectorTokens.length - 2}`;
     const priceText = this._priceText(points);
-    const priceIsFree = points.some((p) => p.freeOfCharge);
 
     const totalPoints = points.length;
     const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
     const stationActive = station.stationStatus === "ACTIVE";
+    const level = this._statusLevel(
+      liveAvailable,
+      stationActive,
+      availPoints,
+      totalPoints,
+    );
 
     const expanded = this._expanded.has(station.stationId);
-    const address = this._address(station);
-    const amenities = this._amenityItems(station);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
+    const metricsParts: string[] = [];
+    if (maxKw > 0) metricsParts.push(`${maxKw} kW`);
+    if (connectorSummary) metricsParts.push(connectorSummary);
+    if (showPricing && priceText) metricsParts.push(priceText);
 
     return html`
       <li
@@ -288,110 +324,175 @@ export class LadestellenAustriaCard extends LitElement {
         role="button"
         aria-expanded=${expanded ? "true" : "false"}
       >
-        ${maxKw > 0
-          ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
-              >${maxKw}&thinsp;kW</span
-            >`
-          : html`<span class="metric-kw empty">—</span>`}
-        <div class="row-main">
-          <div class="row-inline-metrics">
-            ${connectorTokens.map(
-              (t) => html`<span class="pill plug">${t}</span>`,
-            )}
-            ${showPricing && priceText
-              ? html`<span class="metric-price ${priceIsFree ? "free" : ""}"
-                  >${priceText}</span
-                >`
-              : nothing}
-          </div>
-          <div class="row-right">
-            <a
-              class="maps-inline"
-              href=${mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label=${localize("card.open_in_maps")}
-              title=${localize("card.open_in_maps")}
-              @click=${(ev: Event) => ev.stopPropagation()}
-            >
-              <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-              <span class="station-distance">
-                ${this._formatKm(station.distance)}<span class="unit">km</span>
+        <div class="station-body">
+          <span
+            class=${`status-dot status-${level}`}
+            aria-label=${this._statusAria(level, availPoints, totalPoints)}
+          ></span>
+          <div class="station-text">
+            <div class="station-line-1">
+              <span class="station-name">${station.label}</span>
+              <span class="station-metrics">
+                ${metricsParts.map(
+                  (part, i) => html`
+                    ${i > 0
+                      ? html`<span class="metrics-sep">·</span>`
+                      : nothing}
+                    <span
+                      class=${this._metricClass(part, isDC)}
+                      >${part}</span
+                    >
+                  `,
+                )}
               </span>
-            </a>
-            <ha-icon
-              class="chevron"
-              icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
-            ></ha-icon>
+              <a
+                class="station-distance"
+                href=${mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label=${localize("card.open_in_maps")}
+                title=${localize("card.open_in_maps")}
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+                <span class="distance-value">
+                  ${this._formatKm(station.distance)}<span class="unit"
+                    >km</span
+                  >
+                </span>
+              </a>
+              <ha-icon
+                class="chevron"
+                icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
+              ></ha-icon>
+            </div>
+            <div class="station-line-2">${this._address(station) || "—"}</div>
           </div>
         </div>
-        <div class="station-name">${station.label}</div>
         ${expanded
           ? this._renderStationDetail(
-              address,
-              amenities,
-              showAmenities,
-              liveAvailable,
-              stationActive,
+              station,
               availPoints,
               totalPoints,
+              liveAvailable,
+              stationActive,
+              showAmenities,
+              mapsUrl,
             )
           : nothing}
       </li>
     `;
   }
 
+  private _metricClass(part: string, isDC: boolean): string {
+    if (part.endsWith(" kW")) {
+      return isDC ? "metric metric-kw metric-kw--dc" : "metric metric-kw";
+    }
+    if (part === localize("card.gratis")) return "metric metric-free";
+    if (part.includes("€")) return "metric metric-price";
+    return "metric metric-plug";
+  }
+
   private _renderStationDetail(
-    address: string,
-    amenities: Array<{ flag: boolean; icon: string; label: string }>,
-    showAmenities: boolean,
-    liveAvailable: boolean,
-    stationActive: boolean,
+    station: Station,
     availPoints: number,
     totalPoints: number,
+    liveAvailable: boolean,
+    stationActive: boolean,
+    showAmenities: boolean,
+    mapsUrl: string,
   ): TemplateResult {
-    const statusLine = this._statusLine(
-      liveAvailable,
-      stationActive,
-      availPoints,
-      totalPoints,
-    );
-    const showRight =
-      statusLine !== nothing || (showAmenities && amenities.length > 0);
+    const amenities = this._amenityItems(station);
+    const showStatus = liveAvailable || !stationActive;
     return html`
       <div class="detail">
-        <div class="detail-col detail-address-col">
-          ${address
-            ? html`<div class="detail-heading">
-                  ${localize("card.address_heading")}
-                </div>
-                <div class="station-address">${address}</div>`
-            : nothing}
-        </div>
-        ${showRight
-          ? html`<div class="detail-col detail-right-col">
-              ${statusLine}
-              ${showAmenities && amenities.length > 0
-                ? html`<div class="amenities">
-                    ${amenities.map(
-                      (a) => html`
-                        <span
-                          class=${a.icon === "mdi:leaf"
-                            ? "amenity green"
-                            : "amenity"}
-                          title=${a.label}
-                        >
-                          <ha-icon icon=${a.icon}></ha-icon>
-                          <span>${a.label}</span>
-                        </span>
-                      `,
-                    )}
-                  </div>`
-                : nothing}
+        ${showStatus
+          ? html`<div class="detail-section">
+              <div class="detail-label">${localize("card.availability")}</div>
+              ${this._statusLine(
+                liveAvailable,
+                stationActive,
+                availPoints,
+                totalPoints,
+              )}
             </div>`
           : nothing}
+        ${showAmenities && amenities.length > 0
+          ? html`<div class="detail-section">
+              <div class="detail-label">
+                ${localize("card.amenities_heading")}
+              </div>
+              <div class="amenities">
+                ${amenities.map(
+                  (a) => html`
+                    <span class="amenity" title=${a.label}>
+                      <ha-icon icon=${a.icon}></ha-icon>
+                      <span>${a.label}</span>
+                    </span>
+                  `,
+                )}
+              </div>
+            </div>`
+          : nothing}
+        <div class="detail-actions">
+          <a
+            class="action-btn primary"
+            href=${mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            @click=${(ev: Event) => ev.stopPropagation()}
+          >
+            <ha-icon icon="mdi:map-marker-radius-outline"></ha-icon>
+            <span>${localize("card.open_in_maps")}</span>
+          </a>
+          ${station.website
+            ? html`<a
+                class="action-btn"
+                href=${station.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon icon="mdi:web"></ha-icon>
+                <span>${localize("card.website")}</span>
+              </a>`
+            : nothing}
+          ${station.phoneNumber
+            ? html`<a
+                class="action-btn"
+                href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon icon="mdi:phone-outline"></ha-icon>
+                <span>${localize("card.call")}</span>
+              </a>`
+            : nothing}
+        </div>
       </div>
     `;
+  }
+
+  private _statusLevel(
+    liveAvailable: boolean,
+    stationActive: boolean,
+    avail: number,
+    total: number,
+  ): StatusLevel {
+    if (!stationActive) return "inactive";
+    if (!liveAvailable || total === 0) return "unknown";
+    if (avail === 0) return "busy";
+    if (avail < total) return "partial";
+    return "ok";
+  }
+
+  private _statusAria(
+    level: StatusLevel,
+    avail: number,
+    total: number,
+  ): string {
+    if (level === "inactive") return localize("card.inactive");
+    if (level === "unknown") return localize("card.status_unknown");
+    return `${avail} / ${total} ${localize("card.live_suffix")}`;
   }
 
   private _statusLine(
@@ -399,22 +500,26 @@ export class LadestellenAustriaCard extends LitElement {
     stationActive: boolean,
     avail: number,
     total: number,
-  ): TemplateResult | typeof nothing {
-    if (!stationActive) {
-      return html`<div class="station-status inactive">
-        <span class="status-dot"></span>${localize("card.inactive")}
+  ): TemplateResult {
+    const level = this._statusLevel(liveAvailable, stationActive, avail, total);
+    if (level === "inactive") {
+      return html`<div class="status-row status-${level}">
+        <span class="status-dot status-${level}"></span>
+        ${localize("card.inactive")}
       </div>`;
     }
-    if (liveAvailable && total > 0) {
-      const cls = avail > 0 ? "ok" : "busy";
-      const text = localize("card.live_count")
+    if (level === "unknown") {
+      return html`<div class="status-row status-${level}">
+        <span class="status-dot status-${level}"></span>
+        ${localize("card.status_unknown")}
+      </div>`;
+    }
+    return html`<div class="status-row status-${level}">
+      <span class="status-dot status-${level}"></span>
+      ${localize("card.status_count")
         .replace("{avail}", String(avail))
-        .replace("{total}", String(total));
-      return html`<div class="station-status ${cls}">
-        <span class="status-dot"></span>${text}
-      </div>`;
-    }
-    return nothing;
+        .replace("{total}", String(total))}
+    </div>`;
   }
 
   private _toggle(stationId: string): void {
@@ -506,10 +611,12 @@ export class LadestellenAustriaCard extends LitElement {
     ].filter((i) => i.flag);
   }
 
-  private _renderAttribution(attr: string | undefined): TemplateResult {
+  // §3d — attribution footer. Hard-coded fallback in case a template sensor
+  // strips the upstream attribute.
+  private _renderFooter(attr: string | undefined): TemplateResult {
     const text =
       attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
-    return html`<div class="attribution">${text}</div>`;
+    return html`<div class="footer">${text}</div>`;
   }
 
   private _formatKm(value: string | number | undefined): string {
