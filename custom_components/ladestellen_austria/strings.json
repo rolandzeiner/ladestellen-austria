@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ladestellen Austria",
+        "description": "Get your free API key at [ladestellen.at]({registration_url}). Register your Home Assistant external URL as the referer domain during signup — it is pre-filled below from your current [external URL](/config/network).",
+        "data": {
+          "name": "Name",
+          "api_key": "API key",
+          "domain": "Registered domain",
+          "location": "Location",
+          "scan_interval": "Update interval (minutes)"
+        },
+        "data_description": {
+          "domain": "The full domain name you entered at ladestellen.at, without protocol, port or path. Must match the host your Home Assistant requests are served from."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Ladestellen Austria",
+        "description": "Update credentials or location. Existing entities are preserved. Manage your API key at [ladestellen.at]({registration_url}).",
+        "data": {
+          "api_key": "API key",
+          "domain": "Registered domain",
+          "location": "Location",
+          "scan_interval": "Update interval (minutes)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Ladestellen Austria",
+        "description": "The upstream API rejected the stored credentials. Enter a fresh API key and the currently-registered domain at [ladestellen.at]({registration_url}).",
+        "data": {
+          "api_key": "API key",
+          "domain": "Registered domain"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the upstream API. Check your network and try again.",
+      "invalid_auth": "The API key was rejected (HTTP 401).",
+      "invalid_api_key": "Please provide a valid API key.",
+      "invalid_domain": "Enter a valid hostname without protocol, port or path (for example: www.example.com).",
+      "invalid_location": "Pick a valid location on the map.",
+      "domain_mismatch": "The API accepted the key but rejected this referer domain (HTTP 403). Check the registered domains at ladestellen.at."
+    },
+    "abort": {
+      "already_configured": "This domain and location combination is already configured.",
+      "reconfigure_successful": "Reconfigure completed successfully.",
+      "reauth_successful": "Re-authentication completed successfully.",
+      "unique_id_mismatch": "The new credentials point to a different domain/location. Remove the entry and add it fresh instead."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ladestellen Austria options",
+        "description": "Adjust how often the integration polls the upstream API.",
+        "data": {
+          "scan_interval": "Update interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nearest_station": {
+        "name": "Nearest station"
+      }
+    }
+  },
+  "exceptions": {
+    "api_timeout": {
+      "message": "Ladestellen Austria API timed out after {seconds}s"
+    },
+    "api_auth_error": {
+      "message": "Ladestellen Austria API rejected the credentials (HTTP {status}). Home Assistant will ask you to re-enter them."
+    },
+    "api_http_error": {
+      "message": "Ladestellen Austria API returned HTTP {status}: {reason}"
+    },
+    "api_connection_error": {
+      "message": "Ladestellen Austria API connection error: {error_type}: {error}"
+    },
+    "api_invalid_response": {
+      "message": "Ladestellen Austria API returned an unexpected response (status {status}): {error}"
+    }
+  }
+}
