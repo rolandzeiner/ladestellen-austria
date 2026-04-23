@@ -1,0 +1,31 @@
+{
+  "common": {
+    "version": "Version",
+    "invalid_configuration": "Invalid configuration",
+    "loading": "Loading…"
+  },
+  "card": {
+    "no_entity": "Select a Ladestellen Austria sensor in the card editor.",
+    "no_stations": "No nearby charging stations returned yet.",
+    "nearest_label": "to {label}",
+    "station_count": "{count} stations",
+    "inactive": "inactive"
+  },
+  "amenities": {
+    "green_energy": "Green energy",
+    "free_parking": "Free parking",
+    "roofed_parking": "Roofed parking",
+    "catering": "Catering nearby",
+    "bathrooms": "Restrooms",
+    "resting": "Resting area"
+  },
+  "editor": {
+    "section_main": "Main",
+    "section_display": "Display",
+    "name": "Card title (optional)",
+    "entity": "Sensor",
+    "max_stations": "Stations to show",
+    "show_amenities": "Show amenity icons",
+    "hint_compliance": "Data is supplied under the ladestellen.at Terms of Use. The E-Control branding in the header and the 'Datenquelle: E-Control' footer are legally required and cannot be hidden."
+  }
+}

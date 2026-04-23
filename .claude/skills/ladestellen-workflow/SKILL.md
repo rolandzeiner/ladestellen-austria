@@ -356,11 +356,85 @@ Official releases are **not** pre-releases and target `main`, not `dev`.
 - [ ] README.md reflects current features, requirements, and version (see section 2)
 - [ ] On `dev` branch
 - [ ] Commit message has no Claude co-author trailer
+- [ ] **If card changed**: `src/const.ts CARD_VERSION` matches `const.py CARD_VERSION` byte-for-byte; `npm run build` re-run; regenerated bundle staged
+- [ ] **Card compliance invariants intact**: brand-strip `<a href="https://www.e-control.at/">` and `ATTRIBUTION_REQUIRED = "Datenquelle: E-Control"` still present in `src/ladestellen-austria-card.ts`
 
 ---
 
-## Sections added later
+## 6. Lovelace card — CARD_VERSION sync + version files
 
-The following sections will be appended to this skill when the corresponding feature lands:
+Applies once the Lit 3 + Rollup card ships (as of v0.1.0-beta-1). Follow the community guide: <https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909>.
 
-- **CARD_VERSION / version files / embedded Lovelace card rules** — added in step 5 of the initial kickoff, once the Lit 3 + Rollup card ships. Until then, version bumps only touch `manifest.json` + README badge.
+### Build + serve plumbing
+
+- Card sources live in `src/`; the Rollup config writes the bundle to `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`.
+- `card_registration.py` serves that `www/` subdirectory under URL_BASE `/ladestellen_austria` and creates/updates the Lovelace resource entry on every HA start.
+- Registration happens **once in `async_setup`**, gated on `EVENT_HOMEASSISTANT_STARTED` if HA is not yet running. Not per config entry.
+- `manifest.json` has `"after_dependencies": ["frontend", "http", "lovelace"]` + `"dependencies": []`. **Do not** move frontend to `dependencies` — the canonical guide says to, but that's core-integration guidance and breaks `pytest-homeassistant-custom-component` (no `hass_frontend` in the test env).
+- The URL is version-bumped via `?v=<CARD_VERSION>` to bust browser + CDN cache on upgrade.
+
+### CARD_VERSION — the single most common way to lose a day
+
+**`const.py` `CARD_VERSION` and `src/const.ts` `CARD_VERSION` must be byte-identical on every commit.** Both ship with the `-beta-N` suffix during development, both drop it on the final release. The WS version check the card runs on its first `hass` assignment compares the two values; any mismatch triggers a reload banner, reload re-serves the same mismatched JS, banner reappears → infinite loop.
+
+| File | Beta value | Final release value |
+|------|-----------|-------------------|
+| `custom_components/ladestellen_austria/manifest.json` `"version"` | `"0.1.0"` | `"0.1.0"` |
+| `custom_components/ladestellen_austria/const.py` `CARD_VERSION` | `"0.1.0-beta-1"` | `"0.1.0"` |
+| `src/const.ts` `CARD_VERSION` | `"0.1.0-beta-1"` | `"0.1.0"` |
+| `README.md` version badge | `version-0.1.0-blue.svg` | `version-0.1.0-blue.svg` |
+
+**Summary:** `const.py CARD_VERSION` and `src/const.ts CARD_VERSION` always match each other. `manifest.json` and the README badge always use the clean (non-beta) version. The bundled `www/ladestellen-austria-card.js` is a build artefact — never hand-edit. Rollup regenerates it from `src/const.ts` on every `npm run build`.
+
+### On every card-touching commit
+
+1. Bump `INTEGRATION_VERSION` in `const.py` (if the Python side changed).
+2. Bump `CARD_VERSION` in both `const.py` and `src/const.ts` (if the card changed). Beta suffix during development.
+3. Bump `manifest.json` `"version"` to the clean release value (no beta suffix in the manifest — HACS UI reads it).
+4. Update the README badge.
+5. Run `npm run build` — regenerates `www/ladestellen-austria-card.js` from the updated `src/const.ts`.
+6. Commit the regenerated bundle alongside the source change. **End users install via HACS and never run `npm`**, so the bundle must be tracked.
+
+Verify with:
+
+```bash
+grep -E 'CARD_VERSION' src/const.ts custom_components/ladestellen_austria/const.py
+# both lines must show the SAME literal string (including beta suffix)
+
+grep -E 'OLD_VERSION' . -r --include='*.py' --include='*.ts' --include='*.json' --include='*.md' \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dev
+# should be empty after a version bump
+```
+
+### Compliance invariants that LIVE in the card JS
+
+Two things are baked into `src/ladestellen-austria-card.ts` for §3c / §3d compliance. Do not remove them when refactoring:
+
+1. **Brand strip**: `<a href="https://www.e-control.at/" target="_blank" rel="noopener noreferrer">…</a>` wrapping the E-Control logo element. §3c requires a logo-link back to `www.e-control.at`. The current placeholder is a styled text wordmark; the pre-v1.0.0 TODO is to bundle the official logo asset from https://www.e-control.at/presse/pressebilder.
+2. **Attribution footer**: `const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control"` rendered at the bottom of every card view. §3d requires this exact string. The renderer hard-codes it even if the entity attribute is stripped by a user template sensor — belt-and-suspenders.
+
+### Dev-push hook for card iteration
+
+The `scripts/dev-push.sh` sync is set up to rsync anything under `custom_components/ladestellen_austria/` to the live HA container. For a TS-only iteration:
+
+```bash
+npm run build && ./scripts/dev-push.sh
+```
+
+Card JS change → hard-refresh the browser (⌘⇧R / Ctrl⇧R) to bypass browser cache. No HA restart needed for card-only changes. Python changes still need a restart.
+
+### `npm` verification gate (before every release)
+
+```bash
+npm run build                           # exit 0 required
+node --check custom_components/ladestellen_austria/www/ladestellen-austria-card.js
+grep -rE '\{\{[A-Z_]+\}\}' src/        # no unreplaced placeholders
+ls -la custom_components/ladestellen_austria/www/ladestellen-austria-card.js
+# bundle size sanity: ~30-60 KB for this card
+```
+
+Then open the browser to a dashboard with the card, hard-refresh, and confirm:
+- No red error card
+- Console shows the version banner with the correct `CARD_VERSION`
+- E-Control logo-link in the header, "Datenquelle: E-Control" in the footer
+- Tapping a station row opens Google Maps to the station's coordinates

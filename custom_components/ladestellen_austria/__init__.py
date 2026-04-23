@@ -4,11 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
+from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
+from .card_registration import JSModuleRegistration
 from .const import DOMAIN
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
 
@@ -19,8 +20,23 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Set up the Ladestellen Austria component."""
+    """Set up the Ladestellen Austria component + register the card."""
     hass.data.setdefault(DOMAIN, {})
+
+    # Register the Lovelace card once at component setup — never per-entry.
+    # If HA is not yet running, defer until EVENT_HOMEASSISTANT_STARTED so
+    # frontend/http/lovelace are ready (they're listed in after_dependencies,
+    # which is soft ordering; card registration must not run before they load).
+    registration = JSModuleRegistration(hass)
+
+    async def _register_card(_event: Event | None = None) -> None:
+        await registration.async_register()
+
+    if hass.state == CoreState.running:
+        await _register_card()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_card)
+
     return True
 
 

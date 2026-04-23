@@ -1,7 +1,7 @@
 {
   "domain": "ladestellen_austria",
   "name": "Ladestellen Austria",
-  "after_dependencies": ["http"],
+  "after_dependencies": ["frontend", "http", "lovelace"],
   "codeowners": ["@rolandzeiner"],
   "config_flow": true,
   "dependencies": [],

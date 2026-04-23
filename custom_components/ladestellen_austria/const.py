@@ -9,6 +9,14 @@ DOMAIN: Final = "ladestellen_austria"
 
 INTEGRATION_VERSION: Final = "0.1.0"
 
+# Must match src/const.ts CARD_VERSION byte-for-byte. Bump both in the same
+# commit. manifest.json "version" stays on the clean release (no -beta); this
+# constant plus src/const.ts carry the -beta-N suffix during development. The
+# WS version check that the bundled card runs on first hass assignment uses
+# this string as the source of truth — any mismatch triggers the reload banner
+# loop described in the workflow skill's CARD_VERSION section.
+CARD_VERSION: Final = "0.1.0-beta-1"
+
 USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
 
 CONF_API_KEY: Final = "api_key"

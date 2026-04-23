@@ -1,0 +1,31 @@
+{
+  "common": {
+    "version": "Version",
+    "invalid_configuration": "Ungültige Konfiguration",
+    "loading": "Lade…"
+  },
+  "card": {
+    "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
+    "no_stations": "Derzeit keine Ladestellen in der Nähe.",
+    "nearest_label": "zu {label}",
+    "station_count": "{count} Ladestellen",
+    "inactive": "inaktiv"
+  },
+  "amenities": {
+    "green_energy": "Ökostrom",
+    "free_parking": "Gratis Parken",
+    "roofed_parking": "Überdacht",
+    "catering": "Gastronomie",
+    "bathrooms": "WC",
+    "resting": "Ruhebereich"
+  },
+  "editor": {
+    "section_main": "Allgemein",
+    "section_display": "Anzeige",
+    "name": "Kartentitel (optional)",
+    "entity": "Sensor",
+    "max_stations": "Anzahl angezeigter Ladestellen",
+    "show_amenities": "Ausstattungs-Icons anzeigen",
+    "hint_compliance": "Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Branding im Kopf und die Fußzeile „Datenquelle: E-Control“ sind rechtlich vorgeschrieben und dürfen nicht entfernt werden."
+  }
+}
