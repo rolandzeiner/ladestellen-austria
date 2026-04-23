@@ -155,23 +155,22 @@ export const cardStyles = css`
     );
   }
 
-  /* Row head: station name + distance + chevron. Always visible. */
-  .row-head {
+  /* Top row: metrics (kW, plug pills, price) + right cluster
+     (maps-link + chevron). Metrics read first since that's what the user
+     actually scans for. Name demotes to a muted subtitle below. */
+  .row-top {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--l-space-3);
     min-width: 0;
   }
-  .station-name {
-    font-size: var(--l-fs-m);
-    font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    line-height: 1.25;
-    letter-spacing: -0.003em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .row-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--l-space-2);
+    font-variant-numeric: tabular-nums;
     min-width: 0;
     flex: 1;
   }
@@ -181,8 +180,47 @@ export const cardStyles = css`
     gap: var(--l-space-1);
     flex-shrink: 0;
   }
+
+  /* Station name — muted subtitle under the metrics line. */
+  .station-name {
+    font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-reg);
+    color: var(--secondary-text-color);
+    line-height: 1.35;
+    letter-spacing: 0.005em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Maps link — pin + distance form a single click target that opens
+     Google Maps. stopPropagation on click so tapping it doesn't also
+     toggle the row's expand state. */
+  .maps-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--primary-text-color);
+    transition: background-color 120ms;
+  }
+  .maps-inline:hover,
+  .maps-inline:focus-visible {
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 14%,
+      transparent
+    );
+    outline: none;
+  }
+  .maps-inline ha-icon {
+    --mdc-icon-size: 16px;
+    color: var(--primary-color);
+  }
   .station-distance {
-    font-size: var(--l-fs-m);
+    font-size: var(--l-fs-s);
     font-weight: var(--l-fw-med);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
@@ -199,18 +237,6 @@ export const cardStyles = css`
     --mdc-icon-size: 18px;
     color: var(--secondary-text-color);
     transition: transform 180ms ease;
-  }
-  .station.expanded .chevron {
-    transform: none;
-  }
-
-  /* Row metrics: kW + connector pills + price. Always visible. */
-  .row-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--l-space-2);
-    font-variant-numeric: tabular-nums;
   }
   .metric-kw {
     font-size: var(--l-fs-m);
@@ -333,31 +359,6 @@ export const cardStyles = css`
   }
   .amenity.green ha-icon {
     color: var(--success-color, #2e7d32);
-  }
-
-  /* Maps link — explicit affordance now that tap-to-expand owns the row. */
-  .maps-link {
-    align-self: flex-end;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--l-fs-xs);
-    letter-spacing: 0.01em;
-    color: var(--primary-color);
-    text-decoration: none;
-    padding: var(--l-space-1) var(--l-space-2);
-    border-radius: 6px;
-    transition: background-color 120ms;
-  }
-  .maps-link:hover {
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 10%,
-      transparent
-    );
-  }
-  .maps-link ha-icon {
-    --mdc-icon-size: 14px;
   }
 
   /* Attribution footer — §3d exact text. */

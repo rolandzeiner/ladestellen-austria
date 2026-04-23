@@ -277,6 +277,8 @@ export class LadestellenAustriaCard extends LitElement {
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
+
     return html`
       <li
         class=${expanded ? "station expanded" : "station"}
@@ -286,36 +288,46 @@ export class LadestellenAustriaCard extends LitElement {
         role="button"
         aria-expanded=${expanded ? "true" : "false"}
       >
-        <div class="row-head">
-          <span class="station-name">${station.label}</span>
-          <span class="row-right">
-            <span class="station-distance">
-              ${this._formatKm(station.distance)}<span class="unit">km</span>
-            </span>
+        <div class="row-top">
+          <div class="row-metrics">
+            ${maxKw > 0
+              ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
+                  >${maxKw}&thinsp;kW</span
+                >`
+              : nothing}
+            ${connectorTokens.map(
+              (t) => html`<span class="pill plug">${t}</span>`,
+            )}
+            ${showPricing && priceText
+              ? html`<span class="metric-price ${priceIsFree ? "free" : ""}"
+                  >${priceText}</span
+                >`
+              : nothing}
+          </div>
+          <div class="row-right">
+            <a
+              class="maps-inline"
+              href=${mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label=${localize("card.open_in_maps")}
+              title=${localize("card.open_in_maps")}
+              @click=${(ev: Event) => ev.stopPropagation()}
+            >
+              <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+              <span class="station-distance">
+                ${this._formatKm(station.distance)}<span class="unit">km</span>
+              </span>
+            </a>
             <ha-icon
               class="chevron"
               icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
             ></ha-icon>
-          </span>
+          </div>
         </div>
-        <div class="row-metrics">
-          ${maxKw > 0
-            ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
-                >${maxKw}&thinsp;kW</span
-              >`
-            : nothing}
-          ${connectorTokens.map(
-            (t) => html`<span class="pill plug">${t}</span>`,
-          )}
-          ${showPricing && priceText
-            ? html`<span class="metric-price ${priceIsFree ? "free" : ""}"
-                >${priceText}</span
-              >`
-            : nothing}
-        </div>
+        <div class="station-name">${station.label}</div>
         ${expanded
           ? this._renderStationDetail(
-              station,
               address,
               amenities,
               showAmenities,
@@ -330,7 +342,6 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _renderStationDetail(
-    station: Station,
     address: string,
     amenities: Array<{ flag: boolean; icon: string; label: string }>,
     showAmenities: boolean,
@@ -345,7 +356,6 @@ export class LadestellenAustriaCard extends LitElement {
       availPoints,
       totalPoints,
     );
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     return html`
       <div class="detail">
         ${address
@@ -369,16 +379,6 @@ export class LadestellenAustriaCard extends LitElement {
               )}
             </div>`
           : nothing}
-        <a
-          class="maps-link"
-          href=${mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          @click=${(ev: Event) => ev.stopPropagation()}
-        >
-          <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-          <span>${localize("card.open_in_maps")}</span>
-        </a>
       </div>
     `;
   }
