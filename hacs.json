@@ -1,6 +1,5 @@
 {
   "name": "Ladestellen Austria",
-  "content_in_root": false,
-  "homeassistant": "2025.1.0",
-  "render_readme": true
+  "country": "AT",
+  "homeassistant": "2025.1.0"
 }

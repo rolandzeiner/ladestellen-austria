@@ -1,0 +1,87 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ladestellen Austria",
+        "description": "Kostenlosen API-Schlüssel auf [ladestellen.at]({registration_url}) anfordern. Bei der Registrierung muss die externe Home-Assistant-Domain als Referer-Domain angegeben werden — sie ist unten aus deiner aktuellen [externen URL](/config/network) vorausgefüllt.",
+        "data": {
+          "name": "Name",
+          "api_key": "API-Schlüssel",
+          "domain": "Registrierte Domain",
+          "location": "Standort",
+          "scan_interval": "Aktualisierungsintervall (Minuten)"
+        },
+        "data_description": {
+          "domain": "Der vollständige Domainenname, der bei ladestellen.at hinterlegt wurde — ohne Protokoll, Port oder Pfad. Muss mit dem Host übereinstimmen, von dem Home Assistant die Anfragen abschickt."
+        }
+      },
+      "reconfigure": {
+        "title": "Ladestellen Austria neu konfigurieren",
+        "description": "Zugangsdaten oder Standort aktualisieren. Bestehende Entitäten bleiben erhalten. API-Schlüssel verwalten unter [ladestellen.at]({registration_url}).",
+        "data": {
+          "api_key": "API-Schlüssel",
+          "domain": "Registrierte Domain",
+          "location": "Standort",
+          "scan_interval": "Aktualisierungsintervall (Minuten)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ladestellen Austria neu anmelden",
+        "description": "Die gespeicherten Zugangsdaten wurden abgelehnt. Aktuellen API-Schlüssel und die aktuell bei [ladestellen.at]({registration_url}) registrierte Domain eingeben.",
+        "data": {
+          "api_key": "API-Schlüssel",
+          "domain": "Registrierte Domain"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Der Upstream-Dienst ist nicht erreichbar. Netzwerk prüfen und erneut versuchen.",
+      "invalid_auth": "Der API-Schlüssel wurde abgelehnt (HTTP 401).",
+      "invalid_api_key": "Bitte einen gültigen API-Schlüssel eingeben.",
+      "invalid_domain": "Gültigen Hostnamen ohne Protokoll, Port oder Pfad eingeben (z. B. www.beispiel.at).",
+      "invalid_location": "Gültigen Standort auf der Karte auswählen.",
+      "domain_mismatch": "Der Schlüssel ist gültig, aber die Referer-Domain wurde nicht akzeptiert (HTTP 403). Bitte die registrierten Domains auf ladestellen.at prüfen."
+    },
+    "abort": {
+      "already_configured": "Diese Kombination aus Domain und Standort ist bereits konfiguriert.",
+      "reconfigure_successful": "Neukonfiguration erfolgreich abgeschlossen.",
+      "reauth_successful": "Neuanmeldung erfolgreich abgeschlossen.",
+      "unique_id_mismatch": "Die neuen Zugangsdaten zeigen auf eine andere Domain bzw. einen anderen Standort. Bitte den Eintrag entfernen und neu anlegen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ladestellen Austria — Optionen",
+        "description": "Festlegen, wie oft der Upstream-Dienst abgefragt wird.",
+        "data": {
+          "scan_interval": "Aktualisierungsintervall (Minuten)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "nearest_station": {
+        "name": "Nächste Ladestelle"
+      }
+    }
+  },
+  "exceptions": {
+    "api_timeout": {
+      "message": "Ladestellen-Austria-API-Zeitüberschreitung nach {seconds}s"
+    },
+    "api_auth_error": {
+      "message": "Ladestellen-Austria-API hat die Zugangsdaten abgelehnt (HTTP {status}). Home Assistant bittet um eine erneute Eingabe."
+    },
+    "api_http_error": {
+      "message": "Ladestellen-Austria-API lieferte HTTP {status}: {reason}"
+    },
+    "api_connection_error": {
+      "message": "Ladestellen-Austria-API-Verbindungsfehler: {error_type}: {error}"
+    },
+    "api_invalid_response": {
+      "message": "Ladestellen-Austria-API lieferte eine unerwartete Antwort (Status {status}): {error}"
+    }
+  }
+}

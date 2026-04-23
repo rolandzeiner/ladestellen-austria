@@ -1,0 +1,7 @@
+{
+  "entity": {
+    "sensor": {
+      "nearest_station": { "default": "mdi:ev-station" }
+    }
+  }
+}

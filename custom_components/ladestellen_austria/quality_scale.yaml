@@ -1,0 +1,139 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: This integration exposes no service actions.
+  appropriate-polling:
+    status: done
+  brands:
+    status: todo
+    comment: Brand assets (icon.png 256x256, icon@2x.png 512x512, logo variants) must be added under custom_components/ladestellen_austria/brand/ before the first non-beta release. HA 2026.3+ reads local files first; the home-assistant/brands repo no longer accepts custom-integration PRs.
+  common-modules:
+    status: done
+  config-flow:
+    status: done
+  config-flow-test-coverage:
+    status: done
+  dependency-transparency:
+    status: done
+  docs-actions:
+    status: exempt
+    comment: No service actions.
+  docs-high-level-description:
+    status: done
+  docs-installation-instructions:
+    status: done
+  docs-removal-instructions:
+    status: done
+  entity-event-setup:
+    status: exempt
+    comment: Coordinator pattern; entities do not subscribe to events directly.
+  entity-unique-id:
+    status: done
+  has-entity-name:
+    status: done
+  runtime-data:
+    status: done
+  test-before-configure:
+    status: done
+    comment: Config flow probes GET /search with the supplied key + domain before creating the entry.
+  test-before-setup:
+    status: done
+  unique-config-entry:
+    status: done
+    comment: unique_id = f"{domain}:{lat_round3}:{lng_round3}" — FROZEN from v0.1.0 onward.
+
+  # Silver
+  action-exceptions:
+    status: exempt
+    comment: No service actions.
+  config-entry-unloading:
+    status: done
+  docs-configuration-parameters:
+    status: done
+  docs-installation-parameters:
+    status: done
+  entity-unavailable:
+    status: done
+    comment: CoordinatorEntity marks entities unavailable on coordinator failure.
+  integration-owner:
+    status: done
+  log-when-unavailable:
+    status: done
+    comment: DataUpdateCoordinator emits WARNING on first failure automatically; coordinator logs INFO on first recovery after a failure.
+  parallel-updates:
+    status: done
+  reauthentication-flow:
+    status: done
+    comment: async_step_reauth + async_step_reauth_confirm implemented; coordinator raises ConfigEntryAuthFailed on HTTP 401/403 which HA translates into this flow. The reauth step prompts for both api_key and domain since either can be rotated independently at ladestellen.at.
+  test-coverage:
+    status: done
+    comment: Config flow, coordinator, diagnostics, and User-Agent regression tests ship with v0.1.0.
+
+  # Gold
+  devices:
+    status: done
+    comment: DeviceInfo on entities + explicit dr.async_get_or_create in __init__.py.
+  diagnostics:
+    status: done
+    comment: diagnostics.py redacts api_key, domain, latitude, longitude, and Referer headers.
+  discovery:
+    status: exempt
+    comment: Cloud API; no local device to discover.
+  discovery-update-info:
+    status: exempt
+    comment: No discovery.
+  docs-data-update:
+    status: done
+  docs-examples:
+    status: done
+  docs-known-limitations:
+    status: done
+  docs-supported-devices:
+    status: exempt
+    comment: Cloud API; no physical devices.
+  docs-supported-functions:
+    status: done
+  docs-troubleshooting:
+    status: done
+  docs-use-cases:
+    status: done
+  dynamic-devices:
+    status: exempt
+    comment: Single device per config entry; no runtime device discovery.
+  entity-category:
+    status: exempt
+    comment: Primary data entity only.
+  entity-device-class:
+    status: done
+    comment: NearestStationSensor uses SensorDeviceClass.DISTANCE.
+  entity-disabled-by-default:
+    status: exempt
+    comment: Single primary entity; nothing to disable by default.
+  entity-translations:
+    status: done
+  exception-translations:
+    status: done
+    comment: Every UpdateFailed and ConfigEntryAuthFailed raise uses translation_domain + translation_key + translation_placeholders.
+  icon-translations:
+    status: done
+  reconfiguration-flow:
+    status: done
+    comment: async_step_reconfigure lets users update credentials, domain, and location without losing entity history.
+  repair-issues:
+    status: done
+    comment: Coordinator has raise/clear helpers keyed by entry_id; reserved for future recoverable degraded conditions.
+  stale-devices:
+    status: exempt
+    comment: See dynamic-devices.
+
+  # Platinum
+  async-dependency:
+    status: done
+    comment: Only aiohttp (async).
+  inject-websession:
+    status: done
+    comment: async_get_clientsession(hass) used in coordinator and config flow.
+  strict-typing:
+    status: done
+    comment: py.typed marker present; CI runs mypy --strict.
