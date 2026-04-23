@@ -12,7 +12,8 @@
     "station_count_filtered": "{filtered} of {total} stations",
     "inactive": "inactive",
     "gratis": "Gratis",
-    "live_count": "{avail}/{total} free"
+    "live_count": "{avail}/{total} free",
+    "open_in_maps": "Open in Maps"
   },
   "amenities": {
     "green_energy": "Green energy",
