@@ -4,16 +4,10 @@ import { css } from "lit";
 // Card styles — Lit shadow-DOM scoped. HA theme CSS variables pierce the
 // shadow boundary, so every color resolves to the user's active theme.
 //
-// Typography strategy: HA's type scale tokens first (`--ha-font-size-*`,
-// `--ha-font-weight-*`), with sensible fallbacks. Tabular-nums + tight
-// letter-spacing for the station-row headline so kW / price / distance
-// align vertically across rows and read as structured data.
-//
-// Color strategy: primary text = `--primary-text-color`. Structural dividers
-// = `--divider-color`. Accents borrow HA's semantic tokens so themes map
-// correctly: `--primary-color` for the metric emphasis, `--warning-color`
-// for DC fast-charging, `--success-color` / `--error-color` for the live
-// availability line, `--state-unavailable-color` for inactive stations.
+// Typography: HA's type scale tokens with fallbacks. Tabular numerals
+// everywhere numbers appear (kW, km, €) so columns align across rows.
+// Color accents route through HA's semantic tokens (--primary-color,
+// --warning-color, --success-color, --error-color) so themes map cleanly.
 // ---------------------------------------------------------------------------
 
 export const cardStyles = css`
@@ -135,8 +129,8 @@ export const cardStyles = css`
   .station {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: var(--l-space-3) var(--l-space-4);
+    gap: 4px;
+    padding: 10px var(--l-space-4);
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
     transition: background-color 120ms;
@@ -153,96 +147,153 @@ export const cardStyles = css`
     );
     outline: none;
   }
+  .station.expanded {
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 4%,
+      var(--ha-card-background, var(--card-background-color))
+    );
+  }
 
-  /* Headline: the key facts — kW · connectors · price vs distance.
-     These are what the user said they actually care about. */
-  .headline {
+  /* Row head: station name + distance + chevron. Always visible. */
+  .row-head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--l-space-3);
-    font-size: var(--l-fs-l);
-    font-weight: var(--l-fw-med);
-    line-height: 1.2;
-    letter-spacing: -0.005em;
-    color: var(--primary-text-color);
-    font-variant-numeric: tabular-nums;
-  }
-  .headline-metrics {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    column-gap: 6px;
     min-width: 0;
   }
+  .station-name {
+    font-size: var(--l-fs-m);
+    font-weight: var(--l-fw-med);
+    color: var(--primary-text-color);
+    line-height: 1.25;
+    letter-spacing: -0.003em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+  .row-right {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--l-space-1);
+    flex-shrink: 0;
+  }
+  .station-distance {
+    font-size: var(--l-fs-m);
+    font-weight: var(--l-fw-med);
+    color: var(--primary-text-color);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+  }
+  .station-distance .unit {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
+    font-weight: var(--l-fw-reg);
+    margin-left: 3px;
+    letter-spacing: 0;
+  }
+  .chevron {
+    --mdc-icon-size: 18px;
+    color: var(--secondary-text-color);
+    transition: transform 180ms ease;
+  }
+  .station.expanded .chevron {
+    transform: none;
+  }
+
+  /* Row metrics: kW + connector pills + price. Always visible. */
+  .row-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--l-space-2);
+    font-variant-numeric: tabular-nums;
+  }
   .metric-kw {
-    color: var(--primary-color);
+    font-size: var(--l-fs-m);
     font-weight: var(--l-fw-bld);
+    color: var(--primary-color);
+    letter-spacing: -0.01em;
   }
   .metric-kw.dc {
     color: var(--warning-color, #f57c00);
   }
-  .metric {
-    color: var(--primary-text-color);
-  }
-  .metric-muted {
-    color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-  }
   .metric-price {
+    font-size: var(--l-fs-s);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
+    font-weight: var(--l-fw-med);
   }
   .metric-price.free {
     color: var(--success-color, #2e7d32);
     font-weight: var(--l-fw-bld);
   }
-  .dot {
-    color: var(--divider-color);
-    font-weight: var(--l-fw-reg);
-  }
-  .headline-distance {
-    flex-shrink: 0;
-    color: var(--primary-text-color);
+
+  /* Connector pills (kept per user feedback — "keep plugs as pills"). */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
-    letter-spacing: 0;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    background: color-mix(
+      in srgb,
+      var(--primary-text-color) 8%,
+      transparent
+    );
+    color: var(--primary-text-color);
   }
-  .headline-distance .unit {
-    color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-    margin-left: 3px;
+  .pill.plug {
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 12%,
+      transparent
+    );
+    color: color-mix(in srgb, var(--primary-color) 85%, var(--primary-text-color));
   }
 
-  /* Secondary lines — station label + address, visually subordinate. */
-  .station-name {
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
-    color: var(--secondary-text-color);
-    line-height: 1.35;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  /* Expanded detail — address, status, amenities, maps link. */
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--l-space-2);
+    margin-top: var(--l-space-1);
+    animation: l-reveal 180ms ease;
+  }
+  @keyframes l-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
   .station-address {
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
-    line-height: 1.35;
-    opacity: 0.85;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
+    letter-spacing: 0.005em;
+    opacity: 0.9;
   }
 
-  /* Status line: inactive / live-availability. Sits right below address. */
+  /* Status line: inactive / live-availability. */
   .station-status {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: var(--l-space-1);
-    margin-top: var(--l-space-1);
     font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
+    align-self: flex-start;
   }
   .station-status.ok {
     color: var(--success-color, #2e7d32);
@@ -261,13 +312,11 @@ export const cardStyles = css`
     display: inline-block;
   }
 
-  /* Amenities — icon + inline label pair, so the user never has to hover
-     to know what "leaf" means. Wraps gracefully on narrow cards. */
+  /* Amenities — icon + label pair. */
   .amenities {
     display: flex;
     flex-wrap: wrap;
     gap: var(--l-space-1) var(--l-space-3);
-    margin-top: var(--l-space-2);
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
   }
@@ -284,6 +333,31 @@ export const cardStyles = css`
   }
   .amenity.green ha-icon {
     color: var(--success-color, #2e7d32);
+  }
+
+  /* Maps link — explicit affordance now that tap-to-expand owns the row. */
+  .maps-link {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--l-fs-xs);
+    letter-spacing: 0.01em;
+    color: var(--primary-color);
+    text-decoration: none;
+    padding: var(--l-space-1) var(--l-space-2);
+    border-radius: 6px;
+    transition: background-color 120ms;
+  }
+  .maps-link:hover {
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 10%,
+      transparent
+    );
+  }
+  .maps-link ha-icon {
+    --mdc-icon-size: 14px;
   }
 
   /* Attribution footer — §3d exact text. */
@@ -306,9 +380,8 @@ export const cardStyles = css`
 `;
 
 // ---------------------------------------------------------------------------
-// Editor styles — the config panel users see via ⋮ → Edit card.
-// Kept minimal so HA's form components (ha-textfield, ha-selector, ha-switch)
-// supply their own theming.
+// Editor styles — HA form components supply their own theming; we only
+// contribute layout + section rhythm.
 // ---------------------------------------------------------------------------
 
 export const editorStyles = css`

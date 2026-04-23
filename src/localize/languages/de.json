@@ -12,7 +12,8 @@
     "station_count_filtered": "{filtered} von {total} Ladestellen",
     "inactive": "inaktiv",
     "gratis": "Gratis",
-    "live_count": "{avail}/{total} frei"
+    "live_count": "{avail}/{total} frei",
+    "open_in_maps": "In Karte öffnen"
   },
   "amenities": {
     "green_energy": "Ökostrom",

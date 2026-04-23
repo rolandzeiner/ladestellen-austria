@@ -21,7 +21,6 @@ import type {
   HomeAssistant,
   LovelaceCardEditor,
 } from "custom-card-helpers";
-import { hasConfigOrEntityChanged } from "custom-card-helpers";
 
 import type {
   LadestellenAustriaCardConfig,
@@ -85,6 +84,9 @@ export class LadestellenAustriaCard extends LitElement {
 
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: LadestellenAustriaCardConfig;
+  // Set of stationIds currently expanded. Replaced (not mutated) on toggle
+  // so Lit's reactivity fires via property setter.
+  @state() private _expanded: Set<string> = new Set();
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
     if (!config) {
@@ -102,9 +104,22 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
+  // Custom shouldUpdate because _expanded is a Set and the tracked entity
+  // is looked up by id — the single-entity helper from custom-card-helpers
+  // wouldn't notice Set-reference changes or live-data-only state updates.
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     if (!this.config) return false;
-    return hasConfigOrEntityChanged(this, changedProps, false);
+    if (
+      changedProps.has("config") ||
+      changedProps.has("_expanded")
+    ) {
+      return true;
+    }
+    const prev = changedProps.get("hass") as HomeAssistant | undefined;
+    if (!prev || !this.config.entity) return true;
+    return (
+      prev.states[this.config.entity] !== this.hass.states[this.config.entity]
+    );
   }
 
   public getCardSize(): number {
@@ -186,9 +201,6 @@ export class LadestellenAustriaCard extends LitElement {
     });
   }
 
-  // §3c — Logo as image-link to www.e-control.at. Styled-text wordmark is a
-  // placeholder until the official logo asset is bundled pre-v1.0.0. Link
-  // target and attribution intent are already compliant.
   private _renderBrandStrip(): TemplateResult {
     const title = this.config?.name ?? "Ladestellen Austria";
     return html`
@@ -240,12 +252,18 @@ export class LadestellenAustriaCard extends LitElement {
     station: Station,
     liveAvailable: boolean,
   ): TemplateResult {
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     const points = station.points ?? [];
-
     const isDC = points.some((p) => (p.electricityType ?? []).includes("DC"));
     const maxKw = points.reduce((m, p) => Math.max(m, p.capacityKw ?? 0), 0);
-    const connectorLabel = this._connectorSummary(points);
+    const connectorTokens = Array.from(
+      new Set(
+        points.flatMap((p) =>
+          (p.connectorType ?? []).map((c) =>
+            this._shortConnector(c.consumerName, c.key),
+          ),
+        ),
+      ),
+    );
     const priceText = this._priceText(points);
     const priceIsFree = points.some((p) => p.freeOfCharge);
 
@@ -253,6 +271,7 @@ export class LadestellenAustriaCard extends LitElement {
     const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
     const stationActive = station.stationStatus === "ACTIVE";
 
+    const expanded = this._expanded.has(station.stationId);
     const address = this._address(station);
     const amenities = this._amenityItems(station);
     const showAmenities = this.config?.show_amenities ?? true;
@@ -260,49 +279,87 @@ export class LadestellenAustriaCard extends LitElement {
 
     return html`
       <li
-        class="station"
-        @click=${(ev: Event) => this._openMaps(ev, mapsUrl)}
+        class=${expanded ? "station expanded" : "station"}
+        @click=${() => this._toggle(station.stationId)}
+        @keydown=${(ev: KeyboardEvent) => this._onKey(ev, station.stationId)}
         tabindex="0"
         role="button"
+        aria-expanded=${expanded ? "true" : "false"}
       >
-        <div class="headline">
-          <span class="headline-metrics">
-            ${maxKw > 0
-              ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
-                  >${maxKw}&thinsp;kW</span
-                >`
-              : nothing}
-            ${connectorLabel
-              ? html`<span class="dot">·</span
-                  ><span class="metric">${connectorLabel}</span>`
-              : nothing}
-            ${showPricing && priceText
-              ? html`<span class="dot">·</span
-                  ><span class="metric-price ${priceIsFree ? "free" : ""}"
-                    >${priceText}</span
-                  >`
-              : nothing}
-          </span>
-          <span class="headline-distance">
-            ${this._formatKm(station.distance)}<span class="unit">km</span>
+        <div class="row-head">
+          <span class="station-name">${station.label}</span>
+          <span class="row-right">
+            <span class="station-distance">
+              ${this._formatKm(station.distance)}<span class="unit">km</span>
+            </span>
+            <ha-icon
+              class="chevron"
+              icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
+            ></ha-icon>
           </span>
         </div>
-        <div class="station-name">${station.label}</div>
+        <div class="row-metrics">
+          ${maxKw > 0
+            ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
+                >${maxKw}&thinsp;kW</span
+              >`
+            : nothing}
+          ${connectorTokens.map(
+            (t) => html`<span class="pill plug">${t}</span>`,
+          )}
+          ${showPricing && priceText
+            ? html`<span class="metric-price ${priceIsFree ? "free" : ""}"
+                >${priceText}</span
+              >`
+            : nothing}
+        </div>
+        ${expanded
+          ? this._renderStationDetail(
+              station,
+              address,
+              amenities,
+              showAmenities,
+              liveAvailable,
+              stationActive,
+              availPoints,
+              totalPoints,
+            )
+          : nothing}
+      </li>
+    `;
+  }
+
+  private _renderStationDetail(
+    station: Station,
+    address: string,
+    amenities: Array<{ flag: boolean; icon: string; label: string }>,
+    showAmenities: boolean,
+    liveAvailable: boolean,
+    stationActive: boolean,
+    availPoints: number,
+    totalPoints: number,
+  ): TemplateResult {
+    const statusLine = this._statusLine(
+      liveAvailable,
+      stationActive,
+      availPoints,
+      totalPoints,
+    );
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
+    return html`
+      <div class="detail">
         ${address
           ? html`<div class="station-address">${address}</div>`
           : nothing}
-        ${this._renderStatusLine(
-          liveAvailable,
-          stationActive,
-          availPoints,
-          totalPoints,
-        )}
+        ${statusLine}
         ${showAmenities && amenities.length > 0
           ? html`<div class="amenities">
               ${amenities.map(
                 (a) => html`
                   <span
-                    class=${a.icon === "mdi:leaf" ? "amenity green" : "amenity"}
+                    class=${a.icon === "mdi:leaf"
+                      ? "amenity green"
+                      : "amenity"}
                     title=${a.label}
                   >
                     <ha-icon icon=${a.icon}></ha-icon>
@@ -312,11 +369,21 @@ export class LadestellenAustriaCard extends LitElement {
               )}
             </div>`
           : nothing}
-      </li>
+        <a
+          class="maps-link"
+          href=${mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          @click=${(ev: Event) => ev.stopPropagation()}
+        >
+          <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+          <span>${localize("card.open_in_maps")}</span>
+        </a>
+      </div>
     `;
   }
 
-  private _renderStatusLine(
+  private _statusLine(
     liveAvailable: boolean,
     stationActive: boolean,
     avail: number,
@@ -339,27 +406,23 @@ export class LadestellenAustriaCard extends LitElement {
     return nothing;
   }
 
-  private _connectorSummary(points: Point[]): string {
-    const unique = Array.from(
-      new Set(
-        points.flatMap((p) =>
-          (p.connectorType ?? []).map((c) =>
-            this._shortConnector(c.consumerName, c.key),
-          ),
-        ),
-      ),
-    );
-    if (unique.length === 0) return "";
-    if (unique.length <= 2) return unique.join(", ");
-    return `${unique.slice(0, 2).join(", ")} +${unique.length - 2}`;
+  private _toggle(stationId: string): void {
+    const next = new Set(this._expanded);
+    if (next.has(stationId)) next.delete(stationId);
+    else next.add(stationId);
+    this._expanded = next;
   }
 
-  // Show the lowest €/kWh across points, or "Gratis" if any point is free, or
-  // €/min for time-billed connectors. Locale-formatted for Austrian users.
+  private _onKey(ev: KeyboardEvent, stationId: string): void {
+    if (ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      this._toggle(stationId);
+    }
+  }
+
   private _priceText(points: Point[]): string {
     if (points.length === 0) return "";
     if (points.some((p) => p.freeOfCharge)) return localize("card.gratis");
-
     const kwhPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
       .map((p) => p.priceCentKwh);
@@ -438,13 +501,9 @@ export class LadestellenAustriaCard extends LitElement {
     return html`<div class="attribution">${text}</div>`;
   }
 
-  private _openMaps(ev: Event, url: string): void {
-    ev.stopPropagation();
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
   private _formatKm(value: string | number | undefined): string {
-    const n = typeof value === "number" ? value : parseFloat(String(value ?? ""));
+    const n =
+      typeof value === "number" ? value : parseFloat(String(value ?? ""));
     if (!Number.isFinite(n)) return "–";
     try {
       return new Intl.NumberFormat("de-AT", {
