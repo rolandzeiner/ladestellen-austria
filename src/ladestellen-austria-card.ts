@@ -356,27 +356,38 @@ export class LadestellenAustriaCard extends LitElement {
       availPoints,
       totalPoints,
     );
+    const showRight =
+      statusLine !== nothing || (showAmenities && amenities.length > 0);
     return html`
       <div class="detail">
-        ${address
-          ? html`<div class="station-address">${address}</div>`
-          : nothing}
-        ${statusLine}
-        ${showAmenities && amenities.length > 0
-          ? html`<div class="amenities">
-              ${amenities.map(
-                (a) => html`
-                  <span
-                    class=${a.icon === "mdi:leaf"
-                      ? "amenity green"
-                      : "amenity"}
-                    title=${a.label}
-                  >
-                    <ha-icon icon=${a.icon}></ha-icon>
-                    <span>${a.label}</span>
-                  </span>
-                `,
-              )}
+        <div class="detail-col detail-address-col">
+          ${address
+            ? html`<div class="detail-heading">
+                  ${localize("card.address_heading")}
+                </div>
+                <div class="station-address">${address}</div>`
+            : nothing}
+        </div>
+        ${showRight
+          ? html`<div class="detail-col detail-right-col">
+              ${statusLine}
+              ${showAmenities && amenities.length > 0
+                ? html`<div class="amenities">
+                    ${amenities.map(
+                      (a) => html`
+                        <span
+                          class=${a.icon === "mdi:leaf"
+                            ? "amenity green"
+                            : "amenity"}
+                          title=${a.label}
+                        >
+                          <ha-icon icon=${a.icon}></ha-icon>
+                          <span>${a.label}</span>
+                        </span>
+                      `,
+                    )}
+                  </div>`
+                : nothing}
             </div>`
           : nothing}
       </div>

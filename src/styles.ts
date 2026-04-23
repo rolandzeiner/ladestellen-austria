@@ -2,12 +2,16 @@ import { css } from "lit";
 
 // ---------------------------------------------------------------------------
 // Card styles — Lit shadow-DOM scoped. HA theme CSS variables pierce the
-// shadow boundary, so every color resolves to the user's active theme.
+// shadow boundary; every accent resolves through the user's active theme.
 //
-// Typography: HA's type scale tokens with fallbacks. Tabular numerals
-// everywhere numbers appear (kW, km, €) so columns align across rows.
-// Color accents route through HA's semantic tokens (--primary-color,
-// --warning-color, --success-color, --error-color) so themes map cleanly.
+// 2026 conventions in play:
+// - color-mix() for theme-aware tints (light/dark automatically)
+// - cubic-bezier(0.4, 0, 0.2, 1) Material Standard easing on all transitions
+// - Soft tinted chips for metrics (--primary-color wash, not filled)
+// - Two-column layouts for dense data (header + expanded detail)
+// - Tabular numerics + tight tracking on display numerals
+// - Dashed lines avoided; separation via vertical rhythm + subtle fills
+// - Uppercase micro-labels above data blocks (tracking 0.08em)
 // ---------------------------------------------------------------------------
 
 export const cardStyles = css`
@@ -26,6 +30,7 @@ export const cardStyles = css`
     --l-space-3: 12px;
     --l-space-4: 16px;
     --l-space-5: 20px;
+    --l-ease: cubic-bezier(0.4, 0, 0.2, 1);
   }
   ha-card {
     overflow: hidden;
@@ -39,7 +44,6 @@ export const cardStyles = css`
     justify-content: space-between;
     gap: var(--l-space-3);
     padding: var(--l-space-3) var(--l-space-4);
-    border-bottom: 1px solid var(--divider-color);
   }
   .brand-link {
     display: inline-flex;
@@ -47,10 +51,10 @@ export const cardStyles = css`
     gap: var(--l-space-2);
     text-decoration: none;
     color: inherit;
-    transition: opacity 120ms;
+    transition: opacity 160ms var(--l-ease);
   }
   .brand-link:hover {
-    opacity: 0.75;
+    opacity: 0.7;
   }
   .brand-logo {
     display: inline-flex;
@@ -63,7 +67,7 @@ export const cardStyles = css`
     border-radius: 4px;
     font-weight: var(--l-fw-bld);
     font-size: 12px;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.06em;
   }
   .brand-logo .accent {
     color: #3fa535;
@@ -82,8 +86,16 @@ export const cardStyles = css`
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--l-space-3);
-    padding: var(--l-space-4) var(--l-space-4) var(--l-space-3);
-    border-bottom: 1px solid var(--divider-color);
+    padding: var(--l-space-4);
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 5%,
+      var(--ha-card-background, var(--card-background-color))
+    );
+    border-top: 1px solid
+      color-mix(in srgb, var(--primary-color) 10%, transparent);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--primary-color) 10%, transparent);
   }
   .summary-main {
     display: flex;
@@ -96,13 +108,13 @@ export const cardStyles = css`
     font-weight: var(--l-fw-bld);
     color: var(--primary-text-color);
     line-height: 1;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
   }
   .summary-distance .unit {
     font-size: var(--l-fs-s);
     font-weight: var(--l-fw-reg);
-    margin-left: 4px;
+    margin-left: 5px;
     color: var(--secondary-text-color);
     letter-spacing: 0;
   }
@@ -131,10 +143,12 @@ export const cardStyles = css`
     grid-template-columns: auto 1fr;
     column-gap: var(--l-space-3);
     row-gap: 4px;
-    padding: 10px var(--l-space-4);
+    padding: var(--l-space-3) var(--l-space-4);
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
-    transition: background-color 120ms;
+    transition:
+      background-color 200ms var(--l-ease),
+      padding 200ms var(--l-ease);
   }
   .station:last-child {
     border-bottom: none;
@@ -143,46 +157,76 @@ export const cardStyles = css`
   .station:focus-visible {
     background: color-mix(
       in srgb,
-      var(--primary-color) 6%,
+      var(--primary-color) 5%,
       var(--ha-card-background, var(--card-background-color))
     );
     outline: none;
   }
   .station.expanded {
+    padding-bottom: var(--l-space-2);
     background: color-mix(
       in srgb,
-      var(--primary-color) 4%,
+      var(--primary-color) 3%,
       var(--ha-card-background, var(--card-background-color))
     );
   }
 
-  /* kW is the leading metric — spans both content rows on the left.
-     Centered vertically so the display number reads as the row's anchor. */
+  /* kW as a leading data chip: tinted pill-ish backdrop, row-span 2.
+     Uses --primary-color tint for AC, --warning-color for DC — mirrors
+     how HA's own tile cards badge sensor-class accents. */
   .metric-kw {
     grid-column: 1;
     grid-row: 1 / span 2;
     align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 68px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    color: var(--primary-color);
     font-size: 1.35rem;
     font-weight: var(--l-fw-bld);
-    color: var(--primary-color);
     line-height: 1;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    min-width: 3ch;
-    text-align: right;
+    transition:
+      background-color 200ms var(--l-ease),
+      transform 200ms var(--l-ease);
+  }
+  .station:hover .metric-kw {
+    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
   }
   .metric-kw.dc {
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f57c00) 12%,
+      transparent
+    );
     color: var(--warning-color, #f57c00);
   }
+  .station:hover .metric-kw.dc {
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f57c00) 16%,
+      transparent
+    );
+  }
   .metric-kw.empty {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 8%,
+      transparent
+    );
     color: var(--secondary-text-color);
-    opacity: 0.5;
     font-weight: var(--l-fw-reg);
+    opacity: 0.7;
   }
 
-  /* Right side of the grid — top row: metrics (pills + price) + maps link
-     + chevron. Second row (grid-row: 2) is the station name below. */
+  /* Right side of the grid: metrics + maps link + chevron (row 1), name
+     below (row 2). */
   .row-main {
     grid-column: 2;
     grid-row: 1;
@@ -207,7 +251,6 @@ export const cardStyles = css`
     flex-shrink: 0;
   }
 
-  /* Station name — muted subtitle, grid row 2 aligned to the right of kW. */
   .station-name {
     grid-column: 2;
     grid-row: 2;
@@ -221,27 +264,26 @@ export const cardStyles = css`
     white-space: nowrap;
   }
 
-  /* Maps link — pin + distance form a single click target that opens
-     Google Maps. stopPropagation on click so tapping it doesn't also
-     toggle the row's expand state. */
+  /* Maps link — pin + distance, single click target. */
   .maps-inline {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 999px;
     text-decoration: none;
     color: var(--primary-text-color);
-    transition: background-color 120ms;
+    transition:
+      background-color 160ms var(--l-ease),
+      transform 160ms var(--l-ease);
   }
   .maps-inline:hover,
   .maps-inline:focus-visible {
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 14%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--primary-color) 16%, transparent);
     outline: none;
+  }
+  .maps-inline:active {
+    transform: scale(0.96);
   }
   .maps-inline ha-icon {
     --mdc-icon-size: 18px;
@@ -252,7 +294,7 @@ export const cardStyles = css`
     font-weight: var(--l-fw-med);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
   }
   .station-distance .unit {
     font-size: var(--l-fs-s);
@@ -264,94 +306,107 @@ export const cardStyles = css`
   .chevron {
     --mdc-icon-size: 18px;
     color: var(--secondary-text-color);
-    transition: transform 180ms ease;
+    transition: transform 200ms var(--l-ease);
   }
-  .metric-kw {
-    font-size: var(--l-fs-m);
-    font-weight: var(--l-fw-bld);
-    color: var(--primary-color);
-    letter-spacing: -0.01em;
-  }
-  .metric-kw.dc {
-    color: var(--warning-color, #f57c00);
-  }
+
+  /* Price reads quieter than kW — it's a contextual detail, not the hero. */
   .metric-price {
     font-size: var(--l-fs-s);
-    color: var(--primary-text-color);
+    color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
     font-weight: var(--l-fw-med);
+    letter-spacing: -0.005em;
   }
   .metric-price.free {
     color: var(--success-color, #2e7d32);
     font-weight: var(--l-fw-bld);
   }
 
-  /* Connector pills (kept per user feedback — "keep plugs as pills"). */
+  /* Connector pills — theme-accent soft wash (consistent with kW). */
   .pill {
     display: inline-flex;
     align-items: center;
-    padding: 2px 10px;
+    padding: 3px 10px;
     border-radius: 999px;
     font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
-    letter-spacing: 0.01em;
-    line-height: 1.5;
-    background: color-mix(
-      in srgb,
-      var(--primary-text-color) 8%,
-      transparent
-    );
-    color: var(--primary-text-color);
-  }
-  .pill.plug {
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 12%,
-      transparent
-    );
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
     color: color-mix(in srgb, var(--primary-color) 85%, var(--primary-text-color));
   }
 
-  /* Expanded detail — spans full width under the 2-column grid. */
+  /* Expanded detail — 2 columns: address left, status + amenities right. */
   .detail {
     grid-column: 1 / -1;
     grid-row: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: var(--l-space-4);
+    row-gap: var(--l-space-2);
+    margin-top: var(--l-space-2);
+    padding: var(--l-space-3);
+    border-radius: 10px;
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 4%,
+      var(--ha-card-background, var(--card-background-color))
+    );
+    animation: l-reveal 220ms var(--l-ease);
+  }
+  .detail-col {
     display: flex;
     flex-direction: column;
-    gap: var(--l-space-2);
-    margin-top: var(--l-space-1);
-    padding-top: var(--l-space-2);
-    border-top: 1px dashed var(--divider-color);
-    animation: l-reveal 180ms ease;
+    gap: var(--l-space-1);
+    min-width: 0;
   }
+  .detail-heading {
+    font-size: 10px;
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-text-color);
+    opacity: 0.75;
+    margin-bottom: 2px;
+  }
+  .detail-address-col {
+    /* Keep address on the left */
+  }
+  .detail-right-col {
+    gap: var(--l-space-2);
+    align-items: flex-end;
+  }
+
   @keyframes l-reveal {
     from {
       opacity: 0;
-      transform: translateY(-2px);
+      transform: translateY(-4px);
     }
     to {
       opacity: 1;
       transform: none;
     }
   }
+
   .station-address {
-    font-size: var(--l-fs-xs);
-    color: var(--secondary-text-color);
-    line-height: 1.4;
-    letter-spacing: 0.005em;
-    opacity: 0.9;
+    font-size: var(--l-fs-s);
+    color: var(--primary-text-color);
+    line-height: 1.45;
+    letter-spacing: 0.003em;
   }
 
   /* Status line: inactive / live-availability. */
   .station-status {
     display: inline-flex;
     align-items: center;
-    gap: var(--l-space-1);
+    gap: 6px;
     font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
-    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
   .station-status.ok {
     color: var(--success-color, #2e7d32);
@@ -370,11 +425,12 @@ export const cardStyles = css`
     display: inline-block;
   }
 
-  /* Amenities — icon + label pair. */
+  /* Amenities — icon + label pair, right-aligned within the right col. */
   .amenities {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--l-space-1) var(--l-space-3);
+    gap: var(--l-space-1) var(--l-space-2);
+    justify-content: flex-end;
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
   }
@@ -382,12 +438,31 @@ export const cardStyles = css`
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 8%,
+      transparent
+    );
     letter-spacing: 0.01em;
   }
   .amenity ha-icon {
     --mdc-icon-size: 14px;
     color: var(--secondary-text-color);
     flex-shrink: 0;
+  }
+  .amenity.green {
+    background: color-mix(
+      in srgb,
+      var(--success-color, #2e7d32) 12%,
+      transparent
+    );
+    color: color-mix(
+      in srgb,
+      var(--success-color, #2e7d32) 90%,
+      var(--primary-text-color)
+    );
   }
   .amenity.green ha-icon {
     color: var(--success-color, #2e7d32);
@@ -399,8 +474,8 @@ export const cardStyles = css`
     text-align: right;
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
-    letter-spacing: 0.02em;
-    opacity: 0.8;
+    letter-spacing: 0.03em;
+    opacity: 0.75;
   }
 
   /* Empty states */
@@ -410,11 +485,23 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
     font-size: var(--l-fs-s);
   }
+
+  /* Narrow-card fallback: detail panel stacks when the card is below ~360px. */
+  @container (max-width: 360px) {
+    .detail {
+      grid-template-columns: 1fr;
+    }
+    .detail-right-col {
+      align-items: flex-start;
+    }
+    .amenities {
+      justify-content: flex-start;
+    }
+  }
 `;
 
 // ---------------------------------------------------------------------------
-// Editor styles — HA form components supply their own theming; we only
-// contribute layout + section rhythm.
+// Editor styles
 // ---------------------------------------------------------------------------
 
 export const editorStyles = css`
@@ -467,9 +554,9 @@ export const editorStyles = css`
     font-size: var(--ha-font-size-s, 13px);
     cursor: pointer;
     transition:
-      background-color 120ms,
-      color 120ms,
-      border-color 120ms;
+      background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .filter-chip:hover {
     background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
