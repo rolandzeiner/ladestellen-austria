@@ -43,6 +43,10 @@ class NearestStationSensor(
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
     _attr_suggested_display_precision = 2
+    # Required by the upstream data licence (CC-BY family, assumed — confirm
+    # against the exact Nutzungsbedingungen before v1.0.0; see the
+    # ladestellen-workflow skill, Rule #1).
+    _attr_attribution = "Data: E-Control Austria via ladestellen.at"
 
     def __init__(
         self,

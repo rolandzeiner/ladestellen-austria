@@ -25,9 +25,10 @@ tests/fixtures/secrets/
 dev/
 
 # ---------------------------------------------------------------------------
-# Claude / AI tooling
+# Claude / AI tooling — caches ignored, project-level skills tracked
 # ---------------------------------------------------------------------------
-.claude/
+.claude/*
+!.claude/skills/
 .claude-cache/
 .claude-*
 CLAUDE.local.md
