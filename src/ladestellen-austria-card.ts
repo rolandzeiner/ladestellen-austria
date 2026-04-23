@@ -25,8 +25,8 @@ import { hasConfigOrEntityChanged } from "custom-card-helpers";
 
 import type {
   LadestellenAustriaCardConfig,
-  Station,
   Point,
+  Station,
 } from "./types";
 import { CARD_VERSION } from "./const";
 import { localize } from "./localize/localize";
@@ -78,8 +78,7 @@ export class LadestellenAustriaCard extends LitElement {
     entities: string[],
   ): Record<string, unknown> {
     const found = entities.find(
-      (e) =>
-        e.startsWith("sensor.") && e.includes("ladestelle"),
+      (e) => e.startsWith("sensor.") && e.includes("ladestelle"),
     );
     return { entity: found ?? "" };
   }
@@ -145,7 +144,9 @@ export class LadestellenAustriaCard extends LitElement {
         ${this._renderBrandStrip()}
         ${this._renderSummary(nearest, filtered.length, allStations.length)}
         ${visible.length > 0
-          ? html`<ul class="stations">${visible.map((s) => this._renderStation(s, liveAvailable))}</ul>`
+          ? html`<ul class="stations">
+              ${visible.map((s) => this._renderStation(s, liveAvailable))}
+            </ul>`
           : html`<div class="empty-state">${localize("card.no_stations")}</div>`}
         ${this._renderAttribution(stateObj.attributes["attribution"] as string | undefined)}
       </ha-card>
@@ -161,8 +162,9 @@ export class LadestellenAustriaCard extends LitElement {
     }
     return stations.filter((s) => {
       if (onlyAvailable) {
-        const hasActive = s.stationStatus === "ACTIVE"
-          && (s.points ?? []).some((p) => p.status === "AVAILABLE");
+        const hasActive =
+          s.stationStatus === "ACTIVE" &&
+          (s.points ?? []).some((p) => p.status === "AVAILABLE");
         if (!hasActive) return false;
       }
       if (onlyFree) {
@@ -219,17 +221,17 @@ export class LadestellenAustriaCard extends LitElement {
             .replace("{total}", String(rawTotal));
     return html`
       <div class="summary">
-        <div>
-          <div class="summary-distance">
+        <div class="summary-main">
+          <span class="summary-distance">
             ${km}<span class="unit">km</span>
-          </div>
-          <div class="summary-count">
+          </span>
+          <span class="summary-label">
             ${nearest
               ? localize("card.nearest_label").replace("{label}", nearest.label)
               : localize("card.no_stations")}
-          </div>
+          </span>
         </div>
-        <div class="summary-count">${countText}</div>
+        <span class="summary-count">${countText}</span>
       </div>
     `;
   }
@@ -240,38 +242,21 @@ export class LadestellenAustriaCard extends LitElement {
   ): TemplateResult {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     const points = station.points ?? [];
-    const uniqueConnectorNames = Array.from(
-      new Set(
-        points.flatMap((p) =>
-          (p.connectorType ?? []).map((c) =>
-            this._shortConnector(c.consumerName, c.key),
-          ),
-        ),
-      ),
-    );
+
     const isDC = points.some((p) => (p.electricityType ?? []).includes("DC"));
     const maxKw = points.reduce((m, p) => Math.max(m, p.capacityKw ?? 0), 0);
+    const connectorLabel = this._connectorSummary(points);
+    const priceText = this._priceText(points);
+    const priceIsFree = points.some((p) => p.freeOfCharge);
+
     const totalPoints = points.length;
     const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
     const stationActive = station.stationStatus === "ACTIVE";
+
+    const address = this._address(station);
+    const amenities = this._amenityItems(station);
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
-    const priceChip = showPricing ? this._pricingChip(points) : null;
-
-    // Live count chip when DATEX II data is present and the station is
-    // administratively ACTIVE. Pre-DATEX-II (liveAvailable=false), the chip
-    // is hidden because every point would always read AVAILABLE. If the
-    // station is INACTIVE, show the legacy badge regardless.
-    let statusChip: TemplateResult | typeof nothing = nothing;
-    if (!stationActive) {
-      statusChip = html`<span class="chip inactive">${localize("card.inactive")}</span>`;
-    } else if (liveAvailable && totalPoints > 0) {
-      const cls = availPoints > 0 ? "live-ok" : "live-none";
-      const text = localize("card.live_count")
-        .replace("{avail}", String(availPoints))
-        .replace("{total}", String(totalPoints));
-      statusChip = html`<span class=${`chip ${cls}`}>${text}</span>`;
-    }
 
     return html`
       <li
@@ -280,68 +265,171 @@ export class LadestellenAustriaCard extends LitElement {
         tabindex="0"
         role="button"
       >
-        <div class="station-row-1">
-          <span class="station-label">${station.label}</span>
-          <span class="station-distance">${this._formatKm(station.distance)} km</span>
+        <div class="headline">
+          <span class="headline-metrics">
+            ${maxKw > 0
+              ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
+                  >${maxKw}&thinsp;kW</span
+                >`
+              : nothing}
+            ${connectorLabel
+              ? html`<span class="dot">·</span
+                  ><span class="metric">${connectorLabel}</span>`
+              : nothing}
+            ${showPricing && priceText
+              ? html`<span class="dot">·</span
+                  ><span class="metric-price ${priceIsFree ? "free" : ""}"
+                    >${priceText}</span
+                  >`
+              : nothing}
+          </span>
+          <span class="headline-distance">
+            ${this._formatKm(station.distance)}<span class="unit">km</span>
+          </span>
         </div>
-        <div class="station-row-2">
-          <span>${station.postCode} ${station.city}</span>
-          ${maxKw > 0 ? html`<span class="chip power">${maxKw} kW</span>` : nothing}
-          ${isDC ? html`<span class="chip dc">DC</span>` : nothing}
-          ${uniqueConnectorNames.map((n) => html`<span class="chip">${n}</span>`)}
-          ${priceChip}
-          ${statusChip}
-          ${showAmenities ? this._renderAmenities(station) : nothing}
-        </div>
+        <div class="station-name">${station.label}</div>
+        ${address
+          ? html`<div class="station-address">${address}</div>`
+          : nothing}
+        ${this._renderStatusLine(
+          liveAvailable,
+          stationActive,
+          availPoints,
+          totalPoints,
+        )}
+        ${showAmenities && amenities.length > 0
+          ? html`<div class="amenities">
+              ${amenities.map(
+                (a) => html`
+                  <span
+                    class=${a.icon === "mdi:leaf" ? "amenity green" : "amenity"}
+                    title=${a.label}
+                  >
+                    <ha-icon icon=${a.icon}></ha-icon>
+                    <span>${a.label}</span>
+                  </span>
+                `,
+              )}
+            </div>`
+          : nothing}
       </li>
     `;
   }
 
-  // Pricing chip: shows the lowest €/kWh across points, or "Gratis" if any
-  // point is freeOfCharge. A point with priceCentMin > 0 and priceCentKwh === 0
-  // is time-billed — show the per-minute cost with "/min" suffix instead.
-  private _pricingChip(points: Point[]): TemplateResult | typeof nothing {
-    if (points.length === 0) return nothing;
-    if (points.some((p) => p.freeOfCharge)) {
-      return html`<span class="chip free">${localize("card.gratis")}</span>`;
+  private _renderStatusLine(
+    liveAvailable: boolean,
+    stationActive: boolean,
+    avail: number,
+    total: number,
+  ): TemplateResult | typeof nothing {
+    if (!stationActive) {
+      return html`<div class="station-status inactive">
+        <span class="status-dot"></span>${localize("card.inactive")}
+      </div>`;
     }
+    if (liveAvailable && total > 0) {
+      const cls = avail > 0 ? "ok" : "busy";
+      const text = localize("card.live_count")
+        .replace("{avail}", String(avail))
+        .replace("{total}", String(total));
+      return html`<div class="station-status ${cls}">
+        <span class="status-dot"></span>${text}
+      </div>`;
+    }
+    return nothing;
+  }
+
+  private _connectorSummary(points: Point[]): string {
+    const unique = Array.from(
+      new Set(
+        points.flatMap((p) =>
+          (p.connectorType ?? []).map((c) =>
+            this._shortConnector(c.consumerName, c.key),
+          ),
+        ),
+      ),
+    );
+    if (unique.length === 0) return "";
+    if (unique.length <= 2) return unique.join(", ");
+    return `${unique.slice(0, 2).join(", ")} +${unique.length - 2}`;
+  }
+
+  // Show the lowest €/kWh across points, or "Gratis" if any point is free, or
+  // €/min for time-billed connectors. Locale-formatted for Austrian users.
+  private _priceText(points: Point[]): string {
+    if (points.length === 0) return "";
+    if (points.some((p) => p.freeOfCharge)) return localize("card.gratis");
+
     const kwhPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
       .map((p) => p.priceCentKwh);
     if (kwhPrices.length > 0) {
-      const minKwh = Math.min(...kwhPrices);
-      return html`<span class="chip price">${(minKwh / 100).toFixed(2)} €/kWh</span>`;
+      return `${this._formatEuro(Math.min(...kwhPrices))} €/kWh`;
     }
     const minPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentMin > 0)
       .map((p) => p.priceCentMin);
     if (minPrices.length > 0) {
-      const minPrice = Math.min(...minPrices);
-      return html`<span class="chip price">${(minPrice / 100).toFixed(2)} €/min</span>`;
+      return `${this._formatEuro(Math.min(...minPrices))} €/min`;
     }
-    return nothing;
+    return "";
   }
 
-  private _renderAmenities(station: Station): TemplateResult {
-    const items: Array<{ flag: boolean; icon: string; label: string }> = [
-      { flag: station.greenEnergy, icon: "mdi:leaf", label: localize("amenities.green_energy") },
-      { flag: station.freeParking, icon: "mdi:parking", label: localize("amenities.free_parking") },
-      { flag: station.roofedParking, icon: "mdi:home-roof", label: localize("amenities.roofed_parking") },
-      { flag: station.cateringService, icon: "mdi:silverware-fork-knife", label: localize("amenities.catering") },
-      { flag: station.bathroomsAvailable, icon: "mdi:toilet", label: localize("amenities.bathrooms") },
-      { flag: station.restingFacilities, icon: "mdi:sofa", label: localize("amenities.resting") },
-    ];
-    return html`
-      ${items
-        .filter((i) => i.flag)
-        .map(
-          (i) => html`
-            <span class="amenity" title=${i.label}>
-              <ha-icon icon=${i.icon}></ha-icon>
-            </span>
-          `,
-        )}
-    `;
+  private _formatEuro(cents: number): string {
+    const value = cents / 100;
+    try {
+      return new Intl.NumberFormat("de-AT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return value.toFixed(2);
+    }
+  }
+
+  private _address(station: Station): string {
+    const parts: string[] = [];
+    if (station.street) parts.push(station.street);
+    const loc = [station.postCode, station.city].filter(Boolean).join(" ");
+    if (loc) parts.push(loc);
+    return parts.join(", ");
+  }
+
+  private _amenityItems(
+    station: Station,
+  ): Array<{ flag: boolean; icon: string; label: string }> {
+    return [
+      {
+        flag: station.greenEnergy,
+        icon: "mdi:leaf",
+        label: localize("amenities.green_energy"),
+      },
+      {
+        flag: station.freeParking,
+        icon: "mdi:parking",
+        label: localize("amenities.free_parking"),
+      },
+      {
+        flag: station.roofedParking,
+        icon: "mdi:home-roof",
+        label: localize("amenities.roofed_parking"),
+      },
+      {
+        flag: station.cateringService,
+        icon: "mdi:silverware-fork-knife",
+        label: localize("amenities.catering"),
+      },
+      {
+        flag: station.bathroomsAvailable,
+        icon: "mdi:toilet",
+        label: localize("amenities.bathrooms"),
+      },
+      {
+        flag: station.restingFacilities,
+        icon: "mdi:sofa",
+        label: localize("amenities.resting"),
+      },
+    ].filter((i) => i.flag);
   }
 
   private _renderAttribution(attr: string | undefined): TemplateResult {
@@ -358,7 +446,14 @@ export class LadestellenAustriaCard extends LitElement {
   private _formatKm(value: string | number | undefined): string {
     const n = typeof value === "number" ? value : parseFloat(String(value ?? ""));
     if (!Number.isFinite(n)) return "–";
-    return n.toFixed(2);
+    try {
+      return new Intl.NumberFormat("de-AT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n);
+    } catch {
+      return n.toFixed(2);
+    }
   }
 
   private _shortConnector(consumer: string, key: string): string {
