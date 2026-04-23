@@ -127,9 +127,10 @@ export const cardStyles = css`
     padding: 0;
   }
   .station {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--l-space-3);
+    row-gap: 4px;
     padding: 10px var(--l-space-4);
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
@@ -155,22 +156,47 @@ export const cardStyles = css`
     );
   }
 
-  /* Top row: metrics (kW, plug pills, price) + right cluster
-     (maps-link + chevron). Metrics read first since that's what the user
-     actually scans for. Name demotes to a muted subtitle below. */
-  .row-top {
+  /* kW is the leading metric — spans both content rows on the left.
+     Centered vertically so the display number reads as the row's anchor. */
+  .metric-kw {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    font-size: 1.35rem;
+    font-weight: var(--l-fw-bld);
+    color: var(--primary-color);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 3ch;
+    text-align: right;
+  }
+  .metric-kw.dc {
+    color: var(--warning-color, #f57c00);
+  }
+  .metric-kw.empty {
+    color: var(--secondary-text-color);
+    opacity: 0.5;
+    font-weight: var(--l-fw-reg);
+  }
+
+  /* Right side of the grid — top row: metrics (pills + price) + maps link
+     + chevron. Second row (grid-row: 2) is the station name below. */
+  .row-main {
+    grid-column: 2;
+    grid-row: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--l-space-3);
     min-width: 0;
   }
-  .row-metrics {
+  .row-inline-metrics {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--l-space-2);
-    font-variant-numeric: tabular-nums;
     min-width: 0;
     flex: 1;
   }
@@ -181,8 +207,10 @@ export const cardStyles = css`
     flex-shrink: 0;
   }
 
-  /* Station name — muted subtitle under the metrics line. */
+  /* Station name — muted subtitle, grid row 2 aligned to the right of kW. */
   .station-name {
+    grid-column: 2;
+    grid-row: 2;
     font-size: var(--l-fs-s);
     font-weight: var(--l-fw-reg);
     color: var(--secondary-text-color);
@@ -216,18 +244,18 @@ export const cardStyles = css`
     outline: none;
   }
   .maps-inline ha-icon {
-    --mdc-icon-size: 16px;
+    --mdc-icon-size: 18px;
     color: var(--primary-color);
   }
   .station-distance {
-    font-size: var(--l-fs-s);
+    font-size: var(--l-fs-l);
     font-weight: var(--l-fw-med);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.005em;
   }
   .station-distance .unit {
-    font-size: var(--l-fs-xs);
+    font-size: var(--l-fs-s);
     color: var(--secondary-text-color);
     font-weight: var(--l-fw-reg);
     margin-left: 3px;
@@ -284,12 +312,16 @@ export const cardStyles = css`
     color: color-mix(in srgb, var(--primary-color) 85%, var(--primary-text-color));
   }
 
-  /* Expanded detail — address, status, amenities, maps link. */
+  /* Expanded detail — spans full width under the 2-column grid. */
   .detail {
+    grid-column: 1 / -1;
+    grid-row: 3;
     display: flex;
     flex-direction: column;
     gap: var(--l-space-2);
     margin-top: var(--l-space-1);
+    padding-top: var(--l-space-2);
+    border-top: 1px dashed var(--divider-color);
     animation: l-reveal 180ms ease;
   }
   @keyframes l-reveal {
