@@ -62,6 +62,62 @@ Use `homeassistant.components.diagnostics.async_redact_data` with `TO_REDACT = {
 
 ---
 
+## Rule #1 — API usage compliance
+
+The ladestellen.at API is free and public, but not lawless. These rules ensure every Ladestellen Austria install stays a welcome client of E-Control's infrastructure.
+
+### What we know from public sources
+
+- **Public, free API** for the same data shown on [www.ladestellen.at](https://www.ladestellen.at) — E-Control's own webinar *"Das österreichische Ladestellenverzeichnis"* (22 Feb 2023), slide 12: *"Öffentliche, kostenlose API: alle Infos, die auf www.ladestellen.at angezeigt werden, können auch über diese API abgefragt werden."*
+- **Dataset is catalogued as Austrian Open Government Data** on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api) (dataset ID `ef680c5f-fa70-4719-8253-e3a5fe5f9355`). data.gv.at's default licence for OGD-AT datasets is **CC-BY 4.0** unless overridden.
+- **Publisher**: E-Control Austria (Energie-Control Austria für die Regulierung der Elektrizitäts- und Erdgaswirtschaft GmbH), a federal regulator. Initiative of the BMK (Bundesministerium für Klimaschutz, Umwelt, Energie, Mobilität, Innovation und Technologie).
+- **Registration + ToU acceptance**: https://admin.ladestellen.at/#/api/registrieren.
+- **API host**: `https://api.e-control.at/charge/1.0`. Swagger UI is password-protected behind the registered account; spec cached locally at `dev/api-spec.json` (gitignored).
+- **Legal obligation for operators** (not consumers): §3 (5) *Bundesgesetz zur Festlegung einheitlicher Standards beim Infrastrukturaufbau für alternative Kraftstoffe* — every publicly accessible charging point must be listed. That's why the dataset is so comprehensive.
+- **Support contact**: `support@ladestellen.at` (API issues), `office@e-control.at` (general).
+
+### What we don't know yet
+
+The full ToU text the user accepted at registration lives behind the SPA login and wasn't scrape-able. **Open TODOs for the user** to close when convenient:
+
+- Exact licence string + URL (assumption: CC-BY 4.0).
+- Exact attribution/Namensnennung string required (assumption: `"Data: E-Control Austria via ladestellen.at"`).
+- Published rate limits (none documented publicly — we apply a conservative default).
+- Commercial-use clause (assumption: none, since it's public OGD-AT data).
+- Redistribution-in-bulk clause (assumption: non-commercial only; nearest-N lookups are fine).
+
+When the user pastes the exact Nutzungsbedingungen, update this section with verbatim quotes, tighten the attribution string if it differs, and raise the floor scan interval if a rate limit is specified.
+
+### Rules we apply by default
+
+1. **Identify every outbound request.** `const.USER_AGENT = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"` so operators can identify and contact HA-specific traffic (already implemented). Never skip this for "open" APIs — it's how they distinguish problem patterns.
+
+2. **Respect the upstream.** Default poll interval: **10 minutes**. Config flow enforces a 5-minute floor and 12-hour ceiling (5–720 min). No documented rate limit, but charging-station metadata rarely changes faster than hourly; aggressive polling wastes their resources. **If an upstream 429 ever surfaces, raise the floor to 10 min in the schema.**
+
+3. **Attribute the data source on every entity.** `_attr_attribution = "Data: E-Control Austria via ladestellen.at"` on every entity we ship. CC-BY-family licences require it; courtesy regardless.
+
+4. **Cache what you fetch.** Never bypass `coordinator.data` with side-channel fetches. `CoordinatorEntity` is the only read path. Every new entity type reads from coordinator state, never calls the API directly.
+
+5. **Don't redistribute in bulk.** This integration is a **nearest-N consumer** for a single HA install. Never ship a scheduled full-dataset dump, never re-expose the corpus via another API — that turns us into a re-publisher with a different legal posture.
+
+6. **Respect the Referer-match.** The domain the user registered is part of the auth contract. Never strip or fake the Referer header to bypass a 403. The reauth flow exposes the correct fix: the user updates their registered domain at ladestellen.at (or updates the HA-side value).
+
+7. **Stay non-commercial in spirit.** The integration is MIT-licensed. A downstream fork that monetises it is responsible for re-reviewing the ToU against the new use case — we don't bless that on their behalf.
+
+8. **Route upstream problems to the right inbox.** Key rejection, consistently-failing endpoint, data quality concerns → `support@ladestellen.at`. README troubleshooting section points users there. Never open a GitHub issue on their behalf.
+
+9. **Fail gracefully, never hammer.** 30 s request timeout (already set), `DataUpdateCoordinator` back-off on failure (HA default), `ConfigEntryAuthFailed` on 401/403 (not retry-looped). Never add a custom retry loop inside `_async_update_data`.
+
+10. **Credit E-Control in the README.** Every release ships with a "Data & license" section naming E-Control as the data provider and linking to ladestellen.at. Removing that section on a whim is a regression — it's where users learn who actually runs the infrastructure they're consuming.
+
+### Before the first non-beta release (v1.0.0)
+
+- [ ] Confirm the exact licence string on data.gv.at (or behind the admin.ladestellen.at SPA); update the attribution string if E-Control mandates a different form.
+- [ ] Paste the full Nutzungsbedingungen text into this skill's "What we know" section.
+- [ ] Replace the placeholder `REGISTRATION_URL` (currently `https://www.ladestellen.at/`) with the deep-link to the registration page.
+
+---
+
 ## 1. Quality Scale Compliance
 
 The integration targets **Platinum** quality scale from day one. Every code change must be checked against the current status in `custom_components/ladestellen_austria/quality_scale.yaml`.

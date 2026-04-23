@@ -113,6 +113,14 @@ The integration polls `GET /search?latitude=…&longitude=…` every **10 minute
 2. In HACS, click *Remove* on the integration card.
 3. Optionally revoke your API key at ladestellen.at.
 
+## Data & license
+
+Charging-station data is served by the official Austrian *Ladestellenverzeichnis* at [api.e-control.at](https://api.e-control.at), operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK (Federal Ministry for Climate Action)](https://www.bmk.gv.at/). The dataset is catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api) as Austrian Open Government Data.
+
+Every sensor shipped by this integration carries the attribution string *"Data: E-Control Austria via ladestellen.at"* (visible in entity attributes). Upstream terms of use are accepted by each user at registration: https://admin.ladestellen.at/#/api/registrieren.
+
+Problems with the upstream data or API? Contact `support@ladestellen.at` (API issues) or `office@e-control.at` (general). Bugs in *this* integration — open an issue on GitHub instead.
+
 ---
 
-Not affiliated with E-Control Austria or the operators of ladestellen.at.
+This integration is an independent project. Not affiliated with, endorsed by, or sponsored by E-Control Austria, BMK, or the operators of ladestellen.at.
