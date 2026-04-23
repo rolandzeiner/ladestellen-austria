@@ -288,13 +288,13 @@ export class LadestellenAustriaCard extends LitElement {
         role="button"
         aria-expanded=${expanded ? "true" : "false"}
       >
-        <div class="row-top">
-          <div class="row-metrics">
-            ${maxKw > 0
-              ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
-                  >${maxKw}&thinsp;kW</span
-                >`
-              : nothing}
+        ${maxKw > 0
+          ? html`<span class="metric-kw ${isDC ? "dc" : ""}"
+              >${maxKw}&thinsp;kW</span
+            >`
+          : html`<span class="metric-kw empty">—</span>`}
+        <div class="row-main">
+          <div class="row-inline-metrics">
             ${connectorTokens.map(
               (t) => html`<span class="pill plug">${t}</span>`,
             )}
