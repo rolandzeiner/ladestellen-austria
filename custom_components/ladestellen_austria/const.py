@@ -15,7 +15,7 @@ INTEGRATION_VERSION: Final = "0.1.0"
 # WS version check that the bundled card runs on first hass assignment uses
 # this string as the source of truth — any mismatch triggers the reload banner
 # loop described in the workflow skill's CARD_VERSION section.
-CARD_VERSION: Final = "0.1.0-beta-2"
+CARD_VERSION: Final = "0.1.0-beta-3"
 
 USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
 
@@ -27,6 +27,7 @@ DEFAULT_MAX_RESULTS: Final = 10
 
 API_BASE_URL: Final = "https://api.e-control.at/charge/1.0"
 SEARCH_PATH: Final = "/search"
+DATEX_STATUS_PATH: Final = "/datex2/v3.5/energy-infrastructure-status-publication"
 
 API_KEY_HEADER: Final = "Apikey"
 REFERER_HEADER: Final = "Referer"
