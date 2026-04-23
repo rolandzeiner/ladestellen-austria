@@ -115,11 +115,44 @@ The integration polls `GET /search?latitude=…&longitude=…` every **10 minute
 
 ## Data & license
 
-Charging-station data is served by the official Austrian *Ladestellenverzeichnis* at [api.e-control.at](https://api.e-control.at), operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK (Federal Ministry for Climate Action)](https://www.bmk.gv.at/). The dataset is catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api) as Austrian Open Government Data.
+Charging-station data is served by the official Austrian *Ladestellenverzeichnis* at [api.e-control.at](https://api.e-control.at), operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK (Federal Ministry for Climate Action)](https://www.bmk.gv.at/). The dataset is catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api).
 
-Every sensor shipped by this integration carries the attribution string *"Data: E-Control Austria via ladestellen.at"* (visible in entity attributes). Upstream terms of use are accepted by each user at registration: https://admin.ladestellen.at/#/api/registrieren.
+Every sensor shipped by this integration carries the attribution string *"Datenquelle: E-Control"*, required verbatim by §3d of the [ladestellen.at Nutzungsbedingungen](https://admin.ladestellen.at/#/api/terms-of-use).
 
 Problems with the upstream data or API? Contact `support@ladestellen.at` (API issues) or `office@e-control.at` (general). Bugs in *this* integration — open an issue on GitHub instead.
+
+## User obligations under the ladestellen.at Terms of Use
+
+When you register for an API key at [admin.ladestellen.at](https://admin.ladestellen.at/#/api/registrieren) you accept a binding contract with E-Control. This integration helps you comply, but the **legal obligations are yours, not the integration author's**. Violations carry a **€10,000 contract penalty** under §9 of the ToU.
+
+**You must:**
+
+- **Attribute the data source** — "Datenquelle: E-Control" shown directly next to any displayed data. This integration sets it on every entity automatically (§3d).
+- **Display the E-Control logo** next to the data, as an image-link to `https://www.e-control.at/`. The companion Lovelace card ships this for you (§3c). If you render the sensor attributes in a custom card, add the logo yourself.
+- **Notify E-Control before going productive** — email `support@ladestellen.at` with what you're building and when it goes live (§3a).
+- **Notify E-Control of your public URL** if your HA dashboard is reachable over the internet (§3b).
+- **Display the prescribed liability disclaimer** on any public-facing HA dashboard that surfaces this data (§3e):
+
+  > *"Die Dateneingaben der angegebenen Standorte und Informationen werden ausschließlich durch die Betreiber der Ladepunkte direkt und selbst vorgenommen. Diese Betreiber haben die Möglichkeit, die Informationen tagesaktuell zu halten. Für die Richtigkeit, Vollständigkeit und Aktualität der von den Betreibern selbst vorgenommenen Angaben kann keine Haftung übernommen werden. Für Schäden, die sich aus fehlerhaften Inhalten oder Handlungen ergeben, welche im Vertrauen auf die Richtigkeit des Inhaltes gemacht wurden, übernimmt die E-Control keine Haftung."*
+
+- **Submit quarterly usage statistics** — Unique-Visits + Unique-Visitors per quarter to `support@ladestellen.at` (§3g).
+- **Notify E-Control on discontinuation** (temporary or permanent) via `support@ladestellen.at` (§3f).
+- **Keep your API key secret** — never share it with third parties (§3j; enforced technically by the integration via masked input fields and diagnostic redaction).
+
+**You must not:**
+
+- Modify the data values returned by the API — display them as received (§3i).
+- Connect the data to advertising partners, sponsors, or third parties (§3k).
+- Charge visitors for access to the E-Control-sourced information (§3l).
+- Re-distribute the data as a file export or re-serve it as a web service (§7).
+
+**Rate limits (§4):** 30 concurrent requests pooled across all API users globally (Fair Use), 2,500 requests per hour per user. The default 10-minute poll interval keeps you well under these ceilings even with dozens of entries.
+
+**No technical support** from E-Control for API consumers (§5). For integration issues, open a GitHub issue here — not at ladestellen.at.
+
+**Governing law**: Austrian law, exclusive venue Vienna (§11). E-Control can revoke access with 3 months' notice without cause (§10).
+
+Full ToU: https://admin.ladestellen.at/#/api/terms-of-use
 
 ---
 

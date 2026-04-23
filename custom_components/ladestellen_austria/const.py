@@ -25,6 +25,9 @@ REFERER_HEADER: Final = "Referer"
 
 REQUEST_TIMEOUT_SEC: Final = 30
 
-# TODO: replace with deep-link to the ladestellen.at API registration page
-# before v1.0.0. Currently points at the homepage as a fallback.
-REGISTRATION_URL: Final = "https://www.ladestellen.at/"
+# Confirmed against the Angular route table in admin.ladestellen.at's
+# main.dbdfff82cb88e9da.js bundle (path "api/registrieren"). Retrieved
+# 2026-04-23. If the SPA rebuilds, the hash fragment remains stable —
+# hash-based routing is client-side and hash values don't change on
+# bundle-version bumps.
+REGISTRATION_URL: Final = "https://admin.ladestellen.at/#/api/registrieren"
