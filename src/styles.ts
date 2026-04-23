@@ -1,27 +1,25 @@
 import { css } from "lit";
 
 // ---------------------------------------------------------------------------
-// Card styles — Lit shadow-DOM scoped. HA theme CSS variables pierce the
-// shadow boundary; every accent resolves through the user's active theme.
-//
-// 2026 conventions in play:
-// - color-mix() for theme-aware tints (light/dark automatically)
-// - cubic-bezier(0.4, 0, 0.2, 1) Material Standard easing on all transitions
-// - Soft tinted chips for metrics (--primary-color wash, not filled)
-// - Two-column layouts for dense data (header + expanded detail)
-// - Tabular numerics + tight tracking on display numerals
-// - Dashed lines avoided; separation via vertical rhythm + subtle fills
-// - Uppercase micro-labels above data blocks (tracking 0.08em)
+// Card styles — Lit shadow-DOM scoped. Designed from UX-first principles:
+//   - One primary stat (hero distance), everything else reads as support.
+//   - Dense station list, always-visible name + address, optional expand.
+//   - Semantic status traffic-light dot per row (ok/partial/busy/inactive).
+//   - Typography carries hierarchy; color reserved for meaning (accents,
+//     semantic tokens: success, warning, error, unavailable).
+//   - All colors via HA theme tokens + color-mix() so light/dark are free.
 // ---------------------------------------------------------------------------
 
 export const cardStyles = css`
   :host {
     display: block;
+    --l-fs-hero: clamp(2.25rem, 4vw + 1rem, 3rem);
     --l-fs-xl: var(--ha-font-size-xl, 1.5rem);
     --l-fs-l: var(--ha-font-size-l, 1rem);
-    --l-fs-m: var(--ha-font-size-m, 0.9rem);
-    --l-fs-s: var(--ha-font-size-s, 0.85rem);
+    --l-fs-m: var(--ha-font-size-m, 0.9375rem);
+    --l-fs-s: var(--ha-font-size-s, 0.8125rem);
     --l-fs-xs: var(--ha-font-size-xs, 0.75rem);
+    --l-fs-2xs: 11px;
     --l-fw-reg: var(--ha-font-weight-normal, 400);
     --l-fw-med: var(--ha-font-weight-medium, 500);
     --l-fw-bld: var(--ha-font-weight-bold, 700);
@@ -30,27 +28,30 @@ export const cardStyles = css`
     --l-space-3: 12px;
     --l-space-4: 16px;
     --l-space-5: 20px;
+    --l-space-6: 24px;
     --l-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --l-dot-ok: var(--success-color, #22c55e);
+    --l-dot-partial: var(--warning-color, #f59e0b);
+    --l-dot-busy: var(--error-color, #ef4444);
+    --l-dot-inactive: var(--state-unavailable-color, #9ca3af);
   }
   ha-card {
     overflow: hidden;
     border-radius: var(--ha-card-border-radius, 14px);
   }
 
-  /* ----- Brand strip (§3c compliance) --------------------------------- */
-  .brand-strip {
+  /* ----- Header (§3c brand-link, quiet top strip) --------------------- */
+  .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--l-space-3);
-    padding: var(--l-space-3) var(--l-space-4);
+    padding: 10px var(--l-space-4);
   }
   .brand-link {
     display: inline-flex;
     align-items: center;
-    gap: var(--l-space-2);
     text-decoration: none;
-    color: inherit;
     transition: opacity 160ms var(--l-ease);
   }
   .brand-link:hover {
@@ -60,76 +61,86 @@ export const cardStyles = css`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 26px;
-    padding: 0 9px;
+    height: 24px;
+    padding: 0 8px;
     background: #0052a5;
     color: #ffffff;
     border-radius: 4px;
     font-weight: var(--l-fw-bld);
-    font-size: 12px;
-    letter-spacing: 0.06em;
+    font-size: 11px;
+    letter-spacing: 0.08em;
   }
   .brand-logo .accent {
     color: #3fa535;
     margin-right: 1px;
   }
-  .card-title {
-    font-size: var(--l-fs-m);
+  .header-title {
+    font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    letter-spacing: -0.005em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--secondary-text-color);
   }
 
-  /* ----- Summary row ------------------------------------------------- */
-  .summary {
+  /* ----- Hero — single big stat + context ---------------------------- */
+  .hero {
     display: flex;
-    align-items: flex-end;
+    align-items: baseline;
     justify-content: space-between;
-    gap: var(--l-space-3);
-    padding: var(--l-space-4);
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 5%,
-      var(--ha-card-background, var(--card-background-color))
-    );
-    border-top: 1px solid
-      color-mix(in srgb, var(--primary-color) 10%, transparent);
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--primary-color) 10%, transparent);
+    gap: var(--l-space-4);
+    padding: var(--l-space-3) var(--l-space-4) var(--l-space-4);
   }
-  .summary-main {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+  .hero--empty {
+    padding: var(--l-space-5) var(--l-space-4);
+    justify-content: center;
   }
-  .summary-distance {
-    font-size: var(--l-fs-xl);
-    font-weight: var(--l-fw-bld);
+  .hero-value {
+    display: inline-flex;
+    align-items: baseline;
     color: var(--primary-text-color);
-    line-height: 1;
-    letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
-  .summary-distance .unit {
-    font-size: var(--l-fs-s);
+  .hero-number {
+    font-size: var(--l-fs-hero);
+    font-weight: var(--l-fw-bld);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .hero-unit {
+    font-size: var(--l-fs-m);
     font-weight: var(--l-fw-reg);
-    margin-left: 5px;
     color: var(--secondary-text-color);
+    margin-left: 6px;
     letter-spacing: 0;
   }
-  .summary-label,
-  .summary-count {
+  .hero-context {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 0;
+    text-align: right;
+  }
+  .hero-context-1 {
     font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
+    font-weight: var(--l-fw-med);
+    color: var(--primary-text-color);
+    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
   }
-  .summary-count {
-    text-align: right;
+  .hero-context-2 {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+  .hero-label {
+    font-size: var(--l-fs-s);
+    color: var(--secondary-text-color);
   }
 
   /* ----- Station list ------------------------------------------------ */
@@ -137,18 +148,15 @@ export const cardStyles = css`
     list-style: none;
     margin: 0;
     padding: 0;
+    border-top: 1px solid var(--divider-color);
   }
   .station {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: var(--l-space-3);
-    row-gap: 4px;
-    padding: var(--l-space-3) var(--l-space-4);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
-    transition:
-      background-color 200ms var(--l-ease),
-      padding 200ms var(--l-ease);
+    transition: background-color 200ms var(--l-ease);
   }
   .station:last-child {
     border-bottom: none;
@@ -163,7 +171,6 @@ export const cardStyles = css`
     outline: none;
   }
   .station.expanded {
-    padding-bottom: var(--l-space-2);
     background: color-mix(
       in srgb,
       var(--primary-color) 3%,
@@ -171,91 +178,166 @@ export const cardStyles = css`
     );
   }
 
-  /* kW as a leading data chip: tinted pill-ish backdrop, row-span 2.
-     Uses --primary-color tint for AC, --warning-color for DC — mirrors
-     how HA's own tile cards badge sensor-class accents. */
-  .metric-kw {
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    align-self: center;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 68px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
-    color: var(--primary-color);
-    font-size: 1.35rem;
-    font-weight: var(--l-fw-bld);
-    line-height: 1;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    transition:
-      background-color 200ms var(--l-ease),
-      transform 200ms var(--l-ease);
+  /* Body: status dot + text column. Two lines always (name+metrics / address). */
+  .station-body {
+    display: flex;
+    gap: var(--l-space-3);
+    padding: var(--l-space-3) var(--l-space-4);
+    align-items: flex-start;
   }
-  .station:hover .metric-kw {
-    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-  }
-  .metric-kw.dc {
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f57c00) 12%,
-      transparent
-    );
-    color: var(--warning-color, #f57c00);
-  }
-  .station:hover .metric-kw.dc {
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f57c00) 16%,
-      transparent
-    );
-  }
-  .metric-kw.empty {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 8%,
-      transparent
-    );
-    color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-    opacity: 0.7;
+  .station-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  /* Right side of the grid: metrics + maps link + chevron (row 1), name
-     below (row 2). */
-  .row-main {
-    grid-column: 2;
-    grid-row: 1;
+  /* Status dot — 9px circle that communicates live availability at a glance.
+     Aligned to the baseline of the first text line for tidy vertical rhythm. */
+  .status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 7px; /* aligns with the baseline of .station-name */
+    background: currentColor;
+  }
+  .status-dot.status-ok {
+    color: var(--l-dot-ok);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--l-dot-ok) 18%, transparent);
+  }
+  .status-dot.status-partial {
+    color: var(--l-dot-partial);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--l-dot-partial) 20%, transparent);
+  }
+  .status-dot.status-busy {
+    color: var(--l-dot-busy);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--l-dot-busy) 18%, transparent);
+  }
+  .status-dot.status-inactive {
+    color: var(--l-dot-inactive);
+    opacity: 0.7;
+  }
+  .status-dot.status-unknown {
+    color: transparent;
+    border: 1.5px solid var(--secondary-text-color);
+    opacity: 0.6;
+  }
+
+  /* Line 1: name (left, flex-1) + metrics (center, right-aligned) +
+     distance-pill (right) + chevron. */
+  .station-line-1 {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: baseline;
     gap: var(--l-space-3);
     min-width: 0;
   }
-  .row-inline-metrics {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--l-space-2);
+  .station-name {
+    font-size: var(--l-fs-m);
+    font-weight: var(--l-fw-med);
+    color: var(--primary-text-color);
+    line-height: 1.35;
+    letter-spacing: -0.002em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     min-width: 0;
     flex: 1;
   }
-  .row-right {
+
+  .station-metrics {
     display: inline-flex;
-    align-items: center;
-    gap: var(--l-space-1);
+    align-items: baseline;
+    gap: 6px;
+    font-size: var(--l-fs-s);
+    color: var(--secondary-text-color);
+    font-variant-numeric: tabular-nums;
     flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .metric {
+    font-weight: var(--l-fw-reg);
+  }
+  .metric-kw {
+    color: var(--primary-color);
+    font-weight: var(--l-fw-bld);
+    letter-spacing: 0;
+  }
+  .metric-kw--dc {
+    color: var(--warning-color, #f57c00);
+  }
+  .metric-plug {
+    color: var(--primary-text-color);
+    font-weight: var(--l-fw-med);
+  }
+  .metric-price {
+    color: var(--primary-text-color);
+    font-weight: var(--l-fw-med);
+  }
+  .metric-free {
+    color: var(--success-color, #2e7d32);
+    font-weight: var(--l-fw-bld);
+  }
+  .metrics-sep {
+    color: var(--divider-color);
+    font-weight: var(--l-fw-reg);
+    opacity: 0.8;
   }
 
-  .station-name {
-    grid-column: 2;
-    grid-row: 2;
+  /* Distance-pill — map link. Pin + number together, compact click target. */
+  .station-distance {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--primary-text-color);
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    transition:
+      background-color 160ms var(--l-ease),
+      transform 160ms var(--l-ease);
+    flex-shrink: 0;
+  }
+  .station-distance:hover,
+  .station-distance:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+    outline: none;
+  }
+  .station-distance:active {
+    transform: scale(0.96);
+  }
+  .station-distance ha-icon {
+    --mdc-icon-size: 15px;
+    color: var(--primary-color);
+  }
+  .distance-value {
     font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-med);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+  }
+  .distance-value .unit {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
     font-weight: var(--l-fw-reg);
+    margin-left: 2px;
+    letter-spacing: 0;
+  }
+  .chevron {
+    --mdc-icon-size: 18px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+    transition: transform 200ms var(--l-ease);
+  }
+
+  /* Line 2: address (muted, always visible). */
+  .station-line-2 {
+    font-size: var(--l-fs-s);
     color: var(--secondary-text-color);
     line-height: 1.35;
     letter-spacing: 0.005em;
@@ -264,119 +346,14 @@ export const cardStyles = css`
     white-space: nowrap;
   }
 
-  /* Maps link — pin + distance, single click target. */
-  .maps-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    text-decoration: none;
-    color: var(--primary-text-color);
-    transition:
-      background-color 160ms var(--l-ease),
-      transform 160ms var(--l-ease);
-  }
-  .maps-inline:hover,
-  .maps-inline:focus-visible {
-    background: color-mix(in srgb, var(--primary-color) 16%, transparent);
-    outline: none;
-  }
-  .maps-inline:active {
-    transform: scale(0.96);
-  }
-  .maps-inline ha-icon {
-    --mdc-icon-size: 18px;
-    color: var(--primary-color);
-  }
-  .station-distance {
-    font-size: var(--l-fs-l);
-    font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-  }
-  .station-distance .unit {
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-    margin-left: 3px;
-    letter-spacing: 0;
-  }
-  .chevron {
-    --mdc-icon-size: 18px;
-    color: var(--secondary-text-color);
-    transition: transform 200ms var(--l-ease);
-  }
-
-  /* Price reads quieter than kW — it's a contextual detail, not the hero. */
-  .metric-price {
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-    font-variant-numeric: tabular-nums;
-    font-weight: var(--l-fw-med);
-    letter-spacing: -0.005em;
-  }
-  .metric-price.free {
-    color: var(--success-color, #2e7d32);
-    font-weight: var(--l-fw-bld);
-  }
-
-  /* Connector pills — theme-accent soft wash (consistent with kW). */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.02em;
-    line-height: 1.4;
-    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
-    color: color-mix(in srgb, var(--primary-color) 85%, var(--primary-text-color));
-  }
-
-  /* Expanded detail — 2 columns: address left, status + amenities right. */
+  /* ----- Expanded detail -------------------------------------------- */
   .detail {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    column-gap: var(--l-space-4);
-    row-gap: var(--l-space-2);
-    margin-top: var(--l-space-2);
-    padding: var(--l-space-3);
-    border-radius: 10px;
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 4%,
-      var(--ha-card-background, var(--card-background-color))
-    );
-    animation: l-reveal 220ms var(--l-ease);
-  }
-  .detail-col {
     display: flex;
     flex-direction: column;
-    gap: var(--l-space-1);
-    min-width: 0;
+    gap: var(--l-space-3);
+    padding: 0 var(--l-space-4) var(--l-space-4) calc(var(--l-space-4) + 9px + var(--l-space-3));
+    animation: l-reveal 220ms var(--l-ease);
   }
-  .detail-heading {
-    font-size: 10px;
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--secondary-text-color);
-    opacity: 0.75;
-    margin-bottom: 2px;
-  }
-  .detail-address-col {
-    /* Keep address on the left */
-  }
-  .detail-right-col {
-    gap: var(--l-space-2);
-    align-items: flex-end;
-  }
-
   @keyframes l-reveal {
     from {
       opacity: 0;
@@ -387,95 +364,135 @@ export const cardStyles = css`
       transform: none;
     }
   }
-
-  .station-address {
-    font-size: var(--l-fs-s);
-    color: var(--primary-text-color);
-    line-height: 1.45;
-    letter-spacing: 0.003em;
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--l-space-1);
+  }
+  .detail-label {
+    font-size: var(--l-fs-2xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-text-color);
+    opacity: 0.7;
   }
 
-  /* Status line: inactive / live-availability. */
-  .station-status {
+  /* Status row (in expanded detail) */
+  .status-row {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: var(--l-fs-xs);
+    gap: 8px;
+    font-size: var(--l-fs-s);
     font-weight: var(--l-fw-med);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.005em;
     font-variant-numeric: tabular-nums;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: color-mix(in srgb, currentColor 12%, transparent);
+    align-self: flex-start;
   }
-  .station-status.ok {
-    color: var(--success-color, #2e7d32);
+  .status-row .status-dot {
+    margin-top: 0;
   }
-  .station-status.busy {
-    color: var(--error-color, #c62828);
+  .status-row.status-ok {
+    color: var(--l-dot-ok);
   }
-  .station-status.inactive {
-    color: var(--state-unavailable-color, #a0a0a0);
+  .status-row.status-partial {
+    color: var(--l-dot-partial);
   }
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-    display: inline-block;
+  .status-row.status-busy {
+    color: var(--l-dot-busy);
+  }
+  .status-row.status-inactive,
+  .status-row.status-unknown {
+    color: var(--secondary-text-color);
   }
 
-  /* Amenities — icon + label pair, right-aligned within the right col. */
+  /* Amenities — compact wrap of icon+label pairs. */
   .amenities {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--l-space-1) var(--l-space-2);
-    justify-content: flex-end;
-    font-size: var(--l-fs-xs);
+    gap: 6px 14px;
+    font-size: var(--l-fs-s);
     color: var(--secondary-text-color);
   }
   .amenity {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 8%,
-      transparent
-    );
-    letter-spacing: 0.01em;
+    gap: 5px;
+    letter-spacing: 0.005em;
   }
   .amenity ha-icon {
-    --mdc-icon-size: 14px;
+    --mdc-icon-size: 15px;
     color: var(--secondary-text-color);
     flex-shrink: 0;
   }
-  .amenity.green {
+
+  /* Action row — clear, tappable, colored primary for Maps. */
+  .detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--l-space-2);
+    padding-top: var(--l-space-1);
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.005em;
+    text-decoration: none;
+    color: var(--primary-text-color);
     background: color-mix(
       in srgb,
-      var(--success-color, #2e7d32) 12%,
+      var(--secondary-text-color) 10%,
       transparent
     );
+    transition:
+      background-color 160ms var(--l-ease),
+      transform 160ms var(--l-ease);
+  }
+  .action-btn:hover,
+  .action-btn:focus-visible {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 18%,
+      transparent
+    );
+    outline: none;
+  }
+  .action-btn:active {
+    transform: scale(0.97);
+  }
+  .action-btn ha-icon {
+    --mdc-icon-size: 16px;
+  }
+  .action-btn.primary {
+    background: color-mix(in srgb, var(--primary-color) 15%, transparent);
     color: color-mix(
       in srgb,
-      var(--success-color, #2e7d32) 90%,
+      var(--primary-color) 85%,
       var(--primary-text-color)
     );
   }
-  .amenity.green ha-icon {
-    color: var(--success-color, #2e7d32);
+  .action-btn.primary:hover,
+  .action-btn.primary:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 22%, transparent);
+  }
+  .action-btn.primary ha-icon {
+    color: var(--primary-color);
   }
 
-  /* Attribution footer — §3d exact text. */
-  .attribution {
+  /* Footer (§3d attribution) */
+  .footer {
     padding: var(--l-space-2) var(--l-space-4) var(--l-space-3);
     text-align: right;
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.03em;
     opacity: 0.75;
+    border-top: 1px solid var(--divider-color);
   }
 
   /* Empty states */
@@ -485,23 +502,10 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
     font-size: var(--l-fs-s);
   }
-
-  /* Narrow-card fallback: detail panel stacks when the card is below ~360px. */
-  @container (max-width: 360px) {
-    .detail {
-      grid-template-columns: 1fr;
-    }
-    .detail-right-col {
-      align-items: flex-start;
-    }
-    .amenities {
-      justify-content: flex-start;
-    }
-  }
 `;
 
 // ---------------------------------------------------------------------------
-// Editor styles
+// Editor styles — unchanged, HA form widgets carry their own theming.
 // ---------------------------------------------------------------------------
 
 export const editorStyles = css`
