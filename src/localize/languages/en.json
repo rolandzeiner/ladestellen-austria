@@ -13,7 +13,8 @@
     "inactive": "inactive",
     "gratis": "Gratis",
     "live_count": "{avail}/{total} free",
-    "open_in_maps": "Open in Maps"
+    "open_in_maps": "Open in Maps",
+    "address_heading": "Address"
   },
   "amenities": {
     "green_energy": "Green energy",
