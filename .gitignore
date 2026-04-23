@@ -1,0 +1,41 @@
+# --- Rule #0: secrets never leave the dev machine ---
+secrets.json
+.env
+.env.*
+*.secret
+tests/fixtures/secrets/
+dev/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- Node (for the Lovelace card, later) ---
+node_modules/
+.npm/
+
+# --- Editor / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- HA dev scratch ---
+config/
+.HA_VERSION
