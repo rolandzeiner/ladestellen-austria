@@ -26,6 +26,7 @@ import { hasConfigOrEntityChanged } from "custom-card-helpers";
 import type {
   LadestellenAustriaCardConfig,
   Station,
+  Point,
 } from "./types";
 import { CARD_VERSION } from "./const";
 import { localize } from "./localize/localize";
@@ -94,6 +95,10 @@ export class LadestellenAustriaCard extends LitElement {
       name: "Ladestellen Austria",
       max_stations: DEFAULT_MAX_STATIONS,
       show_amenities: true,
+      show_pricing: true,
+      only_available: false,
+      only_free: false,
+      connector_types: [],
       ...config,
     };
   }
@@ -127,15 +132,16 @@ export class LadestellenAustriaCard extends LitElement {
       `;
     }
 
-    const stations = (stateObj.attributes["stations"] ?? []) as Station[];
+    const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
+    const filtered = this._filterStations(allStations);
     const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
-    const visible = stations.slice(0, cap);
+    const visible = filtered.slice(0, cap);
     const nearest = visible[0];
 
     return html`
       <ha-card>
         ${this._renderBrandStrip()}
-        ${this._renderSummary(stateObj.state, nearest, stations.length)}
+        ${this._renderSummary(nearest, filtered.length, allStations.length)}
         ${visible.length > 0
           ? html`<ul class="stations">${visible.map((s) => this._renderStation(s))}</ul>`
           : html`<div class="empty-state">${localize("card.no_stations")}</div>`}
@@ -144,9 +150,40 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  // §3c — Logo as image-link to www.e-control.at. The styled wordmark is a
-  // placeholder until the official logo asset is bundled from
-  // https://www.e-control.at/presse/pressebilder (pre-v1.0.0 todo). The link
+  private _filterStations(stations: Station[]): Station[] {
+    const onlyAvailable = this.config.only_available ?? false;
+    const onlyFree = this.config.only_free ?? false;
+    const wantedTokens = this.config.connector_types ?? [];
+    if (!onlyAvailable && !onlyFree && wantedTokens.length === 0) {
+      return stations;
+    }
+    return stations.filter((s) => {
+      if (onlyAvailable) {
+        const hasActive = s.stationStatus === "ACTIVE"
+          && (s.points ?? []).some((p) => p.status === "AVAILABLE");
+        if (!hasActive) return false;
+      }
+      if (onlyFree) {
+        const hasFree = (s.points ?? []).some((p) => p.freeOfCharge);
+        if (!hasFree) return false;
+      }
+      if (wantedTokens.length > 0) {
+        const stationTokens = new Set(
+          (s.points ?? []).flatMap((p) =>
+            (p.connectorType ?? []).map((c) =>
+              this._shortConnector(c.consumerName, c.key),
+            ),
+          ),
+        );
+        const match = wantedTokens.some((t) => stationTokens.has(t));
+        if (!match) return false;
+      }
+      return true;
+    });
+  }
+
+  // §3c — Logo as image-link to www.e-control.at. Styled-text wordmark is a
+  // placeholder until the official logo asset is bundled pre-v1.0.0. Link
   // target and attribution intent are already compliant.
   private _renderBrandStrip(): TemplateResult {
     const title = this.config?.name ?? "Ladestellen Austria";
@@ -167,11 +204,17 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _renderSummary(
-    rawState: string,
     nearest: Station | undefined,
-    total: number,
+    filteredTotal: number,
+    rawTotal: number,
   ): TemplateResult {
-    const km = this._formatKm(rawState);
+    const km = nearest ? this._formatKm(nearest.distance) : "–";
+    const countText =
+      filteredTotal === rawTotal
+        ? localize("card.station_count").replace("{count}", String(filteredTotal))
+        : localize("card.station_count_filtered")
+            .replace("{filtered}", String(filteredTotal))
+            .replace("{total}", String(rawTotal));
     return html`
       <div class="summary">
         <div>
@@ -184,9 +227,7 @@ export class LadestellenAustriaCard extends LitElement {
               : localize("card.no_stations")}
           </div>
         </div>
-        <div class="summary-count">
-          ${localize("card.station_count").replace("{count}", String(total))}
-        </div>
+        <div class="summary-count">${countText}</div>
       </div>
     `;
   }
@@ -208,6 +249,8 @@ export class LadestellenAustriaCard extends LitElement {
     const anyAvailable = points.some((p) => p.status === "AVAILABLE");
     const active = station.stationStatus === "ACTIVE" && anyAvailable;
     const showAmenities = this.config?.show_amenities ?? true;
+    const showPricing = this.config?.show_pricing ?? true;
+    const priceChip = showPricing ? this._pricingChip(points) : null;
 
     return html`
       <li
@@ -225,6 +268,7 @@ export class LadestellenAustriaCard extends LitElement {
           ${maxKw > 0 ? html`<span class="chip power">${maxKw} kW</span>` : nothing}
           ${isDC ? html`<span class="chip dc">DC</span>` : nothing}
           ${uniqueConnectorNames.map((n) => html`<span class="chip">${n}</span>`)}
+          ${priceChip}
           ${!active
             ? html`<span class="chip inactive">${localize("card.inactive")}</span>`
             : nothing}
@@ -232,6 +276,31 @@ export class LadestellenAustriaCard extends LitElement {
         </div>
       </li>
     `;
+  }
+
+  // Pricing chip: shows the lowest €/kWh across points, or "Gratis" if any
+  // point is freeOfCharge. A point with priceCentMin > 0 and priceCentKwh === 0
+  // is time-billed — show the per-minute cost with "/min" suffix instead.
+  private _pricingChip(points: Point[]): TemplateResult | typeof nothing {
+    if (points.length === 0) return nothing;
+    if (points.some((p) => p.freeOfCharge)) {
+      return html`<span class="chip free">${localize("card.gratis")}</span>`;
+    }
+    const kwhPrices = points
+      .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
+      .map((p) => p.priceCentKwh);
+    if (kwhPrices.length > 0) {
+      const minKwh = Math.min(...kwhPrices);
+      return html`<span class="chip price">${(minKwh / 100).toFixed(2)} €/kWh</span>`;
+    }
+    const minPrices = points
+      .filter((p) => !p.freeOfCharge && p.priceCentMin > 0)
+      .map((p) => p.priceCentMin);
+    if (minPrices.length > 0) {
+      const minPrice = Math.min(...minPrices);
+      return html`<span class="chip price">${(minPrice / 100).toFixed(2)} €/min</span>`;
+    }
+    return nothing;
   }
 
   private _renderAmenities(station: Station): TemplateResult {
@@ -256,9 +325,6 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  // Hard-code the required §3d text instead of trusting the entity attribute
-  // — a user template sensor could strip it and leave us non-compliant. Either
-  // path ends up showing the required verbatim string.
   private _renderAttribution(attr: string | undefined): TemplateResult {
     const text =
       attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;

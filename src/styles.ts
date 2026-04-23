@@ -154,6 +154,16 @@ export const cardStyles = css`
     background: rgba(158, 0, 0, 0.12);
     color: #9e0000;
   }
+  .chip.free {
+    background: rgba(63, 165, 53, 0.2);
+    color: #2f7a27;
+    font-weight: 600;
+  }
+  .chip.price {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.06));
+    color: var(--primary-text-color);
+    font-weight: 500;
+  }
   .amenity {
     display: inline-flex;
     align-items: center;
@@ -213,5 +223,33 @@ export const editorStyles = css`
     font-size: var(--ha-font-size-s, 12px);
     color: var(--secondary-text-color);
     line-height: 1.4;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .filter-chip {
+    appearance: none;
+    border: 1px solid var(--divider-color);
+    border-radius: 999px;
+    background: var(--ha-card-background, var(--card-background-color));
+    color: var(--primary-text-color);
+    padding: 4px 12px;
+    font-size: var(--ha-font-size-s, 13px);
+    cursor: pointer;
+    transition:
+      background-color 120ms,
+      color 120ms,
+      border-color 120ms;
+  }
+  .filter-chip:hover {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
+  }
+  .filter-chip.active {
+    background: var(--primary-color);
+    color: var(--text-primary-color, #fff);
+    border-color: var(--primary-color);
+    font-weight: 600;
   }
 `;
