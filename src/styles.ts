@@ -164,6 +164,16 @@ export const cardStyles = css`
     color: var(--primary-text-color);
     font-weight: 500;
   }
+  .chip.live-ok {
+    background: rgba(63, 165, 53, 0.18);
+    color: #2f7a27;
+    font-weight: 600;
+  }
+  .chip.live-none {
+    background: rgba(158, 0, 0, 0.15);
+    color: #9e0000;
+    font-weight: 600;
+  }
   .amenity {
     display: inline-flex;
     align-items: center;

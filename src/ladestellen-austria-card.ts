@@ -133,6 +133,8 @@ export class LadestellenAustriaCard extends LitElement {
     }
 
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
+    const liveAvailable =
+      (stateObj.attributes["live_status_available"] as boolean) === true;
     const filtered = this._filterStations(allStations);
     const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
     const visible = filtered.slice(0, cap);
@@ -143,7 +145,7 @@ export class LadestellenAustriaCard extends LitElement {
         ${this._renderBrandStrip()}
         ${this._renderSummary(nearest, filtered.length, allStations.length)}
         ${visible.length > 0
-          ? html`<ul class="stations">${visible.map((s) => this._renderStation(s))}</ul>`
+          ? html`<ul class="stations">${visible.map((s) => this._renderStation(s, liveAvailable))}</ul>`
           : html`<div class="empty-state">${localize("card.no_stations")}</div>`}
         ${this._renderAttribution(stateObj.attributes["attribution"] as string | undefined)}
       </ha-card>
@@ -232,7 +234,10 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  private _renderStation(station: Station): TemplateResult {
+  private _renderStation(
+    station: Station,
+    liveAvailable: boolean,
+  ): TemplateResult {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     const points = station.points ?? [];
     const uniqueConnectorNames = Array.from(
@@ -246,11 +251,27 @@ export class LadestellenAustriaCard extends LitElement {
     );
     const isDC = points.some((p) => (p.electricityType ?? []).includes("DC"));
     const maxKw = points.reduce((m, p) => Math.max(m, p.capacityKw ?? 0), 0);
-    const anyAvailable = points.some((p) => p.status === "AVAILABLE");
-    const active = station.stationStatus === "ACTIVE" && anyAvailable;
+    const totalPoints = points.length;
+    const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
+    const stationActive = station.stationStatus === "ACTIVE";
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
     const priceChip = showPricing ? this._pricingChip(points) : null;
+
+    // Live count chip when DATEX II data is present and the station is
+    // administratively ACTIVE. Pre-DATEX-II (liveAvailable=false), the chip
+    // is hidden because every point would always read AVAILABLE. If the
+    // station is INACTIVE, show the legacy badge regardless.
+    let statusChip: TemplateResult | typeof nothing = nothing;
+    if (!stationActive) {
+      statusChip = html`<span class="chip inactive">${localize("card.inactive")}</span>`;
+    } else if (liveAvailable && totalPoints > 0) {
+      const cls = availPoints > 0 ? "live-ok" : "live-none";
+      const text = localize("card.live_count")
+        .replace("{avail}", String(availPoints))
+        .replace("{total}", String(totalPoints));
+      statusChip = html`<span class=${`chip ${cls}`}>${text}</span>`;
+    }
 
     return html`
       <li
@@ -269,9 +290,7 @@ export class LadestellenAustriaCard extends LitElement {
           ${isDC ? html`<span class="chip dc">DC</span>` : nothing}
           ${uniqueConnectorNames.map((n) => html`<span class="chip">${n}</span>`)}
           ${priceChip}
-          ${!active
-            ? html`<span class="chip inactive">${localize("card.inactive")}</span>`
-            : nothing}
+          ${statusChip}
           ${showAmenities ? this._renderAmenities(station) : nothing}
         </div>
       </li>

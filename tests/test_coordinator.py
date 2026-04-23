@@ -1,6 +1,7 @@
 """Tests for the Ladestellen Austria coordinator."""
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -104,3 +105,69 @@ async def test_repair_issue_lifecycle(hass: HomeAssistant) -> None:
         registry.async_get_issue(DOMAIN, f"example_degraded_{entry.entry_id}")
         is None
     )
+
+
+def test_index_live_status_parses_datex_publication() -> None:
+    """DATEX II publication → flat evseId → status map."""
+    from custom_components.ladestellen_austria.coordinator import _index_live_status
+
+    payload = {
+        "energyInfrastructureSiteStatus": [
+            {
+                "energyInfrastructureStationStatus": [
+                    {
+                        "refillPointStatus": [
+                            {
+                                "reference": {"id": "AT*EVN*E4654*1"},
+                                "status": {"value": "OCCUPIED"},
+                            },
+                            {
+                                "reference": {"id": "AT*EVN*E4654*2"},
+                                "status": {"value": "AVAILABLE"},
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    }
+    index = _index_live_status(payload)
+    assert index == {
+        "AT*EVN*E4654*1": "OCCUPIED",
+        "AT*EVN*E4654*2": "AVAILABLE",
+    }
+
+
+def test_index_live_status_tolerates_bad_shapes() -> None:
+    """Missing/renamed levels return an empty dict rather than raising."""
+    from custom_components.ladestellen_austria.coordinator import _index_live_status
+
+    assert _index_live_status({}) == {}
+    assert _index_live_status([]) == {}  # wrong top-level type
+    assert _index_live_status(None) == {}
+    assert _index_live_status({"energyInfrastructureSiteStatus": "not-a-list"}) == {}
+    assert (
+        _index_live_status(
+            {"energyInfrastructureSiteStatus": [{"refillPointStatus": []}]}
+        )
+        == {}
+    )
+
+
+def test_merge_live_status_overwrites_point_status() -> None:
+    """Matched evseIds get the live status; unmatched keep /search value."""
+    from custom_components.ladestellen_austria.coordinator import _merge_live_status
+
+    stations: list[dict[str, Any]] = [
+        {
+            "stationId": "S1",
+            "points": [
+                {"evseId": "AT*EVN*E1*1", "status": "AVAILABLE"},
+                {"evseId": "AT*EVN*E1*2", "status": "AVAILABLE"},
+            ],
+        }
+    ]
+    live_map = {"AT*EVN*E1*1": "OCCUPIED", "AT*OTHER*X*1": "FAULTED"}
+    _merge_live_status(stations, live_map)
+    assert stations[0]["points"][0]["status"] == "OCCUPIED"
+    assert stations[0]["points"][1]["status"] == "AVAILABLE"  # unchanged
