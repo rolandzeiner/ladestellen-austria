@@ -1,6 +1,7 @@
 import {
   LitElement,
   html,
+  nothing,
   type CSSResultGroup,
   type TemplateResult,
 } from "lit";
@@ -11,7 +12,10 @@ import {
   type LovelaceCardEditor,
 } from "custom-card-helpers";
 
-import type { LadestellenAustriaCardConfig } from "./types";
+import {
+  CONNECTOR_FILTER_OPTIONS,
+  type LadestellenAustriaCardConfig,
+} from "./types";
 import { editorStyles } from "./styles";
 import { localize } from "./localize/localize";
 
@@ -31,6 +35,7 @@ export class LadestellenAustriaCardEditor
   }
 
   protected render(): TemplateResult {
+    const selectedConnectors = this._config.connector_types ?? [];
     return html`
       <div class="editor">
         <div class="editor-section">
@@ -76,7 +81,16 @@ export class LadestellenAustriaCardEditor
                   @value-changed=${this._valueChanged}
                 ></ha-selector>
               `
-            : ""}
+            : nothing}
+
+          <div class="toggle-row">
+            <label>${localize("editor.show_pricing")}</label>
+            <ha-switch
+              .checked=${this._config.show_pricing ?? true}
+              .configValue=${"show_pricing"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
 
           <div class="toggle-row">
             <label>${localize("editor.show_amenities")}</label>
@@ -86,11 +100,59 @@ export class LadestellenAustriaCardEditor
               @change=${this._valueChanged}
             ></ha-switch>
           </div>
+        </div>
+
+        <div class="editor-section">
+          <div class="section-header">${localize("editor.section_filters")}</div>
+
+          <div class="toggle-row">
+            <label>${localize("editor.only_available")}</label>
+            <ha-switch
+              .checked=${this._config.only_available ?? false}
+              .configValue=${"only_available"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="toggle-row">
+            <label>${localize("editor.only_free")}</label>
+            <ha-switch
+              .checked=${this._config.only_free ?? false}
+              .configValue=${"only_free"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="editor-hint">${localize("editor.connector_filter_hint")}</div>
+          <div class="chip-row">
+            ${CONNECTOR_FILTER_OPTIONS.map(
+              (token) => html`
+                <button
+                  type="button"
+                  class=${selectedConnectors.includes(token)
+                    ? "filter-chip active"
+                    : "filter-chip"}
+                  @click=${() => this._toggleConnector(token)}
+                >
+                  ${token}
+                </button>
+              `,
+            )}
+          </div>
 
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
         </div>
       </div>
     `;
+  }
+
+  private _toggleConnector(token: string): void {
+    const current = this._config.connector_types ?? [];
+    const next = current.includes(token)
+      ? current.filter((t) => t !== token)
+      : [...current, token];
+    this._config = { ...this._config, connector_types: next };
+    fireEvent(this, "config-changed", { config: this._config });
   }
 
   private _valueChanged(ev: Event): void {

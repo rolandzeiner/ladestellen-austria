@@ -17,7 +17,25 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   entity?: string;
   max_stations?: number;
   show_amenities?: boolean;
+  show_pricing?: boolean;
+  only_available?: boolean;
+  only_free?: boolean;
+  connector_types?: string[];
 }
+
+// Short-label tokens used in the connector filter. These are the UI
+// labels as rendered by `_shortConnector` in the card — matching them
+// here keeps the filter config human-readable and stable across API
+// changes (consumerName values on the wire occasionally shift).
+export const CONNECTOR_FILTER_OPTIONS: string[] = [
+  "Type 2",
+  "CCS",
+  "CHAdeMO",
+  "Type 1",
+  "Tesla",
+  "Schuko",
+  "CEE",
+];
 
 export interface ConnectorType {
   key: string;
