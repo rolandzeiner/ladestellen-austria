@@ -257,8 +257,9 @@ export const cardStyles = css`
   /* Status dot — 9px circle that communicates live availability at a glance.
      Aligned to the baseline of the first text line for tidy vertical rhythm.
      WCAG 1.4.1 (use of color) — each state ships THREE independent cues:
-     colour, halo/ring geometry, AND fill-vs-hollow shape. Grayscale displays,
-     protanopia, and sun-glare viewing all disambiguate without hue. */
+     colour, halo geometry, AND fill-vs-hollow shape. The dot fill itself
+     stays at full saturation in every active state so colour reads loud;
+     the shape cue lives in the halo layers around the dot, never inside. */
   .status-dot {
     width: 9px;
     height: 9px;
@@ -269,39 +270,39 @@ export const cardStyles = css`
     box-sizing: border-box;
   }
   .status-dot.status-ok {
-    /* Shape: solid disc + soft halo. Baseline "healthy" state. */
+    /* Shape: solid disc + single soft halo. Baseline "healthy" state. */
     color: var(--l-dot-ok);
     box-shadow: 0 0 0 3px
       color-mix(in srgb, var(--l-dot-ok) 18%, transparent);
   }
   .status-dot.status-partial {
-    /* Shape: solid disc + contrasting inner "pip" via inset shadow,
-       producing a ringed-dot distinct from the plain ok disc. */
+    /* Shape: solid disc + DOUBLE halo (tighter bright ring + soft outer).
+       Distinct from ok's single halo at any zoom or in grayscale. */
     color: var(--l-dot-partial);
     box-shadow:
-      inset 0 0 0 2px
-        color-mix(in srgb, var(--l-dot-partial) 35%, white 65%),
-      0 0 0 3px color-mix(in srgb, var(--l-dot-partial) 20%, transparent);
+      0 0 0 2px
+        color-mix(in srgb, var(--l-dot-partial) 45%, transparent),
+      0 0 0 4px
+        color-mix(in srgb, var(--l-dot-partial) 18%, transparent);
   }
   .status-dot.status-busy {
-    /* Shape: solid disc + thick solid outer ring (visual "weight"
-       emphasises saturation, even at 100 % grayscale). */
+    /* Shape: solid disc + solid saturated ring + soft outer halo.
+       The solid ring adds visual "weight" so saturation reads heavier
+       even at full grayscale, distinguishing busy from partial. */
     color: var(--l-dot-busy);
     box-shadow:
-      0 0 0 1.5px var(--ha-card-background, var(--card-background-color, #fff)),
-      0 0 0 3.5px var(--l-dot-busy);
+      0 0 0 1.5px var(--l-dot-busy),
+      0 0 0 4px color-mix(in srgb, var(--l-dot-busy) 20%, transparent);
   }
   .status-dot.status-inactive {
-    /* Shape: hollow ring (no fill), distinct from the three filled
-       active states regardless of colour. */
+    /* Shape: hollow ring (no fill) — clearly "off" regardless of colour. */
     color: transparent;
     background: transparent;
     border: 1.5px solid var(--l-dot-inactive);
     opacity: 0.7;
   }
   .status-dot.status-unknown {
-    /* Shape: hollow dashed ring (further distinct from inactive's
-       solid ring). */
+    /* Shape: hollow dashed ring (distinct from inactive's solid ring). */
     color: transparent;
     background: transparent;
     border: 1.5px dashed var(--secondary-text-color);
