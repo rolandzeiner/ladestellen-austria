@@ -754,9 +754,25 @@ export class LadestellenAustriaCard extends LitElement {
   private _renderRackSlot(point: Point): TemplateResult {
     const isDC = (point.electricityType ?? []).includes("DC");
     const statusCat = this._rackSlotStatus(point.status);
+    const tooltip = this._pointTooltip(point);
+    // Out-of-order / faulted / inoperative slots swap their kW + connector
+    // for a wrench icon — the electrical spec isn't actionable while the
+    // point is down, so showing it adds noise. DC badge + status dot stay
+    // for consistency with the rest of the rack.
+    if (statusCat === "warn") {
+      return html`
+        <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
+          ${isDC ? html`<span class="dc-badge">DC</span>` : nothing}
+          <ha-icon
+            class="rack-warn-icon"
+            icon="mdi:wrench-outline"
+          ></ha-icon>
+          <span class="rack-dot status-${statusCat}"></span>
+        </div>
+      `;
+    }
     const connector = this._pointConnectorLabel(point);
     const kwText = this._formatKw(point.capacityKw);
-    const tooltip = this._pointTooltip(point);
     return html`
       <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
         ${isDC ? html`<span class="dc-badge">DC</span>` : nothing}

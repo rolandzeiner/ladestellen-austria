@@ -767,6 +767,14 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .rack-warn-icon {
+    --mdc-icon-size: 28px;
+    color: var(--warning-color, #f57c00);
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .rack-dot {
     width: 8px;
     height: 8px;
@@ -983,6 +991,9 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     }
     .rack-connector {
       font-size: 10px;
+    }
+    .rack-warn-icon {
+      --mdc-icon-size: 22px;
     }
     .dc-badge {
       font-size: 8px;
@@ -1314,7 +1325,7 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
               </div>
             `:W}
       </div>
-    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-30  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
+    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-31  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
         ><div class="empty-state">${Ne("common.loading")}</div></ha-card
       >`;const e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return B`
         <ha-card>
@@ -1531,14 +1542,23 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
       <div class="rack">
         ${e.map(e=>this._renderRackSlot(e))}
       </div>
-    `}_renderRackSlot(e){const t=(e.electricityType??[]).includes("DC"),i=this._rackSlotStatus(e.status),n=this._pointConnectorLabel(e),a=this._formatKw(e.capacityKw),r=this._pointTooltip(e);return B`
-      <div class="rack-slot" data-status=${i} title=${r}>
+    `}_renderRackSlot(e){const t=(e.electricityType??[]).includes("DC"),i=this._rackSlotStatus(e.status),n=this._pointTooltip(e);if("warn"===i)return B`
+        <div class="rack-slot" data-status=${i} title=${n}>
+          ${t?B`<span class="dc-badge">DC</span>`:W}
+          <ha-icon
+            class="rack-warn-icon"
+            icon="mdi:wrench-outline"
+          ></ha-icon>
+          <span class="rack-dot status-${i}"></span>
+        </div>
+      `;const a=this._pointConnectorLabel(e),r=this._formatKw(e.capacityKw);return B`
+      <div class="rack-slot" data-status=${i} title=${n}>
         ${t?B`<span class="dc-badge">DC</span>`:W}
         <span class="rack-kw">
-          <span class="rack-kw-num">${a}</span
+          <span class="rack-kw-num">${r}</span
           ><span class="rack-kw-unit">kW</span>
         </span>
-        <span class="rack-connector">${n}</span>
+        <span class="rack-connector">${a}</span>
         <span class="rack-dot status-${i}"></span>
       </div>
     `}_normStatus(e){return(e??"").toUpperCase().replace(/_/g,"")}_rackSlotStatus(e){const t=this._normStatus(e);return"AVAILABLE"===t?"ok":"CHARGING"===t||"OCCUPIED"===t||"RESERVED"===t||"BLOCKED"===t?"busy":"OUTOFORDER"===t||"FAULTED"===t||"INOPERATIVE"===t||"UNAVAILABLE"===t?"warn":"empty"}_pointConnectorLabel(e){const t=(e.connectorType??[])[0];return t?this._shortConnector(t.consumerName,t.key):"–"}_formatKw(e){if(null==e||!Number.isFinite(e))return"–";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:0,maximumFractionDigits:1}).format(e)}catch{return String(e).replace(".",",")}}_formatCent(e){if(!Number.isFinite(e))return"0";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:0,maximumFractionDigits:2}).format(e)}catch{return String(e).replace(".",",")}}_pointTooltip(e){const t=[`${e.evseId??""} · ${this._pointStatusLabel(e.status)}`.trim()],i=e.startFeeCent??0;i>0&&t.push(`${Ne("card.start_fee_label")}: ${this._formatEuro(i)} €`);const n=e.blockingFeeCentMin??0,a=e.blockingFeeFromMinute??0;return n>0&&a>0&&t.push(`${this._formatCent(n)} ${Ne("card.blocking_fee_label").replace("{from}",String(a))}`),t.join("\n")}_pointStatusLabel(e){if(!e)return"";const t={AVAILABLE:"available",CHARGING:"charging",OCCUPIED:"occupied",RESERVED:"reserved",BLOCKED:"blocked",OUTOFORDER:"fault",FAULTED:"fault",INOPERATIVE:"fault",UNAVAILABLE:"unavailable",UNKNOWN:"unknown",PLANNED:"planned",REMOVED:"removed"}[this._normStatus(e)];if(!t)return e;const i=`card.point_status_${t}`,n=Ne(i);return n===i?e:n}_renderOpeningHoursSection(e,t){if(!e||0===e.length)return W;const i=this._formatOpeningHours(e);if(0===i.length)return W;const n=!0===t?"status-ok":!1===t?"status-inactive":null,a=!0===t?Ne("card.open_now"):!1===t?Ne("card.closed_now"):null;return B`

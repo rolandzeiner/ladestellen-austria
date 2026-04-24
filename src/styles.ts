@@ -778,6 +778,14 @@ export const cardStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .rack-warn-icon {
+    --mdc-icon-size: 28px;
+    color: var(--warning-color, #f57c00);
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .rack-dot {
     width: 8px;
     height: 8px;
@@ -994,6 +1002,9 @@ export const cardStyles = css`
     }
     .rack-connector {
       font-size: 10px;
+    }
+    .rack-warn-icon {
+      --mdc-icon-size: 22px;
     }
     .dc-badge {
       font-size: 8px;
