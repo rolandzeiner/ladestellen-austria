@@ -105,6 +105,20 @@ export class LadestellenAustriaParkingCard extends LitElement {
     return 3;
   }
 
+  public getGridOptions(): {
+    columns: number | "full";
+    rows: number | "auto";
+    min_columns: number;
+    min_rows: number;
+  } {
+    return {
+      columns: 6,
+      rows: "auto",
+      min_columns: 4,
+      min_rows: 3,
+    };
+  }
+
   protected render(): TemplateResult {
     setLanguage(this.hass?.language);
 
@@ -154,10 +168,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     return html`
       <ha-card>
-        <div class="parking-header">
+        <header class="parking-header">
           <div class="parking-title-group">
             ${customTitle
-              ? html`<div class="parking-title">${customTitle}</div>`
+              ? html`<h3 class="parking-title">${customTitle}</h3>`
               : nothing}
             <div class="parking-station-label">${station.label}</div>
           </div>
@@ -165,15 +179,21 @@ export class LadestellenAustriaParkingCard extends LitElement {
             class=${availCount > 0
               ? "parking-count parking-count--ok"
               : "parking-count"}
+            role="status"
+            aria-live="polite"
           >
             ${countText}
           </div>
-        </div>
+        </header>
         ${points.length === 0
           ? html`<div class="empty-state">
               ${localize("parking.no_points")}
             </div>`
-          : html`<div class="parking-lot">
+          : html`<div
+              class="parking-lot"
+              role="list"
+              aria-label=${countText}
+            >
               ${points.map((p) => this._renderSlot(p))}
             </div>`}
       </ha-card>
@@ -200,7 +220,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
       <div
         class=${`parking-slot ${isAvailable ? "is-available" : "is-muted"}`}
         data-status=${statusCat}
-        role="group"
+        role="listitem"
         aria-label=${aria}
         title=${`${point.evseId ?? ""} · ${statusLabel}`.trim()}
       >

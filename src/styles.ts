@@ -112,6 +112,9 @@ export const cardStyles = css`
   /* Optional user-set card title. Only rendered when config.name differs
      from the default "Ladestellen Austria". */
   .custom-title {
+    /* <h3> override: nuke UA heading margins so the layout is identical
+       to the previous <div>. Semantics only. */
+    margin: 0;
     padding: var(--l-space-3) var(--l-space-4) 0;
     font-size: var(--l-fs-l);
     font-weight: var(--l-fw-med);
@@ -401,7 +404,9 @@ export const cardStyles = css`
     appearance: none;
     border: none;
     background: transparent;
-    padding: 6px;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 999px;
     cursor: pointer;
     color: var(--secondary-text-color);
@@ -958,14 +963,30 @@ export const cardStyles = css`
     line-height: 1.4;
   }
   .hours-lines {
+    /* <dl> override: nuke UA margins so the list sits flush inside the
+       detail section. */
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    margin: 0;
+    padding: 0;
   }
   .hours-line {
+    display: flex;
+    gap: 8px;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.005em;
+  }
+  .hours-day,
+  .hours-time {
+    /* <dt> / <dd> overrides: strip UA margins so the day/time pair sits
+       on a single line matching the previous <div> rendering. */
+    margin: 0;
+  }
+  .hours-day {
+    font-weight: 500;
+    flex-shrink: 0;
   }
   .hours-chip {
     display: inline-flex;
@@ -1163,6 +1184,28 @@ export const cardStyles = css`
       white-space: normal;
     }
   }
+
+  /* Accessibility: visible focus ring for keyboard users. */
+  .station:focus-visible,
+  .orphan-remove:focus-visible,
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Accessibility: honour user motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 `;
 
 // ---------------------------------------------------------------------------
@@ -1355,6 +1398,9 @@ export const parkingLotStyles = css`
     flex: 1;
   }
   .parking-title {
+    /* <h3> override: nuke UA heading margins so the header row layout
+       is identical to the previous <div>. */
+    margin: 0;
     font-size: var(--l-fs-l);
     font-weight: var(--l-fw-med);
     color: var(--primary-text-color);
@@ -1531,6 +1577,25 @@ export const parkingLotStyles = css`
     font-size: var(--l-fs-s);
   }
 
+  /* Tablet split-view tier: cards between ~320 px and ~439 px (between
+     the default auto-fit minmax(96px) and the narrow 319 px fallback)
+     get a modest density bump so an iPad or split-view column still
+     reads cleanly. */
+  @container plcard (min-width: 320px) and (max-width: 439px) {
+    .parking-lot {
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      padding: 8px 14px 14px;
+    }
+    .parking-slot {
+      min-height: 110px;
+      padding: 12px 6px;
+    }
+    .parking-header {
+      padding: 12px 14px 6px;
+    }
+  }
+
   /* Narrow card fallback — rely on the container query so small dashboard
      columns still render readable slots. */
   @container plcard (max-width: 319px) {
@@ -1548,6 +1613,27 @@ export const parkingLotStyles = css`
     }
     .slot-kw-num {
       font-size: 1.2rem;
+    }
+  }
+
+  /* Accessibility: visible focus ring. */
+  .parking-slot:focus-visible,
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Accessibility: honour user motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 `;
