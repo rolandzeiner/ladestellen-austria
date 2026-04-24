@@ -195,22 +195,45 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _sortStations(stations: Station[]): Station[] {
-    if (!this.config.sort_by_power) return stations;
-    // Desc by max kW across points, distance as tiebreaker so two equal-power
-    // stations read closest-first. Spread the array so the input (from the
-    // coordinator's shared state) isn't mutated.
+    // Both sort modes get a free > busy tier between the primary sort
+    // value and distance. With DATEX II live data this is meaningful —
+    // inside a tied primary bucket, actionable stations beat fully-busy
+    // ones. Without live data every station reads AVAILABLE so the tier
+    // silently no-ops.
+    //
+    // sort_by_power=true: kW desc → free > busy → distance asc
+    // sort_by_power=false: distance asc → free > busy → (stable)
+    //
+    // In distance mode the free tier only fires on exact-distance ties
+    // (rare), so behaviour matches the previous distance-sort for
+    // essentially all stations. Included for consistency and to handle
+    // pathological edge cases where two stations share identical coords.
     return [...stations].sort((a, b) => {
-      const aMax = Math.max(
-        0,
-        ...(a.points ?? []).map((p) => p.capacityKw ?? 0),
-      );
-      const bMax = Math.max(
-        0,
-        ...(b.points ?? []).map((p) => p.capacityKw ?? 0),
-      );
-      if (bMax !== aMax) return bMax - aMax;
+      if (this.config.sort_by_power) {
+        const aMax = Math.max(
+          0,
+          ...(a.points ?? []).map((p) => p.capacityKw ?? 0),
+        );
+        const bMax = Math.max(
+          0,
+          ...(b.points ?? []).map((p) => p.capacityKw ?? 0),
+        );
+        if (bMax !== aMax) return bMax - aMax;
+      } else {
+        const aDist = a.distance ?? Infinity;
+        const bDist = b.distance ?? Infinity;
+        if (aDist !== bDist) return aDist - bDist;
+      }
+      const aFree = this._stationHasFree(a);
+      const bFree = this._stationHasFree(b);
+      if (aFree !== bFree) return aFree ? -1 : 1;
       return (a.distance ?? Infinity) - (b.distance ?? Infinity);
     });
+  }
+
+  private _stationHasFree(s: Station): boolean {
+    if (s.stationStatus !== "ACTIVE") return false;
+    return (s.points ?? []).some((p) => p.status === "AVAILABLE");
   }
 
   private _filterStations(stations: Station[]): Station[] {
