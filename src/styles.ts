@@ -81,11 +81,10 @@ export const cardStyles = css`
      from the default "Ladestellen Austria". */
   .custom-title {
     padding: var(--l-space-3) var(--l-space-4) 0;
-    font-size: var(--l-fs-xs);
+    font-size: var(--l-fs-l);
     font-weight: var(--l-fw-med);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--secondary-text-color);
+    color: var(--primary-text-color);
+    letter-spacing: 0;
   }
 
   /* ----- Hero — single big stat + context ---------------------------- */
@@ -154,7 +153,6 @@ export const cardStyles = css`
     list-style: none;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--divider-color);
   }
   .station {
     display: flex;
