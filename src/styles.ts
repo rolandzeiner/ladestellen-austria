@@ -85,7 +85,7 @@ export const cardStyles = css`
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin: 0 var(--l-space-4) var(--l-space-3);
+    margin: var(--l-space-3) var(--l-space-4);
     padding: 4px 10px;
     border-radius: 999px;
     background: color-mix(
