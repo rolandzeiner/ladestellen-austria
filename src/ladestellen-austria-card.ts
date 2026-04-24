@@ -16,9 +16,10 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import type {
-  HomeAssistant,
-  LovelaceCardEditor,
+import {
+  fireEvent,
+  type HomeAssistant,
+  type LovelaceCardEditor,
 } from "custom-card-helpers";
 
 import type {
@@ -102,6 +103,7 @@ export class LadestellenAustriaCard extends LitElement {
       only_available: false,
       only_free: false,
       connector_types: [],
+      pinned_station_ids: [],
       ...config,
     };
   }
@@ -151,15 +153,48 @@ export class LadestellenAustriaCard extends LitElement {
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
     const liveAvailable =
       (stateObj.attributes["live_status_available"] as boolean) === true;
-    const filtered = this._filterStations(allStations);
-    // Hero always uses the distance-nearest station — a stable "how far is
-    // any charger from me" answer that shouldn't flip when the user
-    // resorts the list by power.
-    const nearestByDistance = filtered[0];
+
+    // Partition by pin status. Pinned first in user-defined order,
+    // bypassing filters + sort. Orphan pins (IDs not found in the API
+    // response) render as placeholder rows at their pin-order position.
+    const pinnedIds = this.config.pinned_station_ids ?? [];
+    const pinnedItems = this._collectPinnedItems(pinnedIds, allStations);
+    const pinnedLiveStationIds = new Set(
+      pinnedItems
+        .filter((item) => item.kind === "live")
+        .map((item) => item.stationId),
+    );
+    const rest = allStations.filter(
+      (s) => !pinnedLiveStationIds.has(s.stationId),
+    );
+
+    const filtered = this._filterStations(rest);
     const sorted = this._sortStations(filtered);
+
+    // Hero always uses the distance-nearest station from the unfiltered,
+    // unpinned pool — a stable "how far is any charger from me" answer
+    // that shouldn't flip when the user resorts, filters, or pins.
+    const nearestByDistance = allStations[0];
+
     const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
-    const visible = sorted.slice(0, cap);
-    const farthestShown = visible[visible.length - 1];
+    const orderedAll: Array<
+      | { kind: "live"; station: Station }
+      | { kind: "orphan"; id: string }
+    > = [
+      ...pinnedItems,
+      ...sorted.map((s) => ({ kind: "live" as const, station: s })),
+    ];
+    const visible = orderedAll.slice(0, cap);
+    const visibleLive = visible
+      .filter(
+        (item): item is { kind: "live"; station: Station } =>
+          item.kind === "live",
+      )
+      .map((item) => item.station);
+    const farthestShown =
+      visibleLive.length > 0
+        ? visibleLive[visibleLive.length - 1]
+        : undefined;
 
     const showHero = this.config.show_hero !== false;
     const customTitle =
@@ -182,7 +217,15 @@ export class LadestellenAustriaCard extends LitElement {
           : nothing}
         ${visible.length > 0
           ? html`<ul class="stations">
-              ${visible.map((s) => this._renderStation(s, liveAvailable))}
+              ${visible.map((item) =>
+                item.kind === "live"
+                  ? this._renderStation(
+                      item.station,
+                      liveAvailable,
+                      pinnedLiveStationIds.has(item.station.stationId),
+                    )
+                  : this._renderOrphanPin(item.id),
+              )}
             </ul>`
           : html`<div class="empty-state">
               ${localize("card.no_stations")}
@@ -234,6 +277,78 @@ export class LadestellenAustriaCard extends LitElement {
   private _stationHasFree(s: Station): boolean {
     if (s.stationStatus !== "ACTIVE") return false;
     return (s.points ?? []).some((p) => p.status === "AVAILABLE");
+  }
+
+  // Build the pinned section, preserving config order. Each item is
+  // either { kind: "live", station } when the pin matches a station in
+  // the API response, or { kind: "orphan", id } when the pin is stale
+  // (station not in range / decommissioned). Duplicate IDs are ignored.
+  private _collectPinnedItems(
+    ids: readonly string[],
+    stations: readonly Station[],
+  ): Array<
+    | { kind: "live"; station: Station; stationId: string }
+    | { kind: "orphan"; id: string }
+  > {
+    const byId = new Map(stations.map((s) => [s.stationId, s]));
+    const seen = new Set<string>();
+    const out: Array<
+      | { kind: "live"; station: Station; stationId: string }
+      | { kind: "orphan"; id: string }
+    > = [];
+    for (const id of ids) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const station = byId.get(id);
+      if (station) {
+        out.push({ kind: "live", station, stationId: station.stationId });
+      } else {
+        out.push({ kind: "orphan", id });
+      }
+    }
+    return out;
+  }
+
+  private _unpinStation(id: string): void {
+    const current = this.config.pinned_station_ids ?? [];
+    const next = current.filter((x) => x !== id);
+    const newConfig: LadestellenAustriaCardConfig = {
+      ...this.config,
+      pinned_station_ids: next,
+    };
+    // Notify Lovelace of the config change. When the dashboard is in
+    // edit mode (or storage-mode in general) this persists. In YAML-
+    // mode dashboards the event is a no-op — users who want this action
+    // to stick should use the card editor instead.
+    fireEvent(this, "config-changed", { config: newConfig });
+  }
+
+  private _renderOrphanPin(id: string): TemplateResult {
+    return html`
+      <li class="station orphan-pin" role="listitem">
+        <div class="station-body orphan-body">
+          <ha-icon class="orphan-icon" icon="mdi:pin-off-outline"></ha-icon>
+          <div class="orphan-text">
+            <div class="orphan-title">
+              ${localize("card.orphan_pin_title")}
+            </div>
+            <div class="orphan-id">${id}</div>
+          </div>
+          <button
+            class="orphan-remove"
+            type="button"
+            aria-label=${localize("card.unpin")}
+            title=${localize("card.unpin")}
+            @click=${(ev: Event) => {
+              ev.stopPropagation();
+              this._unpinStation(id);
+            }}
+          >
+            <ha-icon icon="mdi:close"></ha-icon>
+          </button>
+        </div>
+      </li>
+    `;
   }
 
   private _filterStations(stations: Station[]): Station[] {
@@ -352,6 +467,7 @@ export class LadestellenAustriaCard extends LitElement {
   private _renderStation(
     station: Station,
     liveAvailable: boolean,
+    isPinned: boolean = false,
   ): TemplateResult {
     const points = station.points ?? [];
     const isDC = points.some((p) => (p.electricityType ?? []).includes("DC"));
@@ -388,9 +504,17 @@ export class LadestellenAustriaCard extends LitElement {
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
+    const cls = [
+      "station",
+      expanded ? "expanded" : "",
+      isPinned ? "pinned" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     return html`
       <li
-        class=${expanded ? "station expanded" : "station"}
+        class=${cls}
         @click=${() => this._toggle(station.stationId)}
         @keydown=${(ev: KeyboardEvent) => this._onKey(ev, station.stationId)}
         tabindex="0"
@@ -404,6 +528,14 @@ export class LadestellenAustriaCard extends LitElement {
           ></span>
           <div class="station-grid">
             <span class="station-metrics">
+              ${isPinned
+                ? html`<ha-icon
+                    class="pin-indicator"
+                    icon="mdi:pin"
+                    title=${localize("card.pinned")}
+                    aria-label=${localize("card.pinned")}
+                  ></ha-icon>`
+                : nothing}
               ${maxKw > 0
                 ? html`<span
                     class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}

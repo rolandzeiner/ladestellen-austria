@@ -24,6 +24,11 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   only_available?: boolean;
   only_free?: boolean;
   connector_types?: string[];
+  // Stations pinned to the top of the list. Ordered — first entry shows
+  // first. Pinned stations override filters and bypass sort, but still
+  // count toward max_stations. A pinned ID that's not in the /search
+  // response is rendered as an orphan placeholder with an unpin action.
+  pinned_station_ids?: string[];
 }
 
 // Short-label tokens used in the connector filter. These are the UI
