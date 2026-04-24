@@ -447,16 +447,19 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
   }
 
-  /* Distance-pill — map link. Pin + number together, compact click target. */
+  /* Distance-pill — map link. Vertical padding + line-height matched to
+     .pill.plug so everything in line 1 (kW numeral, connector chips,
+     distance pill) sits at a shared visual height. */
   .station-distance {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    padding: 3px 10px;
+    padding: 1px 10px;
     border-radius: 999px;
     text-decoration: none;
     color: var(--primary-text-color);
     background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    line-height: 1.3;
     transition:
       background-color 160ms var(--l-ease),
       transform 160ms var(--l-ease);
@@ -471,7 +474,7 @@ export const cardStyles = css`
     transform: scale(0.96);
   }
   .station-distance ha-icon {
-    --mdc-icon-size: 15px;
+    --mdc-icon-size: 14px;
     color: var(--primary-color);
   }
   .distance-value {
