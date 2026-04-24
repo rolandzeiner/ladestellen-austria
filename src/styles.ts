@@ -290,46 +290,33 @@ export const cardStyles = css`
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  /* kW reads as a digital readout — system monospace gives it the
-     electrifying/tech feel the user asked for, while staying 100%
-     system-native (no CDN). Tinted pill adds visual weight so it reads
-     as the row's leading metric. DC switches to --warning-color for
-     the fast-charge accent. */
+  /* kW — pure typographic treatment inspired by nextbike-austria's
+     "bikes available" number. Big bold primary-text number with a
+     small muted unit alongside; no pill, no background. DC distinction
+     rides on the unit colour only so the overall style stays clean. */
   .metric-kw {
     display: inline-flex;
-    align-items: center;
-    padding: 2px 10px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
-    color: var(--primary-color);
-    font-family: ui-monospace, "SFMono-Regular", "SF Mono", "Menlo",
-      "Monaco", "Cascadia Code", "Cascadia Mono", "Consolas",
-      "Liberation Mono", "DejaVu Sans Mono", monospace;
-    font-weight: var(--l-fw-bld);
-    font-size: var(--l-fs-m);
+    align-items: baseline;
+    gap: 3px;
+    color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.015em;
-    line-height: 1.3;
+    line-height: 1;
     white-space: nowrap;
-    transition: background-color 160ms var(--l-ease);
   }
-  .metric-kw--dc {
+  .kw-num {
+    font-size: 1.45em;
+    font-weight: var(--l-fw-bld);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .kw-unit {
+    font-size: 0.85em;
+    font-weight: var(--l-fw-med);
+    color: var(--secondary-text-color);
+    letter-spacing: 0.01em;
+  }
+  .metric-kw--dc .kw-unit {
     color: var(--warning-color, #f57c00);
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f57c00) 14%,
-      transparent
-    );
-  }
-  .station:hover .metric-kw {
-    background: color-mix(in srgb, var(--primary-color) 16%, transparent);
-  }
-  .station:hover .metric-kw--dc {
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f57c00) 18%,
-      transparent
-    );
   }
   /* Price sits above distance in the right-stack — right-aligned so
      digits line up column-wise for easy comparison across rows. */
@@ -646,10 +633,6 @@ export const cardStyles = css`
     }
     .brand-logo {
       height: 18px;
-    }
-    .metric-kw {
-      font-size: var(--l-fs-s);
-      padding: 2px 8px;
     }
   }
 

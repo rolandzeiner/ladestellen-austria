@@ -407,8 +407,10 @@ export class LadestellenAustriaCard extends LitElement {
               ${maxKw > 0
                 ? html`<span
                     class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}
-                    >${maxKw}&thinsp;kW</span
-                  >`
+                  >
+                    <span class="kw-num">${maxKw}</span
+                    ><span class="kw-unit">kW</span>
+                  </span>`
                 : nothing}
               ${visibleConnectors.map(
                 (t) => html`<span class="pill plug">${t}</span>`,
