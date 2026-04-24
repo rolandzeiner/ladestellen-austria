@@ -419,6 +419,8 @@ export class LadestellenAustriaCard extends LitElement {
                       >+${extraConnectors}</span
                     >`
                   : nothing}
+              </span>
+              <div class="row-right-stack">
                 ${showPricing && priceText
                   ? html`<span
                       class=${priceIsFree
@@ -427,23 +429,23 @@ export class LadestellenAustriaCard extends LitElement {
                       >${priceText}</span
                     >`
                   : nothing}
-              </span>
-              <a
-                class="station-distance"
-                href=${mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label=${localize("card.open_in_maps")}
-                title=${localize("card.open_in_maps")}
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-                <span class="distance-value">
-                  ${this._formatKm(station.distance)}<span class="unit"
-                    >km</span
-                  >
-                </span>
-              </a>
+                <a
+                  class="station-distance"
+                  href=${mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label=${localize("card.open_in_maps")}
+                  title=${localize("card.open_in_maps")}
+                  @click=${(ev: Event) => ev.stopPropagation()}
+                >
+                  <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+                  <span class="distance-value">
+                    ${this._formatKm(station.distance)}<span class="unit"
+                      >km</span
+                    >
+                  </span>
+                </a>
+              </div>
               <ha-icon
                 class="chevron"
                 icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
