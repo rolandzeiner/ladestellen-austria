@@ -344,7 +344,16 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Edit credentials or location without deleting the entry."""
+        """Edit credentials, location, or dynamic-tracker mode.
+
+        The reconfigure flow intentionally supports unique_id changes —
+        switching between static and dynamic mode flips the formula from
+        `{domain}:{lat}:{lng}` to `{domain}:dynamic:{entity}`, and
+        moving the static-mode map pin by more than ~110 m also produces
+        a new unique_id. Both are legitimate user operations. We only
+        abort when the new unique_id collides with a *different*
+        existing entry.
+        """
         entry = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -360,10 +369,23 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 if probe_err:
                     errors["base"] = probe_err
                 else:
-                    await self.async_set_unique_id(_compute_unique_id(cleaned))
-                    self._abort_if_unique_id_mismatch()
+                    new_unique_id = _compute_unique_id(cleaned)
+                    await self.async_set_unique_id(new_unique_id)
+                    # Allow THIS entry to change its unique_id (mode
+                    # switch / location move) but abort if another
+                    # entry already holds the new unique_id.
+                    for other in self._async_current_entries(
+                        include_ignore=True
+                    ):
+                        if (
+                            other.entry_id != entry.entry_id
+                            and other.unique_id == new_unique_id
+                        ):
+                            return self.async_abort(reason="already_configured")
                     return self.async_update_reload_and_abort(
-                        entry, data=_build_entry_data(cleaned)
+                        entry,
+                        data=_build_entry_data(cleaned),
+                        unique_id=new_unique_id,
                     )
 
         current = {**entry.data, **entry.options}
