@@ -772,9 +772,7 @@ export class LadestellenAustriaCard extends LitElement {
             class="rack-warn-icon"
             icon="mdi:wrench-outline"
           ></ha-icon>
-          <div class="rack-bottom">
-            <span class="rack-dot status-${statusCat}"></span>
-          </div>
+          <span class="rack-dot status-${statusCat}"></span>
         </div>
       `;
     }
@@ -787,10 +785,8 @@ export class LadestellenAustriaCard extends LitElement {
           <span class="rack-kw-num">${kwText}</span
           ><span class="rack-kw-unit">kW</span>
         </span>
-        <div class="rack-bottom">
-          <span class="rack-connector">${connector}</span>
-          <span class="rack-dot status-${statusCat}"></span>
-        </div>
+        <span class="rack-connector">${connector}</span>
+        <span class="rack-dot status-${statusCat}"></span>
       </div>
     `;
   }
