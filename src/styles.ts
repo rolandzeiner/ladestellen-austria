@@ -282,7 +282,10 @@ export const cardStyles = css`
 
   .station-metrics {
     display: inline-flex;
-    align-items: baseline;
+    /* center alignment keeps pill padding from descending past the row
+       baseline — baseline alignment put chip-bottoms below the kW
+       numeral, visually bleeding into line 2 */
+    align-items: center;
     flex-wrap: wrap;
     gap: 2px 6px;
     font-size: var(--l-fs-m);
@@ -339,11 +342,12 @@ export const cardStyles = css`
     font-weight: var(--l-fw-bld);
   }
 
-  /* Connector chips — neutral tint so they read as secondary to kW. */
+  /* Connector chips — neutral tint, tight vertical footprint so they
+     never overshoot the kW's numeric box when sat next to it. */
   .pill.plug {
     display: inline-flex;
     align-items: center;
-    padding: 2px 8px;
+    padding: 1px 8px;
     border-radius: 999px;
     background: color-mix(
       in srgb,
@@ -354,7 +358,7 @@ export const cardStyles = css`
     font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
     letter-spacing: 0.015em;
-    line-height: 1.5;
+    line-height: 1.3;
     white-space: nowrap;
   }
   .pill.plug.plug-more {
