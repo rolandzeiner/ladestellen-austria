@@ -39,6 +39,7 @@
     "name": "Kartentitel (optional)",
     "entity": "Sensor",
     "max_stations": "Anzahl angezeigter Ladestellen",
+    "show_hero": "Überschrift anzeigen",
     "show_pricing": "Preise anzeigen",
     "show_amenities": "Ausstattungs-Details anzeigen",
     "only_available": "Nur aktuell verfügbare Ladestellen",

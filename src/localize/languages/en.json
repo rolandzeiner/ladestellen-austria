@@ -39,6 +39,7 @@
     "name": "Card title (optional)",
     "entity": "Sensor",
     "max_stations": "Stations to show",
+    "show_hero": "Show hero summary",
     "show_pricing": "Show pricing",
     "show_amenities": "Show amenity details",
     "only_available": "Only currently available stations",

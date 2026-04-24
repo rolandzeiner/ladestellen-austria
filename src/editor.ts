@@ -85,6 +85,15 @@ export class LadestellenAustriaCardEditor
             : nothing}
 
           <div class="toggle-row">
+            <label>${localize("editor.show_hero")}</label>
+            <ha-switch
+              .checked=${this._config.show_hero !== false}
+              .configValue=${"show_hero"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="toggle-row">
             <label>${localize("editor.show_pricing")}</label>
             <ha-switch
               .checked=${this._config.show_pricing ?? true}

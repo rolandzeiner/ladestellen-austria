@@ -94,6 +94,7 @@ export class LadestellenAustriaCard extends LitElement {
     this.config = {
       name: "Ladestellen Austria",
       max_stations: DEFAULT_MAX_STATIONS,
+      show_hero: true,
       show_amenities: true,
       show_pricing: true,
       only_available: false,
@@ -155,15 +156,19 @@ export class LadestellenAustriaCard extends LitElement {
     const nearest = visible[0];
     const farthestShown = visible[visible.length - 1];
 
+    const showHero = this.config.show_hero !== false;
+
     return html`
       <ha-card>
         ${this._renderHeader()}
-        ${this._renderHero(
-          nearest,
-          farthestShown,
-          filtered.length,
-          allStations.length,
-        )}
+        ${showHero
+          ? this._renderHero(
+              nearest,
+              farthestShown,
+              filtered.length,
+              allStations.length,
+            )
+          : nothing}
         ${visible.length > 0
           ? html`<ul class="stations">
               ${visible.map((s) => this._renderStation(s, liveAvailable))}
