@@ -19,6 +19,7 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   show_hero?: boolean;
   show_amenities?: boolean;
   show_pricing?: boolean;
+  sort_by_power?: boolean;
   only_available?: boolean;
   only_free?: boolean;
   connector_types?: string[];

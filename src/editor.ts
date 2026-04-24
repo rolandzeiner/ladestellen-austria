@@ -110,6 +110,15 @@ export class LadestellenAustriaCardEditor
               @change=${this._valueChanged}
             ></ha-switch>
           </div>
+
+          <div class="toggle-row">
+            <label>${localize("editor.sort_by_power")}</label>
+            <ha-switch
+              .checked=${this._config.sort_by_power ?? false}
+              .configValue=${"sort_by_power"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
         </div>
 
         <div class="editor-section">

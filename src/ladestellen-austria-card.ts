@@ -97,6 +97,7 @@ export class LadestellenAustriaCard extends LitElement {
       show_hero: true,
       show_amenities: true,
       show_pricing: true,
+      sort_by_power: false,
       only_available: false,
       only_free: false,
       connector_types: [],
@@ -151,9 +152,13 @@ export class LadestellenAustriaCard extends LitElement {
     const liveAvailable =
       (stateObj.attributes["live_status_available"] as boolean) === true;
     const filtered = this._filterStations(allStations);
+    // Hero always uses the distance-nearest station — a stable "how far is
+    // any charger from me" answer that shouldn't flip when the user
+    // resorts the list by power.
+    const nearestByDistance = filtered[0];
+    const sorted = this._sortStations(filtered);
     const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
-    const visible = filtered.slice(0, cap);
-    const nearest = visible[0];
+    const visible = sorted.slice(0, cap);
     const farthestShown = visible[visible.length - 1];
 
     const showHero = this.config.show_hero !== false;
@@ -163,7 +168,7 @@ export class LadestellenAustriaCard extends LitElement {
         ${this._renderHeader()}
         ${showHero
           ? this._renderHero(
-              nearest,
+              nearestByDistance,
               farthestShown,
               filtered.length,
               allStations.length,
@@ -181,6 +186,25 @@ export class LadestellenAustriaCard extends LitElement {
         )}
       </ha-card>
     `;
+  }
+
+  private _sortStations(stations: Station[]): Station[] {
+    if (!this.config.sort_by_power) return stations;
+    // Desc by max kW across points, distance as tiebreaker so two equal-power
+    // stations read closest-first. Spread the array so the input (from the
+    // coordinator's shared state) isn't mutated.
+    return [...stations].sort((a, b) => {
+      const aMax = Math.max(
+        0,
+        ...(a.points ?? []).map((p) => p.capacityKw ?? 0),
+      );
+      const bMax = Math.max(
+        0,
+        ...(b.points ?? []).map((p) => p.capacityKw ?? 0),
+      );
+      if (bMax !== aMax) return bMax - aMax;
+      return (a.distance ?? Infinity) - (b.distance ?? Infinity);
+    });
   }
 
   private _filterStations(stations: Station[]): Station[] {
