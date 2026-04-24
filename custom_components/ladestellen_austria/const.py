@@ -54,7 +54,6 @@ DOMAIN_LAST_API_CALL_KEY: Final = "last_api_call_ts"
 
 API_BASE_URL: Final = "https://api.e-control.at/charge/1.0"
 SEARCH_PATH: Final = "/search"
-DATEX_STATUS_PATH: Final = "/datex2/v3.5/energy-infrastructure-status-publication"
 
 API_KEY_HEADER: Final = "Apikey"
 REFERER_HEADER: Final = "Referer"
