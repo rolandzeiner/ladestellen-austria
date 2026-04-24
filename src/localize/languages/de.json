@@ -22,7 +22,10 @@
     "call": "Anrufen",
     "address_heading": "Adresse",
     "amenities_heading": "Ausstattung",
-    "availability": "Verfügbarkeit"
+    "availability": "Verfügbarkeit",
+    "pinned": "Angepinnt",
+    "unpin": "Pin entfernen",
+    "orphan_pin_title": "Angepinnte Ladestelle außerhalb des Umkreises"
   },
   "amenities": {
     "green_energy": "Ökostrom",
@@ -47,6 +50,12 @@
     "only_available": "Nur aktuell verfügbare Ladestellen",
     "only_free": "Nur Ladestellen mit Gratis-Laden",
     "connector_filter_hint": "Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",
-    "hint_compliance": "Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Branding im Kopf und die Fußzeile „Datenquelle: E-Control“ sind rechtlich vorgeschrieben und dürfen nicht entfernt werden."
+    "hint_compliance": "Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Branding im Kopf und die Fußzeile „Datenquelle: E-Control“ sind rechtlich vorgeschrieben und dürfen nicht entfernt werden.",
+    "section_pinned": "Angepinnte Ladestellen",
+    "pin_hint": "Angepinnte Ladestellen erscheinen immer zuerst und ignorieren Filter. Sie zählen weiterhin zur obigen Maximalanzahl.",
+    "pin_select_sensor_first": "Zuerst einen Sensor auswählen, um verfügbare Ladestellen zu sehen.",
+    "pin_no_stations_yet": "Noch keine Ladestellen geladen — auf die nächste Aktualisierung warten.",
+    "pin_orphans_heading": "Angepinnt, aber nicht im Umkreis (anklicken zum Entfernen):",
+    "pin_unpin": "Entfernen"
   }
 }

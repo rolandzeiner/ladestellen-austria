@@ -293,6 +293,83 @@ export const cardStyles = css`
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+
+  /* Pin indicator on pinned stations — small accent icon at the start
+     of the metrics row. */
+  .pin-indicator {
+    --mdc-icon-size: 14px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+  }
+  .station.pinned {
+    background: color-mix(in srgb, var(--primary-color) 4%, transparent);
+  }
+  .station.pinned:hover,
+  .station.pinned:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+  }
+
+  /* Orphan-pin placeholder row — for pinned IDs whose stations aren't in
+     the current /search response (out of range / decommissioned). Click
+     the ✕ to unpin. */
+  .orphan-pin {
+    cursor: default;
+  }
+  .orphan-pin:hover {
+    background: transparent;
+  }
+  .orphan-body {
+    display: flex;
+    align-items: center;
+    gap: var(--l-space-3);
+    padding: 10px var(--l-space-4);
+    opacity: 0.75;
+  }
+  .orphan-icon {
+    --mdc-icon-size: 18px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+  }
+  .orphan-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .orphan-title {
+    font-size: var(--l-fs-s);
+    color: var(--primary-text-color);
+    font-weight: var(--l-fw-med);
+  }
+  .orphan-id {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
+    font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    letter-spacing: 0;
+  }
+  .orphan-remove {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 160ms var(--l-ease);
+  }
+  .orphan-remove:hover,
+  .orphan-remove:focus-visible {
+    background: color-mix(in srgb, var(--error-color, #c62828) 14%, transparent);
+    color: var(--error-color, #c62828);
+    outline: none;
+  }
+  .orphan-remove ha-icon {
+    --mdc-icon-size: 16px;
+  }
   /* kW — pure typographic treatment inspired by nextbike-austria's
      "bikes available" number. Big bold primary-text number with a
      small muted unit alongside; no pill, no background. DC distinction
@@ -745,5 +822,65 @@ export const editorStyles = css`
     color: var(--text-primary-color, #fff);
     border-color: var(--primary-color);
     font-weight: 600;
+  }
+
+  /* Pin list — editor section for toggling which stations are pinned. */
+  .pin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pin-row {
+    appearance: none;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--divider-color);
+    background: var(--ha-card-background, var(--card-background-color));
+    color: var(--primary-text-color);
+    font-size: var(--ha-font-size-s, 13px);
+    cursor: pointer;
+    transition:
+      background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .pin-row:hover,
+  .pin-row:focus-visible {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
+    outline: none;
+  }
+  .pin-row.pinned {
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+    border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
+  }
+  .pin-row.orphan {
+    opacity: 0.75;
+  }
+  .pin-row ha-icon {
+    --mdc-icon-size: 18px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+  }
+  .pin-row.pinned ha-icon {
+    color: var(--primary-color);
+  }
+  .pin-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .pin-meta {
+    font-size: var(--ha-font-size-xs, 11px);
+    color: var(--secondary-text-color);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .editor-hint--muted {
+    opacity: 0.7;
   }
 `;

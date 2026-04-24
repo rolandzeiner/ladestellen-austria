@@ -15,6 +15,7 @@ import {
 import {
   CONNECTOR_FILTER_OPTIONS,
   type LadestellenAustriaCardConfig,
+  type Station,
 } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
@@ -170,8 +171,91 @@ export class LadestellenAustriaCardEditor
 
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
         </div>
+
+        ${this._renderPinSection()}
       </div>
     `;
+  }
+
+  private _renderPinSection(): TemplateResult {
+    const entityId = this._config.entity;
+    const stateObj = entityId ? this.hass?.states[entityId] : undefined;
+    const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
+    const pinned = this._config.pinned_station_ids ?? [];
+    const pinnedSet = new Set(pinned);
+    const liveIds = new Set(stations.map((s) => s.stationId));
+    const orphanIds = pinned.filter((id) => !liveIds.has(id));
+
+    return html`
+      <div class="editor-section">
+        <div class="section-header">${localize("editor.section_pinned")}</div>
+        <div class="editor-hint">${localize("editor.pin_hint")}</div>
+
+        ${!entityId
+          ? html`<div class="editor-hint editor-hint--muted">
+              ${localize("editor.pin_select_sensor_first")}
+            </div>`
+          : stations.length === 0
+          ? html`<div class="editor-hint editor-hint--muted">
+              ${localize("editor.pin_no_stations_yet")}
+            </div>`
+          : html`
+              <div class="pin-list">
+                ${stations.map((s) => {
+                  const isPinned = pinnedSet.has(s.stationId);
+                  const distanceText =
+                    typeof s.distance === "number"
+                      ? `${s.distance.toFixed(2)} km`
+                      : "";
+                  return html`
+                    <button
+                      type="button"
+                      class=${isPinned ? "pin-row pinned" : "pin-row"}
+                      @click=${() => this._togglePin(s.stationId)}
+                    >
+                      <ha-icon
+                        icon=${isPinned ? "mdi:pin" : "mdi:pin-outline"}
+                      ></ha-icon>
+                      <span class="pin-label">${s.label}</span>
+                      <span class="pin-meta">${distanceText}</span>
+                    </button>
+                  `;
+                })}
+              </div>
+            `}
+        ${orphanIds.length > 0
+          ? html`
+              <div class="editor-hint editor-hint--muted">
+                ${localize("editor.pin_orphans_heading")}
+              </div>
+              <div class="pin-list">
+                ${orphanIds.map(
+                  (id) => html`
+                    <button
+                      type="button"
+                      class="pin-row orphan"
+                      @click=${() => this._togglePin(id)}
+                    >
+                      <ha-icon icon="mdi:pin-off-outline"></ha-icon>
+                      <span class="pin-label">${id}</span>
+                      <span class="pin-meta">${localize("editor.pin_unpin")}</span>
+                    </button>
+                  `,
+                )}
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
+  private _togglePin(stationId: string): void {
+    const current = this._config.pinned_station_ids ?? [];
+    const next = current.includes(stationId)
+      ? current.filter((id) => id !== stationId)
+      : [...current, stationId];
+    this._config = { ...this._config, pinned_station_ids: next };
+    fireEvent(this, "config-changed", { config: this._config });
   }
 
   private _toggleConnector(token: string): void {

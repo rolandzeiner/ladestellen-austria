@@ -22,7 +22,10 @@
     "call": "Call",
     "address_heading": "Address",
     "amenities_heading": "Amenities",
-    "availability": "Availability"
+    "availability": "Availability",
+    "pinned": "Pinned",
+    "unpin": "Remove pin",
+    "orphan_pin_title": "Pinned station not in range"
   },
   "amenities": {
     "green_energy": "Green energy",
@@ -47,6 +50,12 @@
     "only_available": "Only currently available stations",
     "only_free": "Only stations with free charging",
     "connector_filter_hint": "Tap connector types to only show stations offering at least one of them. Empty = no filter.",
-    "hint_compliance": "Data is supplied under the ladestellen.at Terms of Use. The E-Control branding in the header and the 'Datenquelle: E-Control' footer are legally required and cannot be hidden."
+    "hint_compliance": "Data is supplied under the ladestellen.at Terms of Use. The E-Control branding in the header and the 'Datenquelle: E-Control' footer are legally required and cannot be hidden.",
+    "section_pinned": "Pinned stations",
+    "pin_hint": "Pinned stations always appear first and bypass filters. They still count toward the display cap above.",
+    "pin_select_sensor_first": "Select a sensor first to see available stations.",
+    "pin_no_stations_yet": "No stations returned yet — wait for the next refresh.",
+    "pin_orphans_heading": "Pinned but not in range (click to remove):",
+    "pin_unpin": "Remove"
   }
 }
