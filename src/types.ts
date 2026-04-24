@@ -7,6 +7,7 @@ import type {
 declare global {
   interface HTMLElementTagNameMap {
     "ladestellen-austria-card-editor": LovelaceCardEditor;
+    "ladestellen-austria-parking-card-editor": LovelaceCardEditor;
     "hui-error-card": LovelaceCard;
   }
 }
@@ -39,6 +40,17 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   // count toward max_stations. A pinned ID that's not in the /search
   // response is rendered as an orphan placeholder with an unpin action.
   pinned_station_ids?: string[];
+}
+
+// Second card type — single-station "parking lot from above" visualization.
+// User picks one station and the card renders every point as a parking
+// slot; AVAILABLE points pop, non-available points are muted. Lives in
+// the same bundle as the list card.
+export interface ParkingLotCardConfig extends LovelaceCardConfig {
+  type: string;
+  entity?: string;
+  station_id?: string;
+  name?: string;
 }
 
 // Short-label tokens used in the connector filter. These are the UI

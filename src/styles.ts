@@ -1276,3 +1276,246 @@ export const editorStyles = css`
     opacity: 0.7;
   }
 `;
+
+// ---------------------------------------------------------------------------
+// Parking-slot card styles — single station, points as parking-lot slots
+// viewed from above. Painted-lane separators + dark asphalt surface; AVAILABLE
+// slots pop with a success-tint glow, everything else is desaturated + muted.
+// Container-queried against the card's own width (plcard), not the viewport,
+// so it scales correctly inside HA's column layouts.
+// ---------------------------------------------------------------------------
+
+export const parkingLotStyles = css`
+  :host {
+    display: block;
+    --l-fs-l: var(--ha-font-size-l, 1rem);
+    --l-fs-m: var(--ha-font-size-m, 0.9375rem);
+    --l-fs-s: var(--ha-font-size-s, 0.8125rem);
+    --l-fs-xs: var(--ha-font-size-xs, 0.75rem);
+    --l-fw-reg: var(--ha-font-weight-normal, 400);
+    --l-fw-med: var(--ha-font-weight-medium, 500);
+    --l-fw-bld: var(--ha-font-weight-bold, 700);
+    --l-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --l-ok: var(--success-color, #22c55e);
+    --l-busy: var(--error-color, #ef4444);
+    --l-warn: var(--warning-color, #f59e0b);
+  }
+  ha-card {
+    overflow: hidden;
+    border-radius: var(--ha-card-border-radius, 14px);
+    container-type: inline-size;
+    container-name: plcard;
+  }
+
+  .parking-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px 8px;
+    flex-wrap: wrap;
+  }
+  .parking-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .parking-title {
+    font-size: var(--l-fs-l);
+    font-weight: var(--l-fw-med);
+    color: var(--primary-text-color);
+    letter-spacing: 0;
+  }
+  .parking-station-label {
+    font-size: var(--l-fs-s);
+    color: var(--secondary-text-color);
+    letter-spacing: 0.005em;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .parking-count {
+    font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-med);
+    color: var(--secondary-text-color);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .parking-count--ok {
+    color: var(--l-ok);
+  }
+
+  /* The lot — dark asphalt tint under the slots. Slots sit on this
+     background so the painted lane lines read as paint on asphalt. */
+  .parking-lot {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 8px;
+    padding: 6px 16px 16px;
+    background: color-mix(
+      in srgb,
+      var(--primary-text-color) 8%,
+      var(--ha-card-background, var(--card-background-color))
+    );
+  }
+
+  /* A single parking slot. Dashed vertical borders serve as the painted
+     lane-markers; subtle inner background keeps the slot distinguishable
+     from the asphalt base. */
+  .parking-slot {
+    position: relative;
+    min-height: 120px;
+    padding: 12px 8px;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: default;
+    transition: opacity 160ms var(--l-ease), filter 160ms var(--l-ease);
+    border-left: 2px dashed
+      color-mix(in srgb, var(--primary-text-color) 30%, transparent);
+    border-right: 2px dashed
+      color-mix(in srgb, var(--primary-text-color) 30%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--primary-text-color) 4%,
+      transparent
+    );
+  }
+  .slot-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .slot-power-badge {
+    font-size: 9px;
+    font-weight: var(--l-fw-bld);
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .slot-power-badge[data-type="dc"] {
+    color: var(--warning-color, #f57c00);
+  }
+  .slot-power-badge[data-type="ac"] {
+    color: var(--secondary-text-color);
+    opacity: 0.75;
+  }
+
+  .slot-kw {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    color: var(--primary-text-color);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .slot-kw-num {
+    font-size: 1.4rem;
+    font-weight: var(--l-fw-bld);
+    letter-spacing: -0.02em;
+  }
+  .slot-kw-unit {
+    font-size: 0.78rem;
+    font-weight: var(--l-fw-med);
+  }
+
+  .slot-connector {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
+    letter-spacing: 0.005em;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .slot-status-word {
+    font-size: var(--l-fs-xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .slot-status-free {
+    color: var(--l-ok);
+  }
+  .slot-status-busy {
+    color: var(--l-busy);
+  }
+  .slot-status-warn {
+    color: var(--l-warn);
+  }
+  .slot-status-unknown {
+    color: var(--secondary-text-color);
+  }
+
+  /* AVAILABLE slots pop — success-tinted fill + brighter painted-lane
+     markers so the eye lands on the free spots immediately. */
+  .parking-slot.is-available {
+    background: color-mix(
+      in srgb,
+      var(--l-ok) 14%,
+      color-mix(
+        in srgb,
+        var(--primary-text-color) 4%,
+        transparent
+      )
+    );
+    border-left-color: color-mix(
+      in srgb,
+      var(--l-ok) 50%,
+      var(--primary-text-color)
+    );
+    border-right-color: color-mix(
+      in srgb,
+      var(--l-ok) 50%,
+      var(--primary-text-color)
+    );
+  }
+
+  /* Non-AVAILABLE slots: desaturated + reduced opacity so the AVAILABLE
+     ones dominate the glance-read. Muting applies to CHARGING / BLOCKED
+     / OUTOFORDER / UNKNOWN uniformly. */
+  .parking-slot.is-muted {
+    opacity: 0.5;
+    filter: grayscale(50%);
+  }
+
+  /* Empty state inside ha-card (no station selected, out of range). */
+  .empty-state {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-size: var(--l-fs-s);
+  }
+
+  /* Narrow card fallback — rely on the container query so small dashboard
+     columns still render readable slots. */
+  @container plcard (max-width: 319px) {
+    .parking-lot {
+      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+      gap: 6px;
+      padding: 6px 12px 12px;
+    }
+    .parking-slot {
+      min-height: 100px;
+      padding: 10px 6px;
+    }
+    .parking-header {
+      padding: 10px 12px 6px;
+    }
+    .slot-kw-num {
+      font-size: 1.2rem;
+    }
+  }
+`;
