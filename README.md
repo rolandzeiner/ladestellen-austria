@@ -2,13 +2,13 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2025.1-blue.svg)](https://www.home-assistant.io/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![vibe-coded](https://img.shields.io/badge/vibe-coded-ff69b4?logo=musicbrainz&logoColor=white)](https://en.wikipedia.org/wiki/Vibe_coding)
 
 Home Assistant custom integration for the Austrian EV charging station directory (*Ladestellenverzeichnis*), powered by **E-Control Austria's** official API.
 
-> Status: pre-release, targeting Platinum quality scale from v0.1.0.
+> Status: pre-release, targeting Platinum quality scale from v0.2.0.
 
 ## Features
 
@@ -17,8 +17,8 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - Bilingual config flow (English + German) with pre-filled external-URL referer domain and HA-home coordinates.
 - Reauth flow when the API rejects stored credentials.
 - Reconfiguration flow to change credentials, location, or polling interval without losing entity history.
-- Strict-typed, async-only. *(0.1.0)*
-- **Dynamic location mode** *(0.1.0)* — optionally point the config entry at a `device_tracker` (e.g. your phone via the HA companion app) and the nearby-stations list follows your live GPS instead of a fixed address. Rate-limited to protect the upstream API: 1.5 km movement threshold, 10-min per-entry cooldown, 5-min domain-wide cooldown. Pinning is disabled in dynamic mode since the list changes as you move.
+- Strict-typed, async-only. *(0.2.0)*
+- **Dynamic location mode** *(0.2.0)* — optionally point the config entry at a `device_tracker` (e.g. your phone via the HA companion app) and the nearby-stations list follows your live GPS instead of a fixed address. Rate-limited to protect the upstream API: 1.5 km movement threshold, 10-min per-entry cooldown, 5-min domain-wide cooldown. Pinning is disabled in dynamic mode since the list changes as you move.
 
 ## Requirements
 

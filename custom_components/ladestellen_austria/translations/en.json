@@ -44,7 +44,7 @@
       "cannot_connect": "Could not reach the upstream API. Check your network and try again.",
       "invalid_auth": "The API key was rejected (HTTP 401).",
       "invalid_api_key": "Please provide a valid API key.",
-      "invalid_domain": "Enter a valid hostname without protocol, port or path (for example: www.example.com).",
+      "invalid_domain": "Enter a valid hostname without protocol, port or path.",
       "invalid_location": "Pick a valid location on the map.",
       "domain_mismatch": "The API accepted the key but rejected this referer domain (HTTP 403). Check the registered domains at ladestellen.at."
     },

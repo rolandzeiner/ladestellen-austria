@@ -363,7 +363,7 @@ Official releases are **not** pre-releases and target `main`, not `dev`.
 
 ## 6. Lovelace card — CARD_VERSION sync + version files
 
-Applies once the Lit 3 + Rollup card ships (as of v0.1.0-beta-1). Follow the community guide: <https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909>.
+Applies once the Lit 3 + Rollup card ships (as of v0.2.0). Follow the community guide: <https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909>.
 
 ### Build + serve plumbing
 
@@ -379,10 +379,10 @@ Applies once the Lit 3 + Rollup card ships (as of v0.1.0-beta-1). Follow the com
 
 | File | Beta value | Final release value |
 |------|-----------|-------------------|
-| `custom_components/ladestellen_austria/manifest.json` `"version"` | `"0.1.0"` | `"0.1.0"` |
-| `custom_components/ladestellen_austria/const.py` `CARD_VERSION` | `"0.1.0-beta-1"` | `"0.1.0"` |
-| `src/const.ts` `CARD_VERSION` | `"0.1.0-beta-1"` | `"0.1.0"` |
-| `README.md` version badge | `version-0.1.0-blue.svg` | `version-0.1.0-blue.svg` |
+| `custom_components/ladestellen_austria/manifest.json` `"version"` | `"0.2.0"` | `"0.2.0"` |
+| `custom_components/ladestellen_austria/const.py` `CARD_VERSION` | `"0.2.0-beta-N"` | `"0.2.0"` |
+| `src/const.ts` `CARD_VERSION` | `"0.2.0-beta-N"` | `"0.2.0"` |
+| `README.md` version badge | `version-0.2.0-blue.svg` | `version-0.2.0-blue.svg` |
 
 **Summary:** `const.py CARD_VERSION` and `src/const.ts CARD_VERSION` always match each other. `manifest.json` and the README badge always use the clean (non-beta) version. The bundled `www/ladestellen-austria-card.js` is a build artefact — never hand-edit. Rollup regenerates it from `src/const.ts` on every `npm run build`.
 

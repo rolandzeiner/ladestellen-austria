@@ -44,7 +44,7 @@
       "cannot_connect": "Der Upstream-Dienst ist nicht erreichbar. Netzwerk prüfen und erneut versuchen.",
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt (HTTP 401).",
       "invalid_api_key": "Bitte einen gültigen API-Schlüssel eingeben.",
-      "invalid_domain": "Gültigen Hostnamen ohne Protokoll, Port oder Pfad eingeben (z. B. www.beispiel.at).",
+      "invalid_domain": "Gültigen Hostnamen ohne Protokoll, Port oder Pfad eingeben.",
       "invalid_location": "Gültigen Standort auf der Karte auswählen.",
       "domain_mismatch": "Der Schlüssel ist gültig, aber die Referer-Domain wurde nicht akzeptiert (HTTP 403). Bitte die registrierten Domains auf ladestellen.at prüfen."
     },
