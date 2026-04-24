@@ -669,6 +669,254 @@ export const cardStyles = css`
     font-size: var(--l-fs-s);
   }
 
+  /* ----- Operator byline (top of expanded detail) ------------------ */
+  .operator-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .operator-name {
+    font-size: var(--l-fs-s);
+    color: var(--primary-text-color);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* ----- Rack (per-point availability grid, nextbike-style) --------- */
+  .rack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 4%,
+      transparent
+    );
+  }
+  .rack-slot {
+    position: relative;
+    flex: 0 0 80px;
+    width: 80px;
+    height: 72px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    padding: 8px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    border: 1px solid transparent;
+    transition: background-color 160ms var(--l-ease),
+      border-color 160ms var(--l-ease);
+    cursor: default;
+  }
+  .rack-slot[data-status="ok"] {
+    background: color-mix(in srgb, var(--success-color, #22c55e) 14%, transparent);
+    border-color: color-mix(in srgb, var(--success-color, #22c55e) 40%, transparent);
+  }
+  .rack-slot[data-status="busy"] {
+    background: color-mix(in srgb, var(--error-color, #ef4444) 12%, transparent);
+    border-color: color-mix(in srgb, var(--error-color, #ef4444) 35%, transparent);
+  }
+  .rack-slot[data-status="warn"] {
+    background: color-mix(in srgb, var(--warning-color, #f59e0b) 12%, transparent);
+    border-color: color-mix(in srgb, var(--warning-color, #f59e0b) 35%, transparent);
+  }
+  .rack-slot[data-status="empty"] {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 8%,
+      transparent
+    );
+    border: 1px dashed
+      color-mix(in srgb, var(--secondary-text-color) 35%, transparent);
+  }
+  .rack-kw {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    color: var(--primary-text-color);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .rack-kw-num {
+    font-size: 1.15rem;
+    font-weight: var(--l-fw-bld);
+    letter-spacing: -0.02em;
+  }
+  .rack-kw-unit {
+    font-size: 0.72rem;
+    font-weight: var(--l-fw-med);
+    color: var(--warning-color, #f57c00);
+    letter-spacing: 0.01em;
+  }
+  .rack-slot:not([data-status="warn"]) .rack-kw-unit {
+    color: var(--secondary-text-color);
+  }
+  /* DC-points re-amber the kW unit regardless of slot status. The DC
+     corner badge itself is always warning-accented. */
+  .rack-slot:has(.dc-badge) .rack-kw-unit {
+    color: var(--warning-color, #f57c00);
+  }
+  .rack-connector {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
+    letter-spacing: 0.005em;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rack-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .rack-dot.status-ok {
+    background: var(--l-dot-ok);
+  }
+  .rack-dot.status-busy {
+    background: var(--l-dot-busy);
+  }
+  .rack-dot.status-warn {
+    background: var(--l-dot-partial);
+  }
+  .rack-dot.status-empty {
+    background: transparent;
+    border: 1px solid
+      color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
+  }
+  .dc-badge {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 9px;
+    font-weight: var(--l-fw-bld);
+    letter-spacing: 0.06em;
+    color: var(--warning-color, #f57c00);
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 3px;
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f57c00) 12%,
+      transparent
+    );
+  }
+
+  /* Fees line under the rack — quiet secondary text. */
+  .fees-line {
+    font-size: var(--l-fs-xs);
+    color: var(--secondary-text-color);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.005em;
+    line-height: 1.4;
+    padding-top: 4px;
+  }
+
+  /* ----- Opening hours --------------------------------------------- */
+  .hours-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--l-space-3);
+    flex-wrap: wrap;
+    font-size: var(--l-fs-s);
+    color: var(--primary-text-color);
+    line-height: 1.4;
+  }
+  .hours-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .hours-line {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.005em;
+  }
+  .hours-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: var(--l-fs-xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.01em;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 10%,
+      transparent
+    );
+    color: var(--secondary-text-color);
+    white-space: nowrap;
+  }
+  .hours-chip.status-ok {
+    background: color-mix(
+      in srgb,
+      var(--success-color, #22c55e) 14%,
+      transparent
+    );
+    color: var(--success-color, #22c55e);
+  }
+  .hours-chip.status-inactive {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 12%,
+      transparent
+    );
+    color: var(--secondary-text-color);
+  }
+  .hours-chip .status-dot {
+    margin-top: 0;
+    width: 7px;
+    height: 7px;
+    box-shadow: none;
+  }
+
+  /* ----- Payment chips --------------------------------------------- */
+  .payment-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .payment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 10%,
+      transparent
+    );
+    color: var(--primary-text-color);
+    font-size: var(--l-fs-xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.005em;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .payment-chip ha-icon {
+    --mdc-icon-size: 14px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+  }
+
   /* ==========================================================
      RESPONSIVE: container queries against the card's own width
      ========================================================== */
@@ -722,6 +970,34 @@ export const cardStyles = css`
     }
     .brand-logo {
       height: 18px;
+    }
+  }
+
+  /* Narrow rack — slots shrink from 80×72 to 60×56 so even 4-point DC
+     hubs wrap to two rows at worst on phone-width dashboards. */
+  @container lscard (max-width: 359px) {
+    .rack {
+      gap: 6px;
+      padding: 8px;
+    }
+    .rack-slot {
+      flex: 0 0 60px;
+      width: 60px;
+      height: 56px;
+      padding: 6px 4px 4px;
+    }
+    .rack-kw-num {
+      font-size: 1rem;
+    }
+    .rack-kw-unit {
+      font-size: 0.65rem;
+    }
+    .rack-connector {
+      font-size: 10px;
+    }
+    .dc-badge {
+      font-size: 8px;
+      padding: 1px 2px;
     }
   }
 

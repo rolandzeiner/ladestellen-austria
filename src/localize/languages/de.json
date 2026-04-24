@@ -25,7 +25,28 @@
     "availability": "Verfügbarkeit",
     "pinned": "Angepinnt",
     "unpin": "Pin entfernen",
-    "orphan_pin_title": "Angepinnte Ladestelle außerhalb des Umkreises"
+    "orphan_pin_title": "Angepinnte Ladestelle außerhalb des Umkreises",
+    "operator_heading": "Betreiber",
+    "charging_points_heading": "Ladepunkte",
+    "opening_hours_heading": "Öffnungszeiten",
+    "payment_heading": "Bezahlung",
+    "open_now": "Jetzt geöffnet",
+    "closed_now": "Geschlossen",
+    "closed_now_row": "Jetzt geschlossen",
+    "always_open_short": "24h",
+    "unknown_hours": "Keine Angabe",
+    "start_fee_label": "Startgebühr",
+    "blocking_fee_label": "¢/min ab {from} Min.",
+    "point_status_available": "Verfügbar",
+    "point_status_charging": "Lädt",
+    "point_status_occupied": "Belegt",
+    "point_status_reserved": "Reserviert",
+    "point_status_blocked": "Blockiert",
+    "point_status_fault": "Außer Betrieb",
+    "point_status_unavailable": "Nicht verfügbar",
+    "point_status_unknown": "Unbekannt",
+    "point_status_planned": "Geplant",
+    "point_status_removed": "Entfernt"
   },
   "amenities": {
     "green_energy": "Ökostrom",
@@ -34,6 +55,24 @@
     "catering": "Gastronomie",
     "bathrooms": "WC",
     "resting": "Ruhebereich"
+  },
+  "auth": {
+    "app": "App",
+    "qr": "QR-Code",
+    "rfid": "RFID",
+    "contract": "Vertrag",
+    "debit": "Bankomat",
+    "credit": "Kreditkarte",
+    "contactless": "Kontaktlos"
+  },
+  "weekday": {
+    "mo": "Mo",
+    "tu": "Di",
+    "we": "Mi",
+    "th": "Do",
+    "fr": "Fr",
+    "sa": "Sa",
+    "su": "So"
   },
   "editor": {
     "section_main": "Allgemein",

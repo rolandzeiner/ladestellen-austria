@@ -15,7 +15,7 @@ INTEGRATION_VERSION: Final = "0.1.0"
 # WS version check that the bundled card runs on first hass assignment uses
 # this string as the source of truth — any mismatch triggers the reload banner
 # loop described in the workflow skill's CARD_VERSION section.
-CARD_VERSION: Final = "0.1.0-beta-28"
+CARD_VERSION: Final = "0.1.0-beta-29"
 
 USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
 
