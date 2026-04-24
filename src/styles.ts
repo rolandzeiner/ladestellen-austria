@@ -227,20 +227,19 @@ export const cardStyles = css`
     opacity: 0.6;
   }
 
-  /* 2-row grid for the station row. Line 1 holds the metrics (left) and
-     the price (right, just before the chevron). Line 2 holds the station
-     name (left) and the distance pill (right). Chevron spans both rows
-     so it remains vertically centred against the whole row cluster.
-     Price-right + distance-right alignment makes both columns stack
-     vertically across stations, so users can scan prices down one
-     column and distances down the other. */
+  /* 2-row grid for the station row. Distance sits on line 1, price on
+     line 2. Both live in the same grid column (width = wider-of-the-two,
+     usually the distance pill), and both use justify-self: center so
+     their geometric midpoints line up vertically — harmonic column
+     centred under the distance. Chevron spans both rows and remains
+     vertically centred against the full cluster. */
   .station-grid {
     flex: 1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "metrics price    chevron"
-      "name    distance chevron";
+      "metrics distance chevron"
+      "name    price    chevron";
     column-gap: var(--l-space-3);
     row-gap: 4px;
     align-items: center;
@@ -251,10 +250,14 @@ export const cardStyles = css`
     justify-self: start;
     align-self: center;
   }
+  .station-distance {
+    grid-area: distance;
+    justify-self: center;
+  }
   .metric-price,
   .metric-price-placeholder {
     grid-area: price;
-    justify-self: end;
+    justify-self: center;
     align-self: center;
   }
   .chevron {
@@ -263,9 +266,6 @@ export const cardStyles = css`
   }
   .station-name {
     grid-area: name;
-  }
-  .station-distance {
-    grid-area: distance;
   }
   /* Name sits on line 2 as a secondary identifier. Kept legible but
      visually subordinate to the metrics line above. */
