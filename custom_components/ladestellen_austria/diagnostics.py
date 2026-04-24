@@ -37,6 +37,6 @@ async def async_get_config_entry_diagnostics(
         "coordinator": {
             "last_update_success": coordinator.last_update_success,
             "update_interval": str(coordinator.update_interval),
-            "station_count": data.get("count", 0) if isinstance(data, dict) else 0,
+            "station_count": data.get("count", 0),
         },
     }

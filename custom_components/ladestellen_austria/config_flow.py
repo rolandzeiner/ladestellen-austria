@@ -188,8 +188,8 @@ def _validate_user_input(
         errors[CONF_DOMAIN] = "invalid_domain"
 
     location = user_input.get("location") or {}
-    latitude = location.get("latitude") if isinstance(location, dict) else None
-    longitude = location.get("longitude") if isinstance(location, dict) else None
+    latitude = location.get("latitude")
+    longitude = location.get("longitude")
     if latitude is None and CONF_LATITUDE in user_input:
         latitude = user_input[CONF_LATITUDE]
     if longitude is None and CONF_LONGITUDE in user_input:
@@ -275,9 +275,7 @@ async def _test_api_connection(
             params=params,
             timeout=timeout,
         )
-    except aiohttp.ClientError:
-        return "cannot_connect"
-    except TimeoutError:
+    except (aiohttp.ClientError, TimeoutError):
         return "cannot_connect"
 
     if resp.status == 401:
