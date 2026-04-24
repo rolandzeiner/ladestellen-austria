@@ -767,6 +767,10 @@ export class LadestellenAustriaCard extends LitElement {
     // point is down, so showing it adds noise. Power-type badge + status
     // dot stay for consistency with the rest of the rack.
     if (statusCat === "warn") {
+      // Warn slot = point is down for maintenance / out of order. The
+      // wrench is the entire story; skip the power-badge (electrical
+      // spec is moot when the point isn't usable) and the status dot
+      // (the slot's warn tint + wrench already signal "not usable").
       return html`
         <div
           class="rack-slot"
@@ -775,8 +779,6 @@ export class LadestellenAustriaCard extends LitElement {
           data-status=${statusCat}
           title=${tooltip}
         >
-          <span class="rack-dot status-${statusCat}"></span>
-          ${badge}
           <ha-icon
             class="rack-warn-icon"
             icon="mdi:wrench-outline"
