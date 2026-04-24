@@ -63,22 +63,15 @@ export const cardStyles = css`
   .brand-link:hover {
     opacity: 0.7;
   }
+  /* Official E-Control logo PNG (2274x598, RGBA). Rendered at ~24px tall
+     — the logo has a light background built in, so no wrapper tint is
+     needed in either light or dark themes. Width auto-scales. */
   .brand-logo {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     height: 24px;
-    padding: 0 8px;
-    background: #0052a5;
-    color: #ffffff;
-    border-radius: 4px;
-    font-weight: var(--l-fw-bld);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-  }
-  .brand-logo .accent {
-    color: #3fa535;
-    margin-right: 1px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
   }
   .header-title {
     font-size: var(--l-fs-xs);
