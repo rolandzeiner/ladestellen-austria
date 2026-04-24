@@ -46,12 +46,16 @@
     "point_status_unavailable": "Nicht verfügbar",
     "point_status_unknown": "Unbekannt",
     "point_status_planned": "Geplant",
-    "point_status_removed": "Entfernt"
+    "point_status_removed": "Entfernt",
+    "tariff": "Tarif"
   },
   "amenities": {
     "green_energy": "Ökostrom",
     "free_parking": "Gratis Parken",
     "roofed_parking": "Überdacht",
+    "illuminated_parking": "Beleuchtet",
+    "barrier_free": "Barrierefrei",
+    "austrian_ecolabel": "Umweltzeichen",
     "catering": "Gastronomie",
     "bathrooms": "WC",
     "resting": "Ruhebereich"

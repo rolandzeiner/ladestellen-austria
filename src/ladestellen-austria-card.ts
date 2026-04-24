@@ -652,6 +652,12 @@ export class LadestellenAustriaCard extends LitElement {
               <span class="operator-name">${operatorName}</span>
             </div>`
           : nothing}
+        ${station.description
+          ? html`<div class="station-note">
+              <ha-icon icon="mdi:information-outline"></ha-icon>
+              <span>${station.description}</span>
+            </div>`
+          : nothing}
         ${points.length > 0
           ? html`<div class="detail-section">
               <div class="detail-label">
@@ -737,6 +743,18 @@ export class LadestellenAustriaCard extends LitElement {
               >
                 <ha-icon icon="mdi:phone-outline"></ha-icon>
                 <span>${localize("card.call")}</span>
+              </a>`
+            : nothing}
+          ${station.priceUrl
+            ? html`<a
+                class="action-btn"
+                href=${station.priceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon icon="mdi:cash-multiple"></ha-icon>
+                <span>${localize("card.tariff")}</span>
               </a>`
             : nothing}
         </div>
@@ -1295,6 +1313,11 @@ export class LadestellenAustriaCard extends LitElement {
         label: localize("amenities.green_energy"),
       },
       {
+        flag: station.austrianEcoLabel,
+        icon: "mdi:certificate-outline",
+        label: localize("amenities.austrian_ecolabel"),
+      },
+      {
         flag: station.freeParking,
         icon: "mdi:parking",
         label: localize("amenities.free_parking"),
@@ -1303,6 +1326,16 @@ export class LadestellenAustriaCard extends LitElement {
         flag: station.roofedParking,
         icon: "mdi:home-roof",
         label: localize("amenities.roofed_parking"),
+      },
+      {
+        flag: station.illuminatedParking,
+        icon: "mdi:lightbulb-outline",
+        label: localize("amenities.illuminated_parking"),
+      },
+      {
+        flag: (station.barrierFreeParkingPlaces ?? 0) > 0,
+        icon: "mdi:wheelchair-accessibility",
+        label: localize("amenities.barrier_free"),
       },
       {
         flag: station.cateringService,

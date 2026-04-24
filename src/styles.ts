@@ -708,6 +708,35 @@ export const cardStyles = css`
     min-width: 0;
   }
 
+  /* ----- Station note (operator-supplied access info) --------------
+     Surfaces station.description — free-text notes from the operator
+     like "Zufahrt nur Anrainern gestattet 7-14 Uhr". Only rendered
+     when non-null, so it never adds visual noise for stations that
+     have nothing to say. */
+  .station-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 7%,
+      transparent
+    );
+    border-left: 3px solid
+      color-mix(in srgb, var(--primary-color) 55%, transparent);
+    border-radius: 6px;
+    font-size: var(--l-fs-xs);
+    line-height: 1.4;
+    color: var(--primary-text-color);
+  }
+  .station-note ha-icon {
+    --mdc-icon-size: 16px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
   /* ----- Rack (per-point availability grid, nextbike-style) ---------
      Centred cluster — small point counts (1-4 typical) sit in the middle
      of the container rather than left-hugging, which kept looking like a
