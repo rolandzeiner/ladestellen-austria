@@ -727,22 +727,22 @@ export const cardStyles = css`
   }
   .rack-slot {
     /* Layout model:
-       - Positioned container. Power badge (top-centre) and status dot
-         (top-left) are absolute overlays; they sit outside the flex flow
-         so they don't affect centring of the main content.
-       - Main content (kW + connector, or the warn wrench) is a flex
-         column. justify-content: center vertically balances kW+connector
-         as a single group; align-items: center handles horizontal.
-       - min-height floor keeps a row of mixed warn/regular slots at a
-         consistent height. Content may exceed it; the slot grows to
-         content-size when needed. */
+       - Positioned container. Only the status dot is an absolute
+         overlay (top-left decoration). Everything else — power badge,
+         kW, connector / wrench — participates in the flex column so
+         the entire content cluster is centred by a single
+         justify-content rule.
+       - Symmetric 8px padding + gap: 3px between flex children; when
+         content underfills the min-height floor the free space splits
+         evenly above/below.
+       - min-height keeps mixed warn/regular rows height-consistent. */
     position: relative;
     flex: 0 0 80px;
     width: 80px;
-    min-height: 58px;
+    min-height: 64px;
     box-sizing: border-box;
     border-radius: 10px;
-    padding: 16px 8px 8px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -809,10 +809,6 @@ export const cardStyles = css`
   .rack-warn-icon {
     --mdc-icon-size: 28px;
     color: var(--warning-color, #f57c00);
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
   }
   /* Status dot — top-left corner, mirroring the power-badge at top-
      centre for a balanced header band. Absolute keeps it stable across
@@ -840,14 +836,11 @@ export const cardStyles = css`
     border: 1px solid
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
-  /* AC/DC badge — small uppercase tag centred at the top of the slot.
-     DC takes the warning accent (fast-charge signal), AC stays
-     secondary so it recedes on the much more common AC case. */
+  /* AC/DC badge — first flex child (above kW). Participates in the
+     flex flow so it centres with the rest of the content. DC takes
+     the warning accent (fast-charge signal); AC stays secondary so
+     it recedes on the common case. */
   .power-badge {
-    position: absolute;
-    top: 4px;
-    left: 50%;
-    transform: translateX(-50%);
     font-size: 9px;
     font-weight: var(--l-fw-bld);
     letter-spacing: 0.08em;
@@ -1029,8 +1022,8 @@ export const cardStyles = css`
     .rack-slot {
       flex: 0 0 60px;
       width: 60px;
-      min-height: 46px;
-      padding: 12px 4px 6px;
+      min-height: 52px;
+      padding: 6px 4px;
       gap: 2px;
     }
     .rack-kw-num {
@@ -1052,7 +1045,6 @@ export const cardStyles = css`
       height: 7px;
     }
     .power-badge {
-      top: 3px;
       font-size: 8px;
       letter-spacing: 0.06em;
     }
