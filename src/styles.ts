@@ -184,6 +184,25 @@ export const cardStyles = css`
     );
   }
 
+  /* Station is not actionable right now — under maintenance (all known
+     points in warn states), closed-now, or API says stationStatus is not
+     ACTIVE. The whole collapsed row dims and the kW loses its DC amber
+     so the row reads as neutral-muted instead of a dimmed fast-charge
+     accent. The expanded detail area stays full-clarity — it carries the
+     context (opening hours, rack, wrenches) that explains why the row is
+     muted. */
+  .station.inactive .station-body {
+    opacity: 0.6;
+  }
+  .station.inactive .metric-kw,
+  .station.inactive .metric-kw--dc,
+  .station.inactive .metric-kw .kw-num,
+  .station.inactive .metric-kw .kw-unit,
+  .station.inactive .metric-kw--dc .kw-num,
+  .station.inactive .metric-kw--dc .kw-unit {
+    color: var(--secondary-text-color);
+  }
+
   /* Body: status dot + text column. Two lines always (name+metrics / address). */
   .station-body {
     display: flex;
