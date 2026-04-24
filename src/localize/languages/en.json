@@ -46,12 +46,16 @@
     "point_status_unavailable": "Unavailable",
     "point_status_unknown": "Unknown",
     "point_status_planned": "Planned",
-    "point_status_removed": "Removed"
+    "point_status_removed": "Removed",
+    "tariff": "Tariff"
   },
   "amenities": {
     "green_energy": "Green energy",
     "free_parking": "Free parking",
     "roofed_parking": "Roofed parking",
+    "illuminated_parking": "Illuminated",
+    "barrier_free": "Accessible",
+    "austrian_ecolabel": "Austrian Eco-Label",
     "catering": "Catering nearby",
     "bathrooms": "Restrooms",
     "resting": "Resting area"
