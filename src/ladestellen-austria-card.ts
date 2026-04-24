@@ -752,19 +752,22 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _renderRackSlot(point: Point): TemplateResult {
-    const isDC = (point.electricityType ?? []).includes("DC");
+    const powerType = this._pointPowerType(point);
     const statusCat = this._rackSlotStatus(point.status);
     const tooltip = this._pointTooltip(point);
+    const badge = powerType
+      ? html`<span class="power-badge" data-type=${powerType}
+          >${powerType.toUpperCase()}</span
+        >`
+      : nothing;
     // Out-of-order / faulted / inoperative slots swap their kW + connector
     // for a wrench icon — the electrical spec isn't actionable while the
-    // point is down, so showing it adds noise. DC badge + status dot stay
-    // for consistency with the rest of the rack.
+    // point is down, so showing it adds noise. Power-type badge + status
+    // dot stay for consistency with the rest of the rack.
     if (statusCat === "warn") {
       return html`
         <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
-          ${isDC
-            ? html`<ha-icon class="dc-badge" icon="mdi:flash"></ha-icon>`
-            : nothing}
+          ${badge}
           <ha-icon
             class="rack-warn-icon"
             icon="mdi:wrench-outline"
@@ -779,9 +782,7 @@ export class LadestellenAustriaCard extends LitElement {
     const kwText = this._formatKw(point.capacityKw);
     return html`
       <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
-        ${isDC
-          ? html`<ha-icon class="dc-badge" icon="mdi:flash"></ha-icon>`
-          : nothing}
+        ${badge}
         <span class="rack-kw">
           <span class="rack-kw-num">${kwText}</span
           ><span class="rack-kw-unit">kW</span>
@@ -792,6 +793,17 @@ export class LadestellenAustriaCard extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  // Resolve the slot's AC/DC label from point.electricityType. API emits
+  // values like "DC", "AC_1_PHASE", "AC_3_PHASE" — we collapse to two
+  // buckets since the phase detail isn't actionable at rack-glance level.
+  // Returns null when no recognised value is present.
+  private _pointPowerType(point: Point): "dc" | "ac" | null {
+    const types = point.electricityType ?? [];
+    if (types.some((t) => t === "DC" || t?.startsWith("DC"))) return "dc";
+    if (types.some((t) => t?.startsWith("AC"))) return "ac";
+    return null;
   }
 
   // The API is inconsistent with status casing + punctuation: the same

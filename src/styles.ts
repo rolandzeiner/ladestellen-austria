@@ -818,16 +818,25 @@ export const cardStyles = css`
     border: 1px solid
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
-  /* DC accent — a small amber lightning bolt in the top-left corner.
-     Paired with the already-amber "kW" unit below, it reads as a single
-     DC token without stamping a narrow text badge into the slot. */
-  .dc-badge {
+  /* AC/DC badge — small uppercase tag in the top-left corner. DC takes
+     the warning accent (fast-charge signal), AC stays secondary so it
+     recedes on the much more common AC case. */
+  .power-badge {
     position: absolute;
-    top: 3px;
-    left: 4px;
-    --mdc-icon-size: 14px;
-    color: var(--warning-color, #f57c00);
+    top: 4px;
+    left: 5px;
+    font-size: 9px;
+    font-weight: var(--l-fw-bld);
+    letter-spacing: 0.08em;
     line-height: 1;
+    text-transform: uppercase;
+  }
+  .power-badge[data-type="dc"] {
+    color: var(--warning-color, #f57c00);
+  }
+  .power-badge[data-type="ac"] {
+    color: var(--secondary-text-color);
+    opacity: 0.75;
   }
 
   /* Fees line under the rack — quiet secondary text. */
@@ -1019,10 +1028,11 @@ export const cardStyles = css`
     .rack-bottom {
       gap: 4px;
     }
-    .dc-badge {
-      top: 2px;
-      left: 3px;
-      --mdc-icon-size: 11px;
+    .power-badge {
+      top: 3px;
+      left: 4px;
+      font-size: 8px;
+      letter-spacing: 0.06em;
     }
   }
 
