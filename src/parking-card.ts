@@ -123,9 +123,11 @@ export class LadestellenAustriaParkingCard extends LitElement {
     setLanguage(this.hass?.language);
 
     if (!this.hass || !this.config) {
-      return html`<ha-card
-        ><div class="empty-state">${localize("common.loading")}</div></ha-card
-      >`;
+      return html`<ha-card>
+        <div class="card-content">
+          <div class="empty-state">${localize("common.loading")}</div>
+        </div>
+      </ha-card>`;
     }
 
     const stateObj = this.config.entity
@@ -134,7 +136,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     if (!stateObj) {
       return html`<ha-card>
-        <div class="empty-state">${localize("card.no_entity")}</div>
+        <div class="card-content">
+          <div class="empty-state">${localize("card.no_entity")}</div>
+        </div>
       </ha-card>`;
     }
 
@@ -146,13 +150,15 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     if (!stationId || !station) {
       return html`<ha-card>
-        ${customTitle
-          ? html`<div class="parking-title">${customTitle}</div>`
-          : nothing}
-        <div class="empty-state">
-          ${!stationId
-            ? localize("parking.no_station_selected")
-            : localize("parking.station_not_found")}
+        <div class="card-content">
+          ${customTitle
+            ? html`<div class="parking-title">${customTitle}</div>`
+            : nothing}
+          <div class="empty-state">
+            ${!stationId
+              ? localize("parking.no_station_selected")
+              : localize("parking.station_not_found")}
+          </div>
         </div>
       </ha-card>`;
     }
@@ -168,34 +174,36 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     return html`
       <ha-card>
-        <header class="parking-header">
-          <div class="parking-title-group">
-            ${customTitle
-              ? html`<h3 class="parking-title">${customTitle}</h3>`
-              : nothing}
-            <div class="parking-station-label">${station.label}</div>
-          </div>
-          <div
-            class=${availCount > 0
-              ? "parking-count parking-count--ok"
-              : "parking-count"}
-            role="status"
-            aria-live="polite"
-          >
-            ${countText}
-          </div>
-        </header>
-        ${points.length === 0
-          ? html`<div class="empty-state">
-              ${localize("parking.no_points")}
-            </div>`
-          : html`<div
-              class="parking-lot"
-              role="list"
-              aria-label=${countText}
+        <div class="card-content">
+          <header class="parking-header">
+            <div class="parking-title-group">
+              ${customTitle
+                ? html`<h3 class="parking-title">${customTitle}</h3>`
+                : nothing}
+              <div class="parking-station-label">${station.label}</div>
+            </div>
+            <div
+              class=${availCount > 0
+                ? "parking-count parking-count--ok"
+                : "parking-count"}
+              role="status"
+              aria-live="polite"
             >
-              ${points.map((p) => this._renderSlot(p))}
-            </div>`}
+              ${countText}
+            </div>
+          </header>
+          ${points.length === 0
+            ? html`<div class="empty-state">
+                ${localize("parking.no_points")}
+              </div>`
+            : html`<div
+                class="parking-lot"
+                role="list"
+                aria-label=${countText}
+              >
+                ${points.map((p) => this._renderSlot(p))}
+              </div>`}
+        </div>
       </ha-card>
     `;
   }
