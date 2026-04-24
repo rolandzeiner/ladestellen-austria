@@ -47,7 +47,8 @@
     "point_status_unknown": "Unbekannt",
     "point_status_planned": "Geplant",
     "point_status_removed": "Entfernt",
-    "tariff": "Tarif"
+    "tariff": "Tarif",
+    "dynamic_follows_entity": "Folgt: {entity}"
   },
   "parking": {
     "card_name": "Ladestellen Austria — Parkplatz",
@@ -117,6 +118,7 @@
     "pin_select_sensor_first": "Zuerst einen Sensor auswählen, um verfügbare Ladestellen zu sehen.",
     "pin_no_stations_yet": "Noch keine Ladestellen geladen — auf die nächste Aktualisierung warten.",
     "pin_orphans_heading": "Angepinnt, aber nicht im Umkreis (anklicken zum Entfernen):",
-    "pin_unpin": "Entfernen"
+    "pin_unpin": "Entfernen",
+    "pin_disabled_dynamic": "Dynamische Standortverfolgung ist für diesen Sensor aktiv — angepinnte Ladestellen sind deaktiviert, weil die Liste deiner aktuellen Position folgt. Bestehende Pins bleiben erhalten, falls du wieder auf festen Standort wechselst."
   }
 }

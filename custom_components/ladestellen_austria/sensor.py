@@ -102,4 +102,11 @@ class NearestStationSensor(
             # otherwise. The card falls back to the /search-default
             # AVAILABLE values when this flag is False.
             "live_status_available": bool(data.get("live_status_available", False)),
+            # Dynamic-tracker mode — the card hides pinning and the main
+            # hero shows a "Folgt: device_tracker.xxx" indicator when
+            # this is True. Always emitted (False in static mode) so
+            # cards can branch on a single boolean without having to
+            # check for the attribute's existence.
+            "dynamic_mode": bool(self.coordinator.dynamic_mode),
+            "dynamic_entity": self.coordinator.dynamic_entity,
         }

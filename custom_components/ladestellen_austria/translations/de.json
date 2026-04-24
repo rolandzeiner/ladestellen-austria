@@ -9,10 +9,12 @@
           "api_key": "API-Schlüssel",
           "domain": "Registrierte Domain",
           "location": "Standort",
-          "scan_interval": "Aktualisierungsintervall (Minuten)"
+          "scan_interval": "Aktualisierungsintervall (Minuten)",
+          "dynamic_entity": "Dynamischer Standort-Tracker"
         },
         "data_description": {
-          "domain": "Der vollständige Domainenname, der bei ladestellen.at hinterlegt wurde — ohne Protokoll, Port oder Pfad. Muss mit dem Host übereinstimmen, von dem Home Assistant die Anfragen abschickt."
+          "domain": "Der vollständige Domainenname, der bei ladestellen.at hinterlegt wurde — ohne Protokoll, Port oder Pfad. Muss mit dem Host übereinstimmen, von dem Home Assistant die Anfragen abschickt.",
+          "dynamic_entity": "Optional: ein device_tracker (z. B. dein Handy via Home-Assistant-App) wählen, damit die Ladestellenliste stets von deiner aktuellen GPS-Position abgerufen wird. Leer lassen für festen Standort. Im dynamischen Modus wird das obige Intervall durch einen 6-Stunden-Sicherheitstimer ersetzt — die eigentlichen Aktualisierungen erfolgen bei Bewegung (mind. 1,5 km bzw. 10 min zwischen Aktualisierungen)."
         }
       },
       "reconfigure": {
@@ -22,7 +24,11 @@
           "api_key": "API-Schlüssel",
           "domain": "Registrierte Domain",
           "location": "Standort",
-          "scan_interval": "Aktualisierungsintervall (Minuten)"
+          "scan_interval": "Aktualisierungsintervall (Minuten)",
+          "dynamic_entity": "Dynamischer Standort-Tracker"
+        },
+        "data_description": {
+          "dynamic_entity": "Optional: ein device_tracker, damit die Liste anhand der Live-GPS-Position aktualisiert wird. Leer lassen für festen Standort. Angepinnte Ladestellen werden im dynamischen Modus ausgeblendet — die Liste folgt deiner Position."
         }
       },
       "reauth_confirm": {
@@ -82,6 +88,12 @@
     },
     "api_invalid_response": {
       "message": "Ladestellen-Austria-API lieferte eine unerwartete Antwort (Status {status}): {error}"
+    }
+  },
+  "issues": {
+    "tracker_missing": {
+      "title": "Standort-Tracker nicht verfügbar",
+      "description": "Die device_tracker-Entität **{entity_id}**, die für den dynamischen Modus des Eintrags **{entry_title}** konfiguriert ist, ist nicht verfügbar oder liefert keine Koordinaten. Aktualisierungen fallen auf den für diesen Eintrag konfigurierten Standort zurück. Entweder den Tracker wiederherstellen oder den Eintrag neu konfigurieren, um auf festen Standort zu wechseln."
     }
   }
 }
