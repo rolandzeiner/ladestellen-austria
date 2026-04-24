@@ -41,7 +41,7 @@ rules:
     status: done
   unique-config-entry:
     status: done
-    comment: unique_id = f"{domain}:{lat_round3}:{lng_round3}" — FROZEN from v0.1.0 onward.
+    comment: unique_id = f"{domain}:{lat_round3}:{lng_round3}" (static) or f"{domain}:dynamic:{tracker}" (dynamic) — FROZEN from v0.2.0 onward.
 
   # Silver
   action-exceptions:
@@ -68,7 +68,7 @@ rules:
     comment: async_step_reauth + async_step_reauth_confirm implemented; coordinator raises ConfigEntryAuthFailed on HTTP 401/403 which HA translates into this flow. The reauth step prompts for both api_key and domain since either can be rotated independently at ladestellen.at.
   test-coverage:
     status: done
-    comment: Config flow, coordinator, diagnostics, and User-Agent regression tests ship with v0.1.0.
+    comment: Config flow, coordinator, diagnostics, and User-Agent regression tests ship with v0.2.0.
 
   # Gold
   devices:

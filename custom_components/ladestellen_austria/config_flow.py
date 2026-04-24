@@ -231,7 +231,7 @@ def _build_entry_data(cleaned: dict[str, Any]) -> dict[str, Any]:
 def _compute_unique_id(cleaned: dict[str, Any]) -> str:
     """Stable unique_id formula.
 
-    Static mode — FROZEN from v0.1.0 onward: `{domain}:{lat_round3}:{lng_round3}`.
+    Static mode — FROZEN from v0.2.0 onward: `{domain}:{lat_round3}:{lng_round3}`.
     Combining domain + coarse coords lets the same API key serve multiple
     regional entries without collision. Three decimals of lat/lng is ~110 m
     precision — fine-grained enough that a second entry at a truly different
