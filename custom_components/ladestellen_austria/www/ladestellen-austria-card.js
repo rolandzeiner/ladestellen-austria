@@ -1,5 +1,5 @@
 // Ladestellen Austria Card — bundled by Rollup. Edit sources in src/, then `npm run build`.
-function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPropertyDescriptor(e,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)n=Reflect.decorate(t,e,i,s);else for(var o=t.length-1;o>=0;o--)(r=t[o])&&(n=(a<3?r(n):a>3?r(e,i,n):r(e,i))||n);return a>3&&n&&Object.defineProperty(e,i,n),n}"function"==typeof SuppressedError&&SuppressedError;const e=globalThis,i=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s=Symbol(),r=new WeakMap;let a=class{constructor(t,e,i){if(this._$cssResult$=!0,i!==s)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e}get styleSheet(){let t=this.o;const e=this.t;if(i&&void 0===t){const i=void 0!==e&&1===e.length;i&&(t=r.get(e)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),i&&r.set(e,t))}return t}toString(){return this.cssText}};const n=(t,...e)=>{const i=1===t.length?t[0]:e.reduce((e,i,s)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+t[s+1],t[0]);return new a(i,t,s)},o=i?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const i of t.cssRules)e+=i.cssText;return(t=>new a("string"==typeof t?t:t+"",void 0,s))(e)})(t):t,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:p,getPrototypeOf:u}=Object,f=globalThis,g=f.trustedTypes,m=g?g.emptyScript:"",v=f.reactiveElementPolyfillSupport,_=(t,e)=>t,y={toAttribute(t,e){switch(e){case Boolean:t=t?m:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t)}return t},fromAttribute(t,e){let i=t;switch(e){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t)}catch(t){i=null}}return i}},b=(t,e)=>!l(t,e),$={attribute:!0,type:String,converter:y,reflect:!1,useDefault:!1,hasChanged:b};Symbol.metadata??=Symbol("metadata"),f.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,e=$){if(e.state&&(e.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(t)&&((e=Object.create(e)).wrapped=!0),this.elementProperties.set(t,e),!e.noAccessor){const i=Symbol(),s=this.getPropertyDescriptor(t,i,e);void 0!==s&&c(this.prototype,t,s)}}static getPropertyDescriptor(t,e,i){const{get:s,set:r}=d(this.prototype,t)??{get(){return this[e]},set(t){this[e]=t}};return{get:s,set(e){const a=s?.call(this);r?.call(this,e),this.requestUpdate(t,a,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??$}static _$Ei(){if(this.hasOwnProperty(_("elementProperties")))return;const t=u(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties)}static finalize(){if(this.hasOwnProperty(_("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(_("properties"))){const t=this.properties,e=[...h(t),...p(t)];for(const i of e)this.createProperty(i,t[i])}const t=this[Symbol.metadata];if(null!==t){const e=litPropertyMetadata.get(t);if(void 0!==e)for(const[t,i]of e)this.elementProperties.set(t,i)}this._$Eh=new Map;for(const[t,e]of this.elementProperties){const i=this._$Eu(t,e);void 0!==i&&this._$Eh.set(i,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(t){const e=[];if(Array.isArray(t)){const i=new Set(t.flat(1/0).reverse());for(const t of i)e.unshift(o(t))}else void 0!==t&&e.push(o(t));return e}static _$Eu(t,e){const i=e.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this))}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.()}removeController(t){this._$EO?.delete(t)}_$E_(){const t=new Map,e=this.constructor.elementProperties;for(const i of e.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t)}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((t,s)=>{if(i)t.adoptedStyleSheets=s.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const i of s){const s=document.createElement("style"),r=e.litNonce;void 0!==r&&s.setAttribute("nonce",r),s.textContent=i.cssText,t.appendChild(s)}})(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(t=>t.hostConnected?.())}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.())}attributeChangedCallback(t,e,i){this._$AK(t,i)}_$ET(t,e){const i=this.constructor.elementProperties.get(t),s=this.constructor._$Eu(t,i);if(void 0!==s&&!0===i.reflect){const r=(void 0!==i.converter?.toAttribute?i.converter:y).toAttribute(e,i.type);this._$Em=t,null==r?this.removeAttribute(s):this.setAttribute(s,r),this._$Em=null}}_$AK(t,e){const i=this.constructor,s=i._$Eh.get(t);if(void 0!==s&&this._$Em!==s){const t=i.getPropertyOptions(s),r="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:y;this._$Em=s;const a=r.fromAttribute(e,t.type);this[s]=a??this._$Ej?.get(s)??a,this._$Em=null}}requestUpdate(t,e,i,s=!1,r){if(void 0!==t){const a=this.constructor;if(!1===s&&(r=this[t]),i??=a.getPropertyOptions(t),!((i.hasChanged??b)(r,e)||i.useDefault&&i.reflect&&r===this._$Ej?.get(t)&&!this.hasAttribute(a._$Eu(t,i))))return;this.C(t,e,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(t,e,{useDefault:i,reflect:s,wrapped:r},a){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,a??e??this[t]),!0!==r||void 0!==a)||(this._$AL.has(t)||(this.hasUpdated||i||(e=void 0),this._$AL.set(t,e)),!0===s&&this._$Em!==t&&(this._$Eq??=new Set).add(t))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(t){Promise.reject(t)}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,e]of this._$Ep)this[t]=e;this._$Ep=void 0}const t=this.constructor.elementProperties;if(t.size>0)for(const[e,i]of t){const{wrapped:t}=i,s=this[e];!0!==t||this._$AL.has(e)||void 0===s||this.C(e,void 0,i,s)}}let t=!1;const e=this._$AL;try{t=this.shouldUpdate(e),t?(this.willUpdate(e),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(e)):this._$EM()}catch(e){throw t=!1,this._$EM(),e}t&&this._$AE(e)}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return!0}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM()}updated(t){}firstUpdated(t){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[_("elementProperties")]=new Map,x[_("finalized")]=new Map,v?.({ReactiveElement:x}),(f.reactiveElementVersions??=[]).push("2.1.2");const w=globalThis,A=t=>t,k=w.trustedTypes,E=k?k.createPolicy("lit-html",{createHTML:t=>t}):void 0,C="$lit$",S=`lit$${Math.random().toFixed(9).slice(2)}$`,P="?"+S,z=`<${P}>`,O=document,T=()=>O.createComment(""),M=t=>null===t||"object"!=typeof t&&"function"!=typeof t,L=Array.isArray,U="[ \t\n\f\r]",H=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,N=/-->/g,R=/>/g,D=RegExp(`>|${U}(?:([^\\s"'>=/]+)(${U}*=${U}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,I=/"/g,F=/^(?:script|style|textarea|title)$/i,V=(t=>(e,...i)=>({_$litType$:t,strings:e,values:i}))(1),B=Symbol.for("lit-noChange"),K=Symbol.for("lit-nothing"),W=new WeakMap,q=O.createTreeWalker(O,129);function G(t,e){if(!L(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==E?E.createHTML(e):e}const Y=(t,e)=>{const i=t.length-1,s=[];let r,a=2===e?"<svg>":3===e?"<math>":"",n=H;for(let e=0;e<i;e++){const i=t[e];let o,l,c=-1,d=0;for(;d<i.length&&(n.lastIndex=d,l=n.exec(i),null!==l);)d=n.lastIndex,n===H?"!--"===l[1]?n=N:void 0!==l[1]?n=R:void 0!==l[2]?(F.test(l[2])&&(r=RegExp("</"+l[2],"g")),n=D):void 0!==l[3]&&(n=D):n===D?">"===l[0]?(n=r??H,c=-1):void 0===l[1]?c=-2:(c=n.lastIndex-l[2].length,o=l[1],n=void 0===l[3]?D:'"'===l[3]?I:j):n===I||n===j?n=D:n===N||n===R?n=H:(n=D,r=void 0);const h=n===D&&t[e+1].startsWith("/>")?" ":"";a+=n===H?i+z:c>=0?(s.push(o),i.slice(0,c)+C+i.slice(c)+S+h):i+S+(-2===c?e:h)}return[G(t,a+(t[i]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),s]};class J{constructor({strings:t,_$litType$:e},i){let s;this.parts=[];let r=0,a=0;const n=t.length-1,o=this.parts,[l,c]=Y(t,e);if(this.el=J.createElement(l,i),q.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(s=q.nextNode())&&o.length<n;){if(1===s.nodeType){if(s.hasAttributes())for(const t of s.getAttributeNames())if(t.endsWith(C)){const e=c[a++],i=s.getAttribute(t).split(S),n=/([.?@])?(.*)/.exec(e);o.push({type:1,index:r,name:n[2],strings:i,ctor:"."===n[1]?et:"?"===n[1]?it:"@"===n[1]?st:tt}),s.removeAttribute(t)}else t.startsWith(S)&&(o.push({type:6,index:r}),s.removeAttribute(t));if(F.test(s.tagName)){const t=s.textContent.split(S),e=t.length-1;if(e>0){s.textContent=k?k.emptyScript:"";for(let i=0;i<e;i++)s.append(t[i],T()),q.nextNode(),o.push({type:2,index:++r});s.append(t[e],T())}}}else if(8===s.nodeType)if(s.data===P)o.push({type:2,index:r});else{let t=-1;for(;-1!==(t=s.data.indexOf(S,t+1));)o.push({type:7,index:r}),t+=S.length-1}r++}}static createElement(t,e){const i=O.createElement("template");return i.innerHTML=t,i}}function Z(t,e,i=t,s){if(e===B)return e;let r=void 0!==s?i._$Co?.[s]:i._$Cl;const a=M(e)?void 0:e._$litDirective$;return r?.constructor!==a&&(r?._$AO?.(!1),void 0===a?r=void 0:(r=new a(t),r._$AT(t,i,s)),void 0!==s?(i._$Co??=[])[s]=r:i._$Cl=r),void 0!==r&&(e=Z(t,r._$AS(t,e.values),r,s)),e}class Q{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:i}=this._$AD,s=(t?.creationScope??O).importNode(e,!0);q.currentNode=s;let r=q.nextNode(),a=0,n=0,o=i[0];for(;void 0!==o;){if(a===o.index){let e;2===o.type?e=new X(r,r.nextSibling,this,t):1===o.type?e=new o.ctor(r,o.name,o.strings,this,t):6===o.type&&(e=new rt(r,this,t)),this._$AV.push(e),o=i[++n]}a!==o?.index&&(r=q.nextNode(),a++)}return q.currentNode=O,s}p(t){let e=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(t,i,e),e+=i.strings.length-2):i._$AI(t[e])),e++}}class X{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,i,s){this.type=2,this._$AH=K,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=i,this.options=s,this._$Cv=s?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=Z(this,t,e),M(t)?t===K||null==t||""===t?(this._$AH!==K&&this._$AR(),this._$AH=K):t!==this._$AH&&t!==B&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>L(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==K&&M(this._$AH)?this._$AA.nextSibling.data=t:this.T(O.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:i}=t,s="number"==typeof i?this._$AC(t):(void 0===i.el&&(i.el=J.createElement(G(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===s)this._$AH.p(e);else{const t=new Q(s,this),i=t.u(this.options);t.p(e),this.T(i),this._$AH=t}}_$AC(t){let e=W.get(t.strings);return void 0===e&&W.set(t.strings,e=new J(t)),e}k(t){L(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let i,s=0;for(const r of t)s===e.length?e.push(i=new X(this.O(T()),this.O(T()),this,this.options)):i=e[s],i._$AI(r),s++;s<e.length&&(this._$AR(i&&i._$AB.nextSibling,s),e.length=s)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=A(t).nextSibling;A(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class tt{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,i,s,r){this.type=1,this._$AH=K,this._$AN=void 0,this.element=t,this.name=e,this._$AM=s,this.options=r,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=K}_$AI(t,e=this,i,s){const r=this.strings;let a=!1;if(void 0===r)t=Z(this,t,e,0),a=!M(t)||t!==this._$AH&&t!==B,a&&(this._$AH=t);else{const s=t;let n,o;for(t=r[0],n=0;n<r.length-1;n++)o=Z(this,s[i+n],e,n),o===B&&(o=this._$AH[n]),a||=!M(o)||o!==this._$AH[n],o===K?t=K:t!==K&&(t+=(o??"")+r[n+1]),this._$AH[n]=o}a&&!s&&this.j(t)}j(t){t===K?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class et extends tt{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===K?void 0:t}}class it extends tt{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==K)}}class st extends tt{constructor(t,e,i,s,r){super(t,e,i,s,r),this.type=5}_$AI(t,e=this){if((t=Z(this,t,e,0)??K)===B)return;const i=this._$AH,s=t===K&&i!==K||t.capture!==i.capture||t.once!==i.once||t.passive!==i.passive,r=t!==K&&(i===K||s);s&&this.element.removeEventListener(this.name,this,i),r&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class rt{constructor(t,e,i){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(t){Z(this,t)}}const at=w.litHtmlPolyfillSupport;at?.(J,X),(w.litHtmlVersions??=[]).push("3.3.2");const nt=globalThis;class ot extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const e=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=((t,e,i)=>{const s=i?.renderBefore??e;let r=s._$litPart$;if(void 0===r){const t=i?.renderBefore??null;s._$litPart$=r=new X(e.insertBefore(T(),t),t,void 0,i??{})}return r._$AI(t),r})(e,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return B}}ot._$litElement$=!0,ot.finalized=!0,nt.litElementHydrateSupport?.({LitElement:ot});const lt=nt.litElementPolyfillSupport;lt?.({LitElement:ot}),(nt.litElementVersions??=[]).push("4.2.2");const ct=t=>(e,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(t,e)}):customElements.define(t,e)},dt={attribute:!0,type:String,converter:y,reflect:!1,hasChanged:b},ht=(t=dt,e,i)=>{const{kind:s,metadata:r}=i;let a=globalThis.litPropertyMetadata.get(r);if(void 0===a&&globalThis.litPropertyMetadata.set(r,a=new Map),"setter"===s&&((t=Object.create(t)).wrapped=!0),a.set(i.name,t),"accessor"===s){const{name:s}=i;return{set(i){const r=e.get.call(this);e.set.call(this,i),this.requestUpdate(s,r,t,!0,i)},init(e){return void 0!==e&&this.C(s,void 0,t,e),e}}}if("setter"===s){const{name:s}=i;return function(i){const r=this[s];e.call(this,i),this.requestUpdate(s,r,t,!0,i)}}throw Error("Unsupported decorator location: "+s)};function pt(t){return(e,i)=>"object"==typeof i?ht(t,e,i):((t,e,i)=>{const s=e.hasOwnProperty(i);return e.constructor.createProperty(i,t),s?Object.getOwnPropertyDescriptor(e,i):void 0})(t,e,i)}function ut(t){return pt({...t,state:!0,attribute:!1})}var ft={version:"Version",invalid_configuration:"Invalid configuration",loading:"Loading…"},gt={no_entity:"Select a Ladestellen Austria sensor in the card editor.",no_stations:"No stations match the current filters.",hero_context:"to the nearest charger in {city}",hero_count:"{count} stations",hero_count_filtered:"{filtered} of {total} stations",hero_range:"{min}–{max} km range",inactive:"inactive",status_unknown:"live availability unavailable",status_count:"{avail} of {total} points free",gratis:"Free",live_count:"{avail}/{total} free",live_suffix:"free",open_in_maps:"Open in Maps",website:"Website",call:"Call",address_heading:"Address",amenities_heading:"Amenities",availability:"Availability"},mt={green_energy:"Green energy",free_parking:"Free parking",roofed_parking:"Roofed parking",catering:"Catering nearby",bathrooms:"Restrooms",resting:"Resting area"},vt={section_main:"Main",section_display:"Display",section_filters:"Filters",name:"Card title (optional)",entity:"Sensor",max_stations:"Stations to show",show_pricing:"Show pricing",show_amenities:"Show amenity details",only_available:"Only currently available stations",only_free:"Only stations with free charging",connector_filter_hint:"Tap connector types to only show stations offering at least one of them. Empty = no filter.",hint_compliance:"Data is supplied under the ladestellen.at Terms of Use. The E-Control branding in the header and the 'Datenquelle: E-Control' footer are legally required and cannot be hidden."},_t={common:ft,card:gt,amenities:mt,editor:vt},yt={version:"Version",invalid_configuration:"Ungültige Konfiguration",loading:"Lade…"},bt={no_entity:"Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",no_stations:"Keine Ladestellen entsprechen den aktuellen Filtern.",hero_context:"zur nächsten Ladestelle in {city}",hero_count:"{count} Ladestellen",hero_count_filtered:"{filtered} von {total} Ladestellen",hero_range:"{min}–{max} km Umkreis",inactive:"inaktiv",status_unknown:"Live-Status nicht verfügbar",status_count:"{avail} von {total} Punkten frei",gratis:"Gratis",live_count:"{avail}/{total} frei",live_suffix:"frei",open_in_maps:"In Karte öffnen",website:"Website",call:"Anrufen",address_heading:"Adresse",amenities_heading:"Ausstattung",availability:"Verfügbarkeit"},$t={green_energy:"Ökostrom",free_parking:"Gratis Parken",roofed_parking:"Überdacht",catering:"Gastronomie",bathrooms:"WC",resting:"Ruhebereich"},xt={section_main:"Allgemein",section_display:"Anzeige",section_filters:"Filter",name:"Kartentitel (optional)",entity:"Sensor",max_stations:"Anzahl angezeigter Ladestellen",show_pricing:"Preise anzeigen",show_amenities:"Ausstattungs-Details anzeigen",only_available:"Nur aktuell verfügbare Ladestellen",only_free:"Nur Ladestellen mit Gratis-Laden",connector_filter_hint:"Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",hint_compliance:"Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Branding im Kopf und die Fußzeile „Datenquelle: E-Control“ sind rechtlich vorgeschrieben und dürfen nicht entfernt werden."},wt={common:yt,card:bt,amenities:$t,editor:xt};const At={en:Object.freeze({__proto__:null,amenities:mt,card:gt,common:ft,default:_t,editor:vt}),de:Object.freeze({__proto__:null,amenities:$t,card:bt,common:yt,default:wt,editor:xt})};function kt(t,e){const i=t.split(".").reduce((t,e)=>{if(t&&"object"==typeof t&&e in t)return t[e]},e);return"string"==typeof i?i:void 0}let Et;function Ct(t){"string"==typeof t&&t.length>0&&(Et=t)}function St(t,e="",i=""){const s=(Et||localStorage.getItem("selectedLanguage")||("undefined"!=typeof navigator?navigator.language:"")||"en").replace(/['"]+/g,"").substring(0,2).toLowerCase();let r=kt(t,At[s]||At.en);return void 0===r&&(r=kt(t,At.en)),void 0===r&&(r=t),""!==e&&""!==i&&(r=r.replace(e,i)),r}const Pt=n`
+function t(t,e,i,s){var a,r=arguments.length,n=r<3?e:null===s?s=Object.getOwnPropertyDescriptor(e,i):s;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)n=Reflect.decorate(t,e,i,s);else for(var o=t.length-1;o>=0;o--)(a=t[o])&&(n=(r<3?a(n):r>3?a(e,i,n):a(e,i))||n);return r>3&&n&&Object.defineProperty(e,i,n),n}"function"==typeof SuppressedError&&SuppressedError;const e=globalThis,i=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s=Symbol(),a=new WeakMap;let r=class{constructor(t,e,i){if(this._$cssResult$=!0,i!==s)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e}get styleSheet(){let t=this.o;const e=this.t;if(i&&void 0===t){const i=void 0!==e&&1===e.length;i&&(t=a.get(e)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),i&&a.set(e,t))}return t}toString(){return this.cssText}};const n=(t,...e)=>{const i=1===t.length?t[0]:e.reduce((e,i,s)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+t[s+1],t[0]);return new r(i,t,s)},o=i?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const i of t.cssRules)e+=i.cssText;return(t=>new r("string"==typeof t?t:t+"",void 0,s))(e)})(t):t,{is:l,defineProperty:c,getOwnPropertyDescriptor:d,getOwnPropertyNames:h,getOwnPropertySymbols:p,getPrototypeOf:u}=Object,f=globalThis,g=f.trustedTypes,m=g?g.emptyScript:"",v=f.reactiveElementPolyfillSupport,_=(t,e)=>t,y={toAttribute(t,e){switch(e){case Boolean:t=t?m:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t)}return t},fromAttribute(t,e){let i=t;switch(e){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t)}catch(t){i=null}}return i}},b=(t,e)=>!l(t,e),$={attribute:!0,type:String,converter:y,reflect:!1,useDefault:!1,hasChanged:b};Symbol.metadata??=Symbol("metadata"),f.litPropertyMetadata??=new WeakMap;let x=class extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,e=$){if(e.state&&(e.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(t)&&((e=Object.create(e)).wrapped=!0),this.elementProperties.set(t,e),!e.noAccessor){const i=Symbol(),s=this.getPropertyDescriptor(t,i,e);void 0!==s&&c(this.prototype,t,s)}}static getPropertyDescriptor(t,e,i){const{get:s,set:a}=d(this.prototype,t)??{get(){return this[e]},set(t){this[e]=t}};return{get:s,set(e){const r=s?.call(this);a?.call(this,e),this.requestUpdate(t,r,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??$}static _$Ei(){if(this.hasOwnProperty(_("elementProperties")))return;const t=u(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties)}static finalize(){if(this.hasOwnProperty(_("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(_("properties"))){const t=this.properties,e=[...h(t),...p(t)];for(const i of e)this.createProperty(i,t[i])}const t=this[Symbol.metadata];if(null!==t){const e=litPropertyMetadata.get(t);if(void 0!==e)for(const[t,i]of e)this.elementProperties.set(t,i)}this._$Eh=new Map;for(const[t,e]of this.elementProperties){const i=this._$Eu(t,e);void 0!==i&&this._$Eh.set(i,t)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(t){const e=[];if(Array.isArray(t)){const i=new Set(t.flat(1/0).reverse());for(const t of i)e.unshift(o(t))}else void 0!==t&&e.push(o(t));return e}static _$Eu(t,e){const i=e.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this))}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.()}removeController(t){this._$EO?.delete(t)}_$E_(){const t=new Map,e=this.constructor.elementProperties;for(const i of e.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t)}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((t,s)=>{if(i)t.adoptedStyleSheets=s.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const i of s){const s=document.createElement("style"),a=e.litNonce;void 0!==a&&s.setAttribute("nonce",a),s.textContent=i.cssText,t.appendChild(s)}})(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(t=>t.hostConnected?.())}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.())}attributeChangedCallback(t,e,i){this._$AK(t,i)}_$ET(t,e){const i=this.constructor.elementProperties.get(t),s=this.constructor._$Eu(t,i);if(void 0!==s&&!0===i.reflect){const a=(void 0!==i.converter?.toAttribute?i.converter:y).toAttribute(e,i.type);this._$Em=t,null==a?this.removeAttribute(s):this.setAttribute(s,a),this._$Em=null}}_$AK(t,e){const i=this.constructor,s=i._$Eh.get(t);if(void 0!==s&&this._$Em!==s){const t=i.getPropertyOptions(s),a="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:y;this._$Em=s;const r=a.fromAttribute(e,t.type);this[s]=r??this._$Ej?.get(s)??r,this._$Em=null}}requestUpdate(t,e,i,s=!1,a){if(void 0!==t){const r=this.constructor;if(!1===s&&(a=this[t]),i??=r.getPropertyOptions(t),!((i.hasChanged??b)(a,e)||i.useDefault&&i.reflect&&a===this._$Ej?.get(t)&&!this.hasAttribute(r._$Eu(t,i))))return;this.C(t,e,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(t,e,{useDefault:i,reflect:s,wrapped:a},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??e??this[t]),!0!==a||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(e=void 0),this._$AL.set(t,e)),!0===s&&this._$Em!==t&&(this._$Eq??=new Set).add(t))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(t){Promise.reject(t)}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,e]of this._$Ep)this[t]=e;this._$Ep=void 0}const t=this.constructor.elementProperties;if(t.size>0)for(const[e,i]of t){const{wrapped:t}=i,s=this[e];!0!==t||this._$AL.has(e)||void 0===s||this.C(e,void 0,i,s)}}let t=!1;const e=this._$AL;try{t=this.shouldUpdate(e),t?(this.willUpdate(e),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(e)):this._$EM()}catch(e){throw t=!1,this._$EM(),e}t&&this._$AE(e)}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return!0}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM()}updated(t){}firstUpdated(t){}};x.elementStyles=[],x.shadowRootOptions={mode:"open"},x[_("elementProperties")]=new Map,x[_("finalized")]=new Map,v?.({ReactiveElement:x}),(f.reactiveElementVersions??=[]).push("2.1.2");const w=globalThis,A=t=>t,k=w.trustedTypes,E=k?k.createPolicy("lit-html",{createHTML:t=>t}):void 0,C="$lit$",S=`lit$${Math.random().toFixed(9).slice(2)}$`,z="?"+S,P=`<${z}>`,O=document,T=()=>O.createComment(""),M=t=>null===t||"object"!=typeof t&&"function"!=typeof t,L=Array.isArray,U="[ \t\n\f\r]",H=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,N=/-->/g,R=/>/g,D=RegExp(`>|${U}(?:([^\\s"'>=/]+)(${U}*=${U}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),j=/'/g,I=/"/g,V=/^(?:script|style|textarea|title)$/i,F=(t=>(e,...i)=>({_$litType$:t,strings:e,values:i}))(1),B=Symbol.for("lit-noChange"),K=Symbol.for("lit-nothing"),q=new WeakMap,W=O.createTreeWalker(O,129);function G(t,e){if(!L(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==E?E.createHTML(e):e}const Y=(t,e)=>{const i=t.length-1,s=[];let a,r=2===e?"<svg>":3===e?"<math>":"",n=H;for(let e=0;e<i;e++){const i=t[e];let o,l,c=-1,d=0;for(;d<i.length&&(n.lastIndex=d,l=n.exec(i),null!==l);)d=n.lastIndex,n===H?"!--"===l[1]?n=N:void 0!==l[1]?n=R:void 0!==l[2]?(V.test(l[2])&&(a=RegExp("</"+l[2],"g")),n=D):void 0!==l[3]&&(n=D):n===D?">"===l[0]?(n=a??H,c=-1):void 0===l[1]?c=-2:(c=n.lastIndex-l[2].length,o=l[1],n=void 0===l[3]?D:'"'===l[3]?I:j):n===I||n===j?n=D:n===N||n===R?n=H:(n=D,a=void 0);const h=n===D&&t[e+1].startsWith("/>")?" ":"";r+=n===H?i+P:c>=0?(s.push(o),i.slice(0,c)+C+i.slice(c)+S+h):i+S+(-2===c?e:h)}return[G(t,r+(t[i]||"<?>")+(2===e?"</svg>":3===e?"</math>":"")),s]};class J{constructor({strings:t,_$litType$:e},i){let s;this.parts=[];let a=0,r=0;const n=t.length-1,o=this.parts,[l,c]=Y(t,e);if(this.el=J.createElement(l,i),W.currentNode=this.el.content,2===e||3===e){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes)}for(;null!==(s=W.nextNode())&&o.length<n;){if(1===s.nodeType){if(s.hasAttributes())for(const t of s.getAttributeNames())if(t.endsWith(C)){const e=c[r++],i=s.getAttribute(t).split(S),n=/([.?@])?(.*)/.exec(e);o.push({type:1,index:a,name:n[2],strings:i,ctor:"."===n[1]?et:"?"===n[1]?it:"@"===n[1]?st:tt}),s.removeAttribute(t)}else t.startsWith(S)&&(o.push({type:6,index:a}),s.removeAttribute(t));if(V.test(s.tagName)){const t=s.textContent.split(S),e=t.length-1;if(e>0){s.textContent=k?k.emptyScript:"";for(let i=0;i<e;i++)s.append(t[i],T()),W.nextNode(),o.push({type:2,index:++a});s.append(t[e],T())}}}else if(8===s.nodeType)if(s.data===z)o.push({type:2,index:a});else{let t=-1;for(;-1!==(t=s.data.indexOf(S,t+1));)o.push({type:7,index:a}),t+=S.length-1}a++}}static createElement(t,e){const i=O.createElement("template");return i.innerHTML=t,i}}function Z(t,e,i=t,s){if(e===B)return e;let a=void 0!==s?i._$Co?.[s]:i._$Cl;const r=M(e)?void 0:e._$litDirective$;return a?.constructor!==r&&(a?._$AO?.(!1),void 0===r?a=void 0:(a=new r(t),a._$AT(t,i,s)),void 0!==s?(i._$Co??=[])[s]=a:i._$Cl=a),void 0!==a&&(e=Z(t,a._$AS(t,e.values),a,s)),e}class Q{constructor(t,e){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=e}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:e},parts:i}=this._$AD,s=(t?.creationScope??O).importNode(e,!0);W.currentNode=s;let a=W.nextNode(),r=0,n=0,o=i[0];for(;void 0!==o;){if(r===o.index){let e;2===o.type?e=new X(a,a.nextSibling,this,t):1===o.type?e=new o.ctor(a,o.name,o.strings,this,t):6===o.type&&(e=new at(a,this,t)),this._$AV.push(e),o=i[++n]}r!==o?.index&&(a=W.nextNode(),r++)}return W.currentNode=O,s}p(t){let e=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(t,i,e),e+=i.strings.length-2):i._$AI(t[e])),e++}}class X{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,e,i,s){this.type=2,this._$AH=K,this._$AN=void 0,this._$AA=t,this._$AB=e,this._$AM=i,this.options=s,this._$Cv=s?.isConnected??!0}get parentNode(){let t=this._$AA.parentNode;const e=this._$AM;return void 0!==e&&11===t?.nodeType&&(t=e.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,e=this){t=Z(this,t,e),M(t)?t===K||null==t||""===t?(this._$AH!==K&&this._$AR(),this._$AH=K):t!==this._$AH&&t!==B&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):(t=>L(t)||"function"==typeof t?.[Symbol.iterator])(t)?this.k(t):this._(t)}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t))}_(t){this._$AH!==K&&M(this._$AH)?this._$AA.nextSibling.data=t:this.T(O.createTextNode(t)),this._$AH=t}$(t){const{values:e,_$litType$:i}=t,s="number"==typeof i?this._$AC(t):(void 0===i.el&&(i.el=J.createElement(G(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===s)this._$AH.p(e);else{const t=new Q(s,this),i=t.u(this.options);t.p(e),this.T(i),this._$AH=t}}_$AC(t){let e=q.get(t.strings);return void 0===e&&q.set(t.strings,e=new J(t)),e}k(t){L(this._$AH)||(this._$AH=[],this._$AR());const e=this._$AH;let i,s=0;for(const a of t)s===e.length?e.push(i=new X(this.O(T()),this.O(T()),this,this.options)):i=e[s],i._$AI(a),s++;s<e.length&&(this._$AR(i&&i._$AB.nextSibling,s),e.length=s)}_$AR(t=this._$AA.nextSibling,e){for(this._$AP?.(!1,!0,e);t!==this._$AB;){const e=A(t).nextSibling;A(t).remove(),t=e}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t))}}class tt{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,e,i,s,a){this.type=1,this._$AH=K,this._$AN=void 0,this.element=t,this.name=e,this._$AM=s,this.options=a,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=K}_$AI(t,e=this,i,s){const a=this.strings;let r=!1;if(void 0===a)t=Z(this,t,e,0),r=!M(t)||t!==this._$AH&&t!==B,r&&(this._$AH=t);else{const s=t;let n,o;for(t=a[0],n=0;n<a.length-1;n++)o=Z(this,s[i+n],e,n),o===B&&(o=this._$AH[n]),r||=!M(o)||o!==this._$AH[n],o===K?t=K:t!==K&&(t+=(o??"")+a[n+1]),this._$AH[n]=o}r&&!s&&this.j(t)}j(t){t===K?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"")}}class et extends tt{constructor(){super(...arguments),this.type=3}j(t){this.element[this.name]=t===K?void 0:t}}class it extends tt{constructor(){super(...arguments),this.type=4}j(t){this.element.toggleAttribute(this.name,!!t&&t!==K)}}class st extends tt{constructor(t,e,i,s,a){super(t,e,i,s,a),this.type=5}_$AI(t,e=this){if((t=Z(this,t,e,0)??K)===B)return;const i=this._$AH,s=t===K&&i!==K||t.capture!==i.capture||t.once!==i.once||t.passive!==i.passive,a=t!==K&&(i===K||s);s&&this.element.removeEventListener(this.name,this,i),a&&this.element.addEventListener(this.name,this,t),this._$AH=t}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t)}}class at{constructor(t,e,i){this.element=t,this.type=6,this._$AN=void 0,this._$AM=e,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(t){Z(this,t)}}const rt=w.litHtmlPolyfillSupport;rt?.(J,X),(w.litHtmlVersions??=[]).push("3.3.2");const nt=globalThis;class ot extends x{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const e=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=((t,e,i)=>{const s=i?.renderBefore??e;let a=s._$litPart$;if(void 0===a){const t=i?.renderBefore??null;s._$litPart$=a=new X(e.insertBefore(T(),t),t,void 0,i??{})}return a._$AI(t),a})(e,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return B}}ot._$litElement$=!0,ot.finalized=!0,nt.litElementHydrateSupport?.({LitElement:ot});const lt=nt.litElementPolyfillSupport;lt?.({LitElement:ot}),(nt.litElementVersions??=[]).push("4.2.2");const ct=t=>(e,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(t,e)}):customElements.define(t,e)},dt={attribute:!0,type:String,converter:y,reflect:!1,hasChanged:b},ht=(t=dt,e,i)=>{const{kind:s,metadata:a}=i;let r=globalThis.litPropertyMetadata.get(a);if(void 0===r&&globalThis.litPropertyMetadata.set(a,r=new Map),"setter"===s&&((t=Object.create(t)).wrapped=!0),r.set(i.name,t),"accessor"===s){const{name:s}=i;return{set(i){const a=e.get.call(this);e.set.call(this,i),this.requestUpdate(s,a,t,!0,i)},init(e){return void 0!==e&&this.C(s,void 0,t,e),e}}}if("setter"===s){const{name:s}=i;return function(i){const a=this[s];e.call(this,i),this.requestUpdate(s,a,t,!0,i)}}throw Error("Unsupported decorator location: "+s)};function pt(t){return(e,i)=>"object"==typeof i?ht(t,e,i):((t,e,i)=>{const s=e.hasOwnProperty(i);return e.constructor.createProperty(i,t),s?Object.getOwnPropertyDescriptor(e,i):void 0})(t,e,i)}function ut(t){return pt({...t,state:!0,attribute:!1})}var ft={version:"Version",invalid_configuration:"Invalid configuration",loading:"Loading…"},gt={no_entity:"Select a Ladestellen Austria sensor in the card editor.",no_stations:"No stations match the current filters.",hero_context:"to the nearest charger in {city}",hero_count:"{count} stations",hero_count_filtered:"{filtered} of {total} stations",hero_range:"{min}–{max} km range",inactive:"inactive",status_unknown:"live availability unavailable",status_count:"{avail} of {total} points free",gratis:"Free",live_count:"{avail}/{total} free",live_suffix:"free",open_in_maps:"Open in Maps",website:"Website",call:"Call",address_heading:"Address",amenities_heading:"Amenities",availability:"Availability"},mt={green_energy:"Green energy",free_parking:"Free parking",roofed_parking:"Roofed parking",catering:"Catering nearby",bathrooms:"Restrooms",resting:"Resting area"},vt={section_main:"Main",section_display:"Display",section_filters:"Filters",name:"Card title (optional)",entity:"Sensor",max_stations:"Stations to show",show_pricing:"Show pricing",show_amenities:"Show amenity details",only_available:"Only currently available stations",only_free:"Only stations with free charging",connector_filter_hint:"Tap connector types to only show stations offering at least one of them. Empty = no filter.",hint_compliance:"Data is supplied under the ladestellen.at Terms of Use. The E-Control branding in the header and the 'Datenquelle: E-Control' footer are legally required and cannot be hidden."},_t={common:ft,card:gt,amenities:mt,editor:vt},yt={version:"Version",invalid_configuration:"Ungültige Konfiguration",loading:"Lade…"},bt={no_entity:"Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",no_stations:"Keine Ladestellen entsprechen den aktuellen Filtern.",hero_context:"zur nächsten Ladestelle in {city}",hero_count:"{count} Ladestellen",hero_count_filtered:"{filtered} von {total} Ladestellen",hero_range:"{min}–{max} km Umkreis",inactive:"inaktiv",status_unknown:"Live-Status nicht verfügbar",status_count:"{avail} von {total} Punkten frei",gratis:"Gratis",live_count:"{avail}/{total} frei",live_suffix:"frei",open_in_maps:"In Karte öffnen",website:"Website",call:"Anrufen",address_heading:"Adresse",amenities_heading:"Ausstattung",availability:"Verfügbarkeit"},$t={green_energy:"Ökostrom",free_parking:"Gratis Parken",roofed_parking:"Überdacht",catering:"Gastronomie",bathrooms:"WC",resting:"Ruhebereich"},xt={section_main:"Allgemein",section_display:"Anzeige",section_filters:"Filter",name:"Kartentitel (optional)",entity:"Sensor",max_stations:"Anzahl angezeigter Ladestellen",show_pricing:"Preise anzeigen",show_amenities:"Ausstattungs-Details anzeigen",only_available:"Nur aktuell verfügbare Ladestellen",only_free:"Nur Ladestellen mit Gratis-Laden",connector_filter_hint:"Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",hint_compliance:"Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Branding im Kopf und die Fußzeile „Datenquelle: E-Control“ sind rechtlich vorgeschrieben und dürfen nicht entfernt werden."},wt={common:yt,card:bt,amenities:$t,editor:xt};const At={en:Object.freeze({__proto__:null,amenities:mt,card:gt,common:ft,default:_t,editor:vt}),de:Object.freeze({__proto__:null,amenities:$t,card:bt,common:yt,default:wt,editor:xt})};function kt(t,e){const i=t.split(".").reduce((t,e)=>{if(t&&"object"==typeof t&&e in t)return t[e]},e);return"string"==typeof i?i:void 0}let Et;function Ct(t){"string"==typeof t&&t.length>0&&(Et=t)}function St(t,e="",i=""){const s=(Et||localStorage.getItem("selectedLanguage")||("undefined"!=typeof navigator?navigator.language:"")||"en").replace(/['"]+/g,"").substring(0,2).toLowerCase();let a=kt(t,At[s]||At.en);return void 0===a&&(a=kt(t,At.en)),void 0===a&&(a=t),""!==e&&""!==i&&(a=a.replace(e,i)),a}const zt=n`
   :host {
     display: block;
     --l-fs-hero: clamp(2.25rem, 4vw + 1rem, 3rem);
@@ -223,25 +223,21 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     opacity: 0.6;
   }
 
-  /* Line 1: grid-based so we can reshuffle on narrow containers without
-     touching the HTML. Wide layout: name / metrics / distance / chevron
-     on a single line. Narrow layout: metrics wrap to their own row below
-     the name, keeping line 1 uncluttered. */
+  /* Line 1: metrics (the user's real question: "what, how fast, how much")
+     take the primary position. Distance + chevron sit on the right. Name
+     moves to line 2 as a subtitle; address moves to the expanded detail. */
   .station-line-1 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    grid-template-areas: "name metrics distance chevron";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "metrics distance chevron";
     align-items: baseline;
     column-gap: var(--l-space-3);
     row-gap: 2px;
     min-width: 0;
   }
-  .station-name {
-    grid-area: name;
-  }
   .station-metrics {
     grid-area: metrics;
-    justify-self: end;
+    justify-self: start;
   }
   .station-distance {
     grid-area: distance;
@@ -249,16 +245,17 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
   .chevron {
     grid-area: chevron;
   }
+  /* Name sits on line 2 as a secondary identifier. Kept legible but
+     visually subordinate to the metrics line above. */
   .station-name {
-    font-size: var(--l-fs-m);
-    font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    line-height: 1.35;
-    letter-spacing: -0.002em;
+    font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-reg);
+    color: var(--secondary-text-color);
+    line-height: 1.4;
+    letter-spacing: 0.005em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
   }
 
   .station-metrics {
@@ -266,8 +263,8 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     align-items: baseline;
     flex-wrap: wrap;
     gap: 2px 6px;
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
+    font-size: var(--l-fs-m);
+    color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -295,9 +292,9 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     font-weight: var(--l-fw-bld);
   }
   .metrics-sep {
-    color: var(--divider-color);
+    color: var(--secondary-text-color);
     font-weight: var(--l-fw-reg);
-    opacity: 0.8;
+    opacity: 0.45;
   }
 
   /* Distance-pill — map link. Pin + number together, compact click target. */
@@ -347,15 +344,13 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     transition: transform 200ms var(--l-ease);
   }
 
-  /* Line 2: address (muted, always visible). */
-  .station-line-2 {
+  /* (Line 2 is now .station-name — address moved to .detail-address in
+     the expanded panel.) */
+  .detail-address {
     font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-    line-height: 1.35;
-    letter-spacing: 0.005em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--primary-text-color);
+    line-height: 1.4;
+    letter-spacing: 0.003em;
   }
 
   /* ----- Expanded detail -------------------------------------------- */
@@ -514,7 +509,95 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     color: var(--secondary-text-color);
     font-size: var(--l-fs-s);
   }
-`,zt=n`
+
+  /* ==========================================================
+     RESPONSIVE: container queries against the card's own width
+     ========================================================== */
+
+  /* Compact — below ~440px (most phone dashboards). Line 1 stays as
+     metrics + distance + chevron; line 2 stays as the station name.
+     Only typography and padding tighten. */
+  @container lscard (max-width: 439px) {
+    .station-body {
+      padding: 10px var(--l-space-3);
+      gap: var(--l-space-2);
+    }
+    .station-metrics {
+      font-size: var(--l-fs-s);
+    }
+    .station-name {
+      font-size: var(--l-fs-xs);
+    }
+
+    /* Hero stacks vertically so the big number and context each get
+       their own line. */
+    .hero {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--l-space-2);
+      padding: var(--l-space-3) var(--l-space-3) var(--l-space-4);
+    }
+    .hero-context {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .header {
+      padding: 8px var(--l-space-3);
+    }
+    .header-title {
+      display: none;
+    }
+
+    .detail {
+      padding: 0 var(--l-space-3) var(--l-space-3)
+        calc(var(--l-space-3) + 9px + var(--l-space-2));
+    }
+    .amenities {
+      gap: 4px 10px;
+    }
+    .action-btn {
+      font-size: var(--l-fs-xs);
+      padding: 5px 10px;
+    }
+    .footer {
+      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
+    }
+  }
+
+  /* Ultra-compact — below 320px. Drop more ornamentation; let overflow
+     wrap instead of ellipsis-truncate. */
+  @container lscard (max-width: 319px) {
+    .station-body {
+      padding: 8px var(--l-space-3);
+    }
+    .station-metrics {
+      font-size: var(--l-fs-xs);
+    }
+    .distance-value {
+      font-size: var(--l-fs-s);
+    }
+    .distance-value .unit {
+      font-size: 10px;
+    }
+    .station-distance {
+      padding: 2px 8px;
+    }
+    .station-distance ha-icon {
+      --mdc-icon-size: 14px;
+    }
+    .chevron {
+      --mdc-icon-size: 16px;
+    }
+    .hero {
+      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
+    }
+    .hero-context-1,
+    .hero-context-2 {
+      white-space: normal;
+    }
+  }
+`,Pt=n`
   :host {
     display: block;
   }
@@ -577,12 +660,12 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     border-color: var(--primary-color);
     font-weight: 600;
   }
-`;var Ot,Tt;!function(t){t.language="language",t.system="system",t.comma_decimal="comma_decimal",t.decimal_comma="decimal_comma",t.space_comma="space_comma",t.none="none"}(Ot||(Ot={})),function(t){t.language="language",t.system="system",t.am_pm="12",t.twenty_four="24"}(Tt||(Tt={}));const Mt=(t,e,i,s)=>{s=s||{},i=null==i?{}:i;const r=new Event(e,{bubbles:void 0===s.bubbles||s.bubbles,cancelable:Boolean(s.cancelable),composed:void 0===s.composed||s.composed});return r.detail=i,t.dispatchEvent(r),r},Lt=["Type 2","CCS","CHAdeMO","Type 1","Tesla","Schuko","CEE"];let Ut=class extends ot{constructor(){super(...arguments),this._config={type:"ladestellen-austria-card"}}setConfig(t){this._config={...t}}render(){Ct(this.hass?.language);const t=this._config.connector_types??[];return V`
+`;var Ot,Tt;!function(t){t.language="language",t.system="system",t.comma_decimal="comma_decimal",t.decimal_comma="decimal_comma",t.space_comma="space_comma",t.none="none"}(Ot||(Ot={})),function(t){t.language="language",t.system="system",t.am_pm="12",t.twenty_four="24"}(Tt||(Tt={}));const Mt=(t,e,i,s)=>{s=s||{},i=null==i?{}:i;const a=new Event(e,{bubbles:void 0===s.bubbles||s.bubbles,cancelable:Boolean(s.cancelable),composed:void 0===s.composed||s.composed});return a.detail=i,t.dispatchEvent(a),a},Lt=["Type 2","CCS","CHAdeMO","Type 1","Tesla","Schuko","CEE"];let Ut=class extends ot{constructor(){super(...arguments),this._config={type:"ladestellen-austria-card"}}setConfig(t){this._config={...t}}render(){Ct(this.hass?.language);const t=this._config.connector_types??[];return F`
       <div class="editor">
         <div class="editor-section">
           <div class="section-header">${St("editor.section_main")}</div>
 
-          ${this.hass?V`
+          ${this.hass?F`
                 <ha-selector
                   .hass=${this.hass}
                   .selector=${{entity:{domain:"sensor",integration:"ladestellen_austria"}}}
@@ -592,7 +675,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
                   .required=${!0}
                   @value-changed=${this._valueChanged}
                 ></ha-selector>
-              `:V`<p>${St("common.loading")}</p>`}
+              `:F`<p>${St("common.loading")}</p>`}
 
           <ha-textfield
             label=${St("editor.name")}
@@ -605,7 +688,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
         <div class="editor-section">
           <div class="section-header">${St("editor.section_display")}</div>
 
-          ${this.hass?V`
+          ${this.hass?F`
                 <ha-selector
                   .hass=${this.hass}
                   .selector=${{number:{min:1,max:10,step:1,mode:"slider"}}}
@@ -658,7 +741,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
 
           <div class="editor-hint">${St("editor.connector_filter_hint")}</div>
           <div class="chip-row">
-            ${Lt.map(e=>V`
+            ${Lt.map(e=>F`
                 <button
                   type="button"
                   class=${t.includes(e)?"filter-chip active":"filter-chip"}
@@ -672,26 +755,26 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
           <div class="editor-hint">${St("editor.hint_compliance")}</div>
         </div>
       </div>
-    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Mt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Mt(this,"config-changed",{config:this._config}))}static{this.styles=zt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-12  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Ht=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_amenities:!0,show_pricing:!0,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Ct(this.hass?.language),!this.hass||!this.config)return V`<ha-card
+    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Mt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Mt(this,"config-changed",{config:this._config}))}static{this.styles=Pt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-13  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Ht=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_amenities:!0,show_pricing:!0,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Ct(this.hass?.language),!this.hass||!this.config)return F`<ha-card
         ><div class="empty-state">${St("common.loading")}</div></ha-card
-      >`;const t=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!t)return V`
+      >`;const t=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!t)return F`
         <ha-card>
           ${this._renderHeader()}
           <div class="empty-state">${St("card.no_entity")}</div>
           ${this._renderFooter(void 0)}
         </ha-card>
-      `;const e=t.attributes.stations??[],i=!0===t.attributes.live_status_available,s=this._filterStations(e),r=Math.max(1,this.config.max_stations??10),a=s.slice(0,r),n=a[0],o=a[a.length-1];return V`
+      `;const e=t.attributes.stations??[],i=!0===t.attributes.live_status_available,s=this._filterStations(e),a=Math.max(1,this.config.max_stations??10),r=s.slice(0,a),n=r[0],o=r[r.length-1];return F`
       <ha-card>
         ${this._renderHeader()}
         ${this._renderHero(n,o,s.length,e.length)}
-        ${a.length>0?V`<ul class="stations">
-              ${a.map(t=>this._renderStation(t,i))}
-            </ul>`:V`<div class="empty-state">
+        ${r.length>0?F`<ul class="stations">
+              ${r.map(t=>this._renderStation(t,i))}
+            </ul>`:F`<div class="empty-state">
               ${St("card.no_stations")}
             </div>`}
         ${this._renderFooter(t.attributes.attribution)}
       </ha-card>
-    `}_filterStations(t){const e=this.config.only_available??!1,i=this.config.only_free??!1,s=this.config.connector_types??[];return e||i||0!==s.length?t.filter(t=>{if(e){const e="ACTIVE"===t.stationStatus&&(t.points??[]).some(t=>"AVAILABLE"===t.status);if(!e)return!1}if(i){const e=(t.points??[]).some(t=>t.freeOfCharge);if(!e)return!1}if(s.length>0){const e=new Set((t.points??[]).flatMap(t=>(t.connectorType??[]).map(t=>this._shortConnector(t.consumerName,t.key)))),i=s.some(t=>e.has(t));if(!i)return!1}return!0}):t}_renderHeader(){const t=this.config?.name??"Ladestellen Austria";return V`
+    `}_filterStations(t){const e=this.config.only_available??!1,i=this.config.only_free??!1,s=this.config.connector_types??[];return e||i||0!==s.length?t.filter(t=>{if(e){const e="ACTIVE"===t.stationStatus&&(t.points??[]).some(t=>"AVAILABLE"===t.status);if(!e)return!1}if(i){const e=(t.points??[]).some(t=>t.freeOfCharge);if(!e)return!1}if(s.length>0){const e=new Set((t.points??[]).flatMap(t=>(t.connectorType??[]).map(t=>this._shortConnector(t.consumerName,t.key)))),i=s.some(t=>e.has(t));if(!i)return!1}return!0}):t}_renderHeader(){const t=this.config?.name??"Ladestellen Austria";return F`
       <div class="header">
         <a
           class="brand-link"
@@ -707,22 +790,22 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
         </a>
         <span class="header-title">${t}</span>
       </div>
-    `}_renderHero(t,e,i,s){if(!t)return V`<div class="hero hero--empty">
+    `}_renderHero(t,e,i,s){if(!t)return F`<div class="hero hero--empty">
         <div class="hero-label">${St("card.no_stations")}</div>
-      </div>`;const r=this._formatKm(t.distance),a=this._heroCity(t),n=e?this._formatKm(e.distance):r,o=St("card.hero_range").replace("{min}",this._formatKm(t.distance)).replace("{max}",n),l=i===s?St("card.hero_count").replace("{count}",String(i)):St("card.hero_count_filtered").replace("{filtered}",String(i)).replace("{total}",String(s));return V`
+      </div>`;const a=this._formatKm(t.distance),r=this._heroCity(t),n=e?this._formatKm(e.distance):a,o=St("card.hero_range").replace("{min}",this._formatKm(t.distance)).replace("{max}",n),l=i===s?St("card.hero_count").replace("{count}",String(i)):St("card.hero_count_filtered").replace("{filtered}",String(i)).replace("{total}",String(s));return F`
       <div class="hero">
         <div class="hero-value">
-          <span class="hero-number">${r}</span>
+          <span class="hero-number">${a}</span>
           <span class="hero-unit">km</span>
         </div>
         <div class="hero-context">
           <div class="hero-context-1">
-            ${St("card.hero_context").replace("{city}",a)}
+            ${St("card.hero_context").replace("{city}",r)}
           </div>
           <div class="hero-context-2">${l} · ${o}</div>
         </div>
       </div>
-    `}_heroCity(t){return t.city||t.label||""}_renderStation(t,e){const i=t.points??[],s=i.some(t=>(t.electricityType??[]).includes("DC")),r=i.reduce((t,e)=>Math.max(t,e.capacityKw??0),0),a=Array.from(new Set(i.flatMap(t=>(t.connectorType??[]).map(t=>this._shortConnector(t.consumerName,t.key))))),n=a.length<=2?a.join(", "):`${a.slice(0,2).join(", ")} +${a.length-2}`,o=this._priceText(i),l=i.length,c=i.filter(t=>"AVAILABLE"===t.status).length,d="ACTIVE"===t.stationStatus,h=this._statusLevel(e,d,c,l),p=this._expanded.has(t.stationId),u=`https://www.google.com/maps/search/?api=1&query=${t.location.lat},${t.location.lon}`,f=this.config?.show_amenities??!0,g=this.config?.show_pricing??!0,m=[];return r>0&&m.push(`${r} kW`),n&&m.push(n),g&&o&&m.push(o),V`
+    `}_heroCity(t){return t.city||t.label||""}_renderStation(t,e){const i=t.points??[],s=i.some(t=>(t.electricityType??[]).includes("DC")),a=i.reduce((t,e)=>Math.max(t,e.capacityKw??0),0),r=Array.from(new Set(i.flatMap(t=>(t.connectorType??[]).map(t=>this._shortConnector(t.consumerName,t.key))))),n=r.length<=2?r.join(", "):`${r.slice(0,2).join(", ")} +${r.length-2}`,o=this._priceText(i),l=i.length,c=i.filter(t=>"AVAILABLE"===t.status).length,d="ACTIVE"===t.stationStatus,h=this._statusLevel(e,d,c,l),p=this._expanded.has(t.stationId),u=`https://www.google.com/maps/search/?api=1&query=${t.location.lat},${t.location.lon}`,f=this.config?.show_amenities??!0,g=this.config?.show_pricing??!0,m=[];return a>0&&m.push(`${a} kW`),n&&m.push(n),g&&o&&m.push(o),F`
       <li
         class=${p?"station expanded":"station"}
         @click=${()=>this._toggle(t.stationId)}
@@ -738,10 +821,9 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
           ></span>
           <div class="station-text">
             <div class="station-line-1">
-              <span class="station-name">${t.label}</span>
               <span class="station-metrics">
-                ${m.map((t,e)=>V`
-                    ${e>0?V`<span class="metrics-sep">·</span>`:K}
+                ${m.map((t,e)=>F`
+                    ${e>0?F`<span class="metrics-sep">·</span>`:K}
                     <span
                       class=${this._metricClass(t,s)}
                       >${t}</span
@@ -769,23 +851,29 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
                 icon=${p?"mdi:chevron-up":"mdi:chevron-down"}
               ></ha-icon>
             </div>
-            <div class="station-line-2">${this._address(t)||"—"}</div>
+            <div class="station-name">${t.label}</div>
           </div>
         </div>
         ${p?this._renderStationDetail(t,c,l,e,d,f,u):K}
       </li>
-    `}_metricClass(t,e){return t.endsWith(" kW")?e?"metric metric-kw metric-kw--dc":"metric metric-kw":t===St("card.gratis")?"metric metric-free":t.includes("€")?"metric metric-price":"metric metric-plug"}_renderStationDetail(t,e,i,s,r,a,n){const o=this._amenityItems(t);return V`
+    `}_metricClass(t,e){return t.endsWith(" kW")?e?"metric metric-kw metric-kw--dc":"metric metric-kw":t===St("card.gratis")?"metric metric-free":t.includes("€")?"metric metric-price":"metric metric-plug"}_renderStationDetail(t,e,i,s,a,r,n){const o=this._amenityItems(t),l=s||!a,c=this._address(t);return F`
       <div class="detail">
-        ${s||!r?V`<div class="detail-section">
-              <div class="detail-label">${St("card.availability")}</div>
-              ${this._statusLine(s,r,e,i)}
+        ${c?F`<div class="detail-section">
+              <div class="detail-label">
+                ${St("card.address_heading")}
+              </div>
+              <div class="detail-address">${c}</div>
             </div>`:K}
-        ${a&&o.length>0?V`<div class="detail-section">
+        ${l?F`<div class="detail-section">
+              <div class="detail-label">${St("card.availability")}</div>
+              ${this._statusLine(s,a,e,i)}
+            </div>`:K}
+        ${r&&o.length>0?F`<div class="detail-section">
               <div class="detail-label">
                 ${St("card.amenities_heading")}
               </div>
               <div class="amenities">
-                ${o.map(t=>V`
+                ${o.map(t=>F`
                     <span class="amenity" title=${t.label}>
                       <ha-icon icon=${t.icon}></ha-icon>
                       <span>${t.label}</span>
@@ -804,7 +892,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
             <ha-icon icon="mdi:map-marker-radius-outline"></ha-icon>
             <span>${St("card.open_in_maps")}</span>
           </a>
-          ${t.website?V`<a
+          ${t.website?F`<a
                 class="action-btn"
                 href=${t.website}
                 target="_blank"
@@ -814,7 +902,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
                 <ha-icon icon="mdi:web"></ha-icon>
                 <span>${St("card.website")}</span>
               </a>`:K}
-          ${t.phoneNumber?V`<a
+          ${t.phoneNumber?F`<a
                 class="action-btn"
                 href=${`tel:${t.phoneCountryCode??""}${t.phoneNumber}`}
                 @click=${t=>t.stopPropagation()}
@@ -824,13 +912,13 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
               </a>`:K}
         </div>
       </div>
-    `}_statusLevel(t,e,i,s){return e?t&&0!==s?0===i?"busy":i<s?"partial":"ok":"unknown":"inactive"}_statusAria(t,e,i){return"inactive"===t?St("card.inactive"):"unknown"===t?St("card.status_unknown"):`${e} / ${i} ${St("card.live_suffix")}`}_statusLine(t,e,i,s){const r=this._statusLevel(t,e,i,s);return"inactive"===r?V`<div class="status-row status-${r}">
-        <span class="status-dot status-${r}"></span>
+    `}_statusLevel(t,e,i,s){return e?t&&0!==s?0===i?"busy":i<s?"partial":"ok":"unknown":"inactive"}_statusAria(t,e,i){return"inactive"===t?St("card.inactive"):"unknown"===t?St("card.status_unknown"):`${e} / ${i} ${St("card.live_suffix")}`}_statusLine(t,e,i,s){const a=this._statusLevel(t,e,i,s);return"inactive"===a?F`<div class="status-row status-${a}">
+        <span class="status-dot status-${a}"></span>
         ${St("card.inactive")}
-      </div>`:"unknown"===r?V`<div class="status-row status-${r}">
-        <span class="status-dot status-${r}"></span>
+      </div>`:"unknown"===a?F`<div class="status-row status-${a}">
+        <span class="status-dot status-${a}"></span>
         ${St("card.status_unknown")}
-      </div>`:V`<div class="status-row status-${r}">
-      <span class="status-dot status-${r}"></span>
+      </div>`:F`<div class="status-row status-${a}">
+      <span class="status-dot status-${a}"></span>
       ${St("card.status_count").replace("{avail}",String(i)).replace("{total}",String(s))}
-    </div>`}_toggle(t){const e=new Set(this._expanded);e.has(t)?e.delete(t):e.add(t),this._expanded=e}_onKey(t,e){"Enter"!==t.key&&" "!==t.key||(t.preventDefault(),this._toggle(e))}_priceText(t){if(0===t.length)return"";if(t.some(t=>t.freeOfCharge))return St("card.gratis");const e=t.filter(t=>!t.freeOfCharge&&t.priceCentKwh>0).map(t=>t.priceCentKwh);if(e.length>0)return`${this._formatEuro(Math.min(...e))} €/kWh`;const i=t.filter(t=>!t.freeOfCharge&&t.priceCentMin>0).map(t=>t.priceCentMin);return i.length>0?`${this._formatEuro(Math.min(...i))} €/min`:""}_formatEuro(t){const e=t/100;try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(e)}catch{return e.toFixed(2)}}_address(t){const e=[];t.street&&e.push(t.street);const i=[t.postCode,t.city].filter(Boolean).join(" ");return i&&e.push(i),e.join(", ")}_amenityItems(t){return[{flag:t.greenEnergy,icon:"mdi:leaf",label:St("amenities.green_energy")},{flag:t.freeParking,icon:"mdi:parking",label:St("amenities.free_parking")},{flag:t.roofedParking,icon:"mdi:home-roof",label:St("amenities.roofed_parking")},{flag:t.cateringService,icon:"mdi:silverware-fork-knife",label:St("amenities.catering")},{flag:t.bathroomsAvailable,icon:"mdi:toilet",label:St("amenities.bathrooms")},{flag:t.restingFacilities,icon:"mdi:sofa",label:St("amenities.resting")}].filter(t=>t.flag)}_renderFooter(t){const e=t&&t.includes("E-Control")?t:"Datenquelle: E-Control";return V`<div class="footer">${e}</div>`}_formatKm(t){const e="number"==typeof t?t:parseFloat(String(t??""));if(!Number.isFinite(e))return"–";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(e)}catch{return e.toFixed(2)}}_shortConnector(t,e){switch(t){case"TYPE_2_AC":return"Type 2";case"COMBO2_CCS_DC":return"CCS";case"CHADEMO":return"CHAdeMO";case"TYPE_1_AC":return"Type 1";case"TESLA_S":case"TESLA_R":return"Tesla";case"OTHER":return"DOMESTIC_F"===e?"Schuko":e?.startsWith("CEE")?"CEE":e??"?";default:return t?.replace(/_/g," ")??e??"?"}}static{this.styles=Pt}};t([pt({attribute:!1})],Ht.prototype,"hass",void 0),t([ut()],Ht.prototype,"config",void 0),t([ut()],Ht.prototype,"_expanded",void 0),Ht=t([ct("ladestellen-austria-card")],Ht);export{Ht as LadestellenAustriaCard};
+    </div>`}_toggle(t){const e=new Set(this._expanded);e.has(t)?e.delete(t):e.add(t),this._expanded=e}_onKey(t,e){"Enter"!==t.key&&" "!==t.key||(t.preventDefault(),this._toggle(e))}_priceText(t){if(0===t.length)return"";if(t.some(t=>t.freeOfCharge))return St("card.gratis");const e=t.filter(t=>!t.freeOfCharge&&t.priceCentKwh>0).map(t=>t.priceCentKwh);if(e.length>0)return`${this._formatEuro(Math.min(...e))} €/kWh`;const i=t.filter(t=>!t.freeOfCharge&&t.priceCentMin>0).map(t=>t.priceCentMin);return i.length>0?`${this._formatEuro(Math.min(...i))} €/min`:""}_formatEuro(t){const e=t/100;try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(e)}catch{return e.toFixed(2)}}_address(t){const e=[];t.street&&e.push(t.street);const i=[t.postCode,t.city].filter(Boolean).join(" ");return i&&e.push(i),e.join(", ")}_amenityItems(t){return[{flag:t.greenEnergy,icon:"mdi:leaf",label:St("amenities.green_energy")},{flag:t.freeParking,icon:"mdi:parking",label:St("amenities.free_parking")},{flag:t.roofedParking,icon:"mdi:home-roof",label:St("amenities.roofed_parking")},{flag:t.cateringService,icon:"mdi:silverware-fork-knife",label:St("amenities.catering")},{flag:t.bathroomsAvailable,icon:"mdi:toilet",label:St("amenities.bathrooms")},{flag:t.restingFacilities,icon:"mdi:sofa",label:St("amenities.resting")}].filter(t=>t.flag)}_renderFooter(t){const e=t&&t.includes("E-Control")?t:"Datenquelle: E-Control";return F`<div class="footer">${e}</div>`}_formatKm(t){const e="number"==typeof t?t:parseFloat(String(t??""));if(!Number.isFinite(e))return"–";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(e)}catch{return e.toFixed(2)}}_shortConnector(t,e){switch(t){case"TYPE_2_AC":return"Type 2";case"COMBO2_CCS_DC":return"CCS";case"CHADEMO":return"CHAdeMO";case"TYPE_1_AC":return"Type 1";case"TESLA_S":case"TESLA_R":return"Tesla";case"OTHER":return"DOMESTIC_F"===e?"Schuko":e?.startsWith("CEE")?"CEE":e??"?";default:return t?.replace(/_/g," ")??e??"?"}}static{this.styles=zt}};t([pt({attribute:!1})],Ht.prototype,"hass",void 0),t([ut()],Ht.prototype,"config",void 0),t([ut()],Ht.prototype,"_expanded",void 0),Ht=t([ct("ladestellen-austria-card")],Ht);export{Ht as LadestellenAustriaCard};
