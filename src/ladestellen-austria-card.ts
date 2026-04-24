@@ -164,6 +164,20 @@ export class LadestellenAustriaCard extends LitElement {
     return Math.min(3 + Math.ceil(max / 3), 10);
   }
 
+  public getGridOptions(): {
+    columns: number | "full";
+    rows: number | "auto";
+    min_columns: number;
+    min_rows: number;
+  } {
+    return {
+      columns: 12,
+      rows: "auto",
+      min_columns: 6,
+      min_rows: 3,
+    };
+  }
+
   protected render(): TemplateResult {
     // Push hass.language into the localize() helper on every render so the
     // card always matches HA's server-side user-profile language setting,
@@ -256,7 +270,7 @@ export class LadestellenAustriaCard extends LitElement {
     return html`
       <ha-card>
         ${customTitle
-          ? html`<div class="custom-title">${customTitle}</div>`
+          ? html`<h3 class="custom-title">${customTitle}</h3>`
           : nothing}
         ${showHero
           ? this._renderHero(
@@ -555,9 +569,9 @@ export class LadestellenAustriaCard extends LitElement {
     rawTotal: number,
   ): TemplateResult {
     if (!nearest) {
-      return html`<div class="hero hero--empty">
+      return html`<section class="hero hero--empty" aria-live="polite">
         <div class="hero-label">${localize("card.no_stations")}</div>
-      </div>`;
+      </section>`;
     }
     const km = this._formatKm(nearest.distance);
     const cityLabel = this._heroCity(nearest);
@@ -572,7 +586,7 @@ export class LadestellenAustriaCard extends LitElement {
             .replace("{filtered}", String(filteredTotal))
             .replace("{total}", String(rawTotal));
     return html`
-      <div class="hero">
+      <section class="hero" aria-live="polite">
         <div class="hero-value">
           <span class="hero-number">${km}</span>
           <span class="hero-unit">km</span>
@@ -583,7 +597,7 @@ export class LadestellenAustriaCard extends LitElement {
           </div>
           <div class="hero-context-2">${countText} · ${rangeText}</div>
         </div>
-      </div>
+      </section>
     `;
   }
 
@@ -996,9 +1010,14 @@ export class LadestellenAustriaCard extends LitElement {
           ${localize("card.opening_hours_heading")}
         </div>
         <div class="hours-row">
-          <div class="hours-lines">
-            ${lines.map((l) => html`<div class="hours-line">${l}</div>`)}
-          </div>
+          <dl class="hours-lines">
+            ${lines.map(
+              (l) => html`<div class="hours-line">
+                <dt class="hours-day">${l.day}</dt>
+                <dd class="hours-time">${l.time}</dd>
+              </div>`,
+            )}
+          </dl>
           ${chipText
             ? html`<span class=${`hours-chip ${chipClass ?? ""}`}>
                 <span class=${`status-dot ${chipClass ?? ""}`}></span>
@@ -1010,8 +1029,11 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  private _formatOpeningHours(hours: OpeningHours[]): string[] {
-    const out: string[] = [];
+  private _formatOpeningHours(hours: OpeningHours[]): Array<{
+    day: string;
+    time: string;
+  }> {
+    const out: Array<{ day: string; time: string }> = [];
     for (const h of hours) {
       const line = this._formatSingleRange(h);
       if (line) out.push(line);
@@ -1019,7 +1041,9 @@ export class LadestellenAustriaCard extends LitElement {
     return out;
   }
 
-  private _formatSingleRange(h: OpeningHours): string | null {
+  private _formatSingleRange(
+    h: OpeningHours,
+  ): { day: string; time: string } | null {
     const from = this._shortDay(h.fromWeekday);
     const to = this._shortDay(h.toWeekday);
     if (!from || !to) return null;
@@ -1027,11 +1051,11 @@ export class LadestellenAustriaCard extends LitElement {
       h.fromTime === "00:00" &&
       (h.toTime === "23:59" || h.toTime === "24:00");
     const sameDay = h.fromWeekday === h.toWeekday;
-    const dayRange = sameDay ? from : `${from}–${to}`;
-    if (isFull24h) {
-      return `${dayRange} ${localize("card.always_open_short")}`;
-    }
-    return `${dayRange} ${h.fromTime}–${h.toTime}`;
+    const day = sameDay ? from : `${from}–${to}`;
+    const time = isFull24h
+      ? localize("card.always_open_short")
+      : `${h.fromTime}–${h.toTime}`;
+    return { day, time };
   }
 
   private _shortDay(name: string): string {
