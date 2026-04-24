@@ -455,16 +455,12 @@ export class LadestellenAustriaCard extends LitElement {
     const amenities = this._amenityItems(station);
     const showStatus = liveAvailable || !stationActive;
     const address = this._address(station);
+    // Order within the expanded panel: availability → amenities → address
+    // → actions. Address sits second-to-last because tapping the Maps
+    // action reveals the location visually anyway — the written address
+    // is a supporting reference, not a primary finding.
     return html`
       <div class="detail">
-        ${address
-          ? html`<div class="detail-section">
-              <div class="detail-label">
-                ${localize("card.address_heading")}
-              </div>
-              <div class="detail-address">${address}</div>
-            </div>`
-          : nothing}
         ${showStatus
           ? html`<div class="detail-section">
               <div class="detail-label">${localize("card.availability")}</div>
@@ -491,6 +487,14 @@ export class LadestellenAustriaCard extends LitElement {
                   `,
                 )}
               </div>
+            </div>`
+          : nothing}
+        ${address
+          ? html`<div class="detail-section">
+              <div class="detail-label">
+                ${localize("card.address_heading")}
+              </div>
+              <div class="detail-address">${address}</div>
             </div>`
           : nothing}
         <div class="detail-actions">
