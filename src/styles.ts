@@ -713,12 +713,15 @@ export const cardStyles = css`
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    padding: 10px 8px 14px;
-    display: flex;
-    flex-direction: column;
+    /* Two-row grid: kW fills the large top cell and centres in both
+       axes; connector sits in the small bottom cell. Bottom padding is
+       kept clear of the status dot, which sits absolutely over the
+       bottom-right corner. */
+    padding: 8px 8px 16px;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    justify-items: center;
     align-items: center;
-    justify-content: center;
-    gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
@@ -754,6 +757,9 @@ export const cardStyles = css`
     line-height: 1;
     white-space: nowrap;
   }
+  /* Number + unit share the same primary-text colour on every slot —
+     status tint lives on the slot background + status dot, not on the
+     kW label. DC is carried by the top-left bolt icon. */
   .rack-kw-num {
     font-size: 1.15rem;
     font-weight: var(--l-fw-bld);
@@ -762,22 +768,15 @@ export const cardStyles = css`
   .rack-kw-unit {
     font-size: 0.72rem;
     font-weight: var(--l-fw-med);
-    color: var(--warning-color, #f57c00);
     letter-spacing: 0.01em;
-  }
-  .rack-slot:not([data-status="warn"]) .rack-kw-unit {
-    color: var(--secondary-text-color);
-  }
-  /* DC-points re-amber the kW unit regardless of slot status. The DC
-     corner badge itself is always warning-accented. */
-  .rack-slot:has(.dc-badge) .rack-kw-unit {
-    color: var(--warning-color, #f57c00);
   }
   .rack-connector {
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.005em;
-    max-width: 100%;
+    /* Reserve the rightmost ~14px so the centred label doesn't run into
+       the bottom-right status dot on long connector names. */
+    max-width: calc(100% - 12px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -996,7 +995,7 @@ export const cardStyles = css`
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 8px 4px 12px;
+      padding: 6px 4px 12px;
     }
     .rack-kw-num {
       font-size: 1rem;
