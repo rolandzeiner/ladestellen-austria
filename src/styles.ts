@@ -836,13 +836,14 @@ export const cardStyles = css`
     border: 1px solid
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
-  /* AC/DC badge — small uppercase tag in the top-left corner. DC takes
-     the warning accent (fast-charge signal), AC stays secondary so it
-     recedes on the much more common AC case. */
+  /* AC/DC badge — small uppercase tag centred at the top of the slot.
+     DC takes the warning accent (fast-charge signal), AC stays
+     secondary so it recedes on the much more common AC case. */
   .power-badge {
     position: absolute;
     top: 4px;
-    left: 5px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 9px;
     font-weight: var(--l-fw-bld);
     letter-spacing: 0.08em;
@@ -1049,7 +1050,6 @@ export const cardStyles = css`
     }
     .power-badge {
       top: 3px;
-      left: 4px;
       font-size: 8px;
       letter-spacing: 0.06em;
     }

@@ -825,13 +825,14 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     border: 1px solid
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
-  /* AC/DC badge — small uppercase tag in the top-left corner. DC takes
-     the warning accent (fast-charge signal), AC stays secondary so it
-     recedes on the much more common AC case. */
+  /* AC/DC badge — small uppercase tag centred at the top of the slot.
+     DC takes the warning accent (fast-charge signal), AC stays
+     secondary so it recedes on the much more common AC case. */
   .power-badge {
     position: absolute;
     top: 4px;
-    left: 5px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 9px;
     font-weight: var(--l-fw-bld);
     letter-spacing: 0.08em;
@@ -1038,7 +1039,6 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     }
     .power-badge {
       top: 3px;
-      left: 4px;
       font-size: 8px;
       letter-spacing: 0.06em;
     }
@@ -1368,7 +1368,7 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
               </div>
             `:W}
       </div>
-    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-38  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
+    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-39  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
         ><div class="empty-state">${Ne("common.loading")}</div></ha-card
       >`;const e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return B`
         <ha-card>
