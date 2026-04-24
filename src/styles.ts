@@ -729,13 +729,15 @@ export const cardStyles = css`
     position: relative;
     flex: 0 0 80px;
     width: 80px;
-    height: 72px;
+    /* Dynamic height — content + padding size the slot. kW + connector
+       sit as a tight vertically-centred group; dot + power-badge live
+       absolute at the top so removing the bottom row freed the extra
+       square height. min-height keeps a regular slot at least as tall
+       as a warn slot (wrench icon), so a mixed row stays consistent. */
+    min-height: 58px;
     box-sizing: border-box;
     border-radius: 10px;
-    /* kW + connector sit as a tight vertically-centred group (small gap
-       between them); the status dot lives absolute in the bottom-right
-       corner so it stays put regardless of connector length. */
-    padding: 8px;
+    padding: 16px 8px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -790,9 +792,7 @@ export const cardStyles = css`
     letter-spacing: 0.01em;
   }
   .rack-connector {
-    /* Reserve ~14px on the right so the centred label stays clear of the
-       absolute-positioned status dot; overflow clips via ellipsis. */
-    max-width: calc(100% - 14px);
+    max-width: 100%;
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.005em;
@@ -809,14 +809,13 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
   }
-  /* Status dot — anchored to the slot's bottom-right corner. Sitting
-     absolute keeps it inside the slot even when the connector label
-     overflows; the connector's right-margin reservation handles the
-     text/dot collision. */
+  /* Status dot — top-left corner, mirroring the power-badge at top-
+     centre for a balanced header band. Absolute keeps it stable across
+     varying connector label widths below. */
   .rack-dot {
     position: absolute;
-    bottom: 5px;
-    right: 6px;
+    top: 6px;
+    left: 7px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -1025,8 +1024,8 @@ export const cardStyles = css`
     .rack-slot {
       flex: 0 0 60px;
       width: 60px;
-      height: 56px;
-      padding: 6px;
+      min-height: 46px;
+      padding: 12px 4px 6px;
       gap: 2px;
     }
     .rack-kw-num {
@@ -1037,14 +1036,13 @@ export const cardStyles = css`
     }
     .rack-connector {
       font-size: 10px;
-      max-width: calc(100% - 12px);
     }
     .rack-warn-icon {
       --mdc-icon-size: 22px;
     }
     .rack-dot {
-      bottom: 4px;
-      right: 5px;
+      top: 4px;
+      left: 5px;
       width: 7px;
       height: 7px;
     }
