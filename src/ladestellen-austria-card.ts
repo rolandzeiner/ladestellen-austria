@@ -142,7 +142,6 @@ export class LadestellenAustriaCard extends LitElement {
     if (!stateObj) {
       return html`
         <ha-card>
-          ${this._renderHeader()}
           <div class="empty-state">${localize("card.no_entity")}</div>
           ${this._renderFooter(undefined)}
         </ha-card>
@@ -163,10 +162,16 @@ export class LadestellenAustriaCard extends LitElement {
     const farthestShown = visible[visible.length - 1];
 
     const showHero = this.config.show_hero !== false;
+    const customTitle =
+      this.config.name && this.config.name !== "Ladestellen Austria"
+        ? this.config.name
+        : null;
 
     return html`
       <ha-card>
-        ${this._renderHeader()}
+        ${customTitle
+          ? html`<div class="custom-title">${customTitle}</div>`
+          : nothing}
         ${showHero
           ? this._renderHero(
               nearestByDistance,
@@ -241,18 +246,13 @@ export class LadestellenAustriaCard extends LitElement {
     });
   }
 
-  // §3c — E-Control logo-link required. The PNG lives in the integration's
-  // www/ directory, served by HA's static-path registration under
-  // /ladestellen_austria/. The <img> + <a> wrapper preserves the legal
-  // link-back to www.e-control.at; never remove the href or the alt text.
-  //
-  // When logo_adapt_to_theme is on, we mask the PNG to pure black (light
-  // theme) or pure white (dark theme) via CSS filter, so the logo reads
-  // as a silhouette matching --primary-text-color. Dark-mode detection
-  // uses hass.themes.darkMode — HA's authoritative source, which updates
-  // reactively when the user flips themes.
-  private _renderHeader(): TemplateResult {
-    const title = this.config?.name ?? "Ladestellen Austria";
+  // §3c and §3d compliance rolled into a single footer row: logo-link
+  // on the left, "Datenquelle: E-Control" on the right. Hard-coded
+  // attribution text as a fallback in case a user template sensor
+  // strips the upstream attribute. When logo_adapt_to_theme is on, the
+  // PNG renders as a silhouette (filter brightness(0) [invert(1)]) that
+  // follows hass.themes.darkMode.
+  private _renderFooter(attr: string | undefined): TemplateResult {
     const adaptive = this.config?.logo_adapt_to_theme === true;
     const darkMode = Boolean(
       (this.hass?.themes as { darkMode?: boolean } | undefined)?.darkMode,
@@ -260,8 +260,10 @@ export class LadestellenAustriaCard extends LitElement {
     const logoClasses = adaptive
       ? `brand-logo adaptive ${darkMode ? "adaptive-dark" : "adaptive-light"}`
       : "brand-logo";
+    const text =
+      attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
     return html`
-      <div class="header">
+      <div class="footer">
         <a
           class="brand-link"
           href="https://www.e-control.at/"
@@ -276,7 +278,7 @@ export class LadestellenAustriaCard extends LitElement {
             alt="E-Control"
           />
         </a>
-        <span class="header-title">${title}</span>
+        <span class="attribution-text">${text}</span>
       </div>
     `;
   }
@@ -340,11 +342,13 @@ export class LadestellenAustriaCard extends LitElement {
         ),
       ),
     );
-    const connectorSummary =
-      connectorTokens.length <= 2
-        ? connectorTokens.join(", ")
-        : `${connectorTokens.slice(0, 2).join(", ")} +${connectorTokens.length - 2}`;
+    // Cap inline connector chips at 3, roll the rest into a "+N" chip so
+    // wide rows stay scannable. The full list still appears in the
+    // expanded detail via the original points[] data.
+    const visibleConnectors = connectorTokens.slice(0, 3);
+    const extraConnectors = connectorTokens.length - visibleConnectors.length;
     const priceText = this._priceText(points);
+    const priceIsFree = points.some((p) => p.freeOfCharge);
 
     const totalPoints = points.length;
     const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
@@ -360,11 +364,6 @@ export class LadestellenAustriaCard extends LitElement {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
-
-    const metricsParts: string[] = [];
-    if (maxKw > 0) metricsParts.push(`${maxKw} kW`);
-    if (connectorSummary) metricsParts.push(connectorSummary);
-    if (showPricing && priceText) metricsParts.push(priceText);
 
     return html`
       <li
@@ -383,17 +382,28 @@ export class LadestellenAustriaCard extends LitElement {
           <div class="station-text">
             <div class="station-line-1">
               <span class="station-metrics">
-                ${metricsParts.map(
-                  (part, i) => html`
-                    ${i > 0
-                      ? html`<span class="metrics-sep">·</span>`
-                      : nothing}
-                    <span
-                      class=${this._metricClass(part, isDC)}
-                      >${part}</span
-                    >
-                  `,
+                ${maxKw > 0
+                  ? html`<span
+                      class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}
+                      >${maxKw}&thinsp;kW</span
+                    >`
+                  : nothing}
+                ${visibleConnectors.map(
+                  (t) => html`<span class="pill plug">${t}</span>`,
                 )}
+                ${extraConnectors > 0
+                  ? html`<span class="pill plug plug-more"
+                      >+${extraConnectors}</span
+                    >`
+                  : nothing}
+                ${showPricing && priceText
+                  ? html`<span
+                      class=${priceIsFree
+                        ? "metric-price metric-free"
+                        : "metric-price"}
+                      >${priceText}</span
+                    >`
+                  : nothing}
               </span>
               <a
                 class="station-distance"
@@ -434,14 +444,6 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  private _metricClass(part: string, isDC: boolean): string {
-    if (part.endsWith(" kW")) {
-      return isDC ? "metric metric-kw metric-kw--dc" : "metric metric-kw";
-    }
-    if (part === localize("card.gratis")) return "metric metric-free";
-    if (part.includes("€")) return "metric metric-price";
-    return "metric metric-plug";
-  }
 
   private _renderStationDetail(
     station: Station,
@@ -672,14 +674,6 @@ export class LadestellenAustriaCard extends LitElement {
         label: localize("amenities.resting"),
       },
     ].filter((i) => i.flag);
-  }
-
-  // §3d — attribution footer. Hard-coded fallback in case a template sensor
-  // strips the upstream attribute.
-  private _renderFooter(attr: string | undefined): TemplateResult {
-    const text =
-      attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
-    return html`<div class="footer">${text}</div>`;
   }
 
   private _formatKm(value: string | number | undefined): string {
