@@ -97,10 +97,8 @@ class NearestStationSensor(
             "station_count": data.get("count", 0),
             "stations": stations,
             # Exposed so the card can decide whether to render live-count
-            # chips; set by the coordinator to True when the parallel
-            # /datex2 fetch returned a non-empty evseId→status map, False
-            # otherwise. The card falls back to the /search-default
-            # AVAILABLE values when this flag is False.
+            # chips. /search returns live per-point status inline, so this
+            # is True on every successful refresh.
             "live_status_available": bool(data.get("live_status_available", False)),
             # Dynamic-tracker mode — the card hides pinning and the main
             # hero shows a "Folgt: device_tracker.xxx" indicator when
