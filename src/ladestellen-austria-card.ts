@@ -31,8 +31,23 @@ import type {
 import { CARD_VERSION } from "./const";
 import { localize, setLanguage } from "./localize/localize";
 import { cardStyles } from "./styles";
+import {
+  formatCent,
+  formatEuro,
+  formatKw,
+  normStatus,
+  pointConnectorLabel,
+  pointPowerType,
+  pointStatusLabel,
+  rackSlotStatus,
+  shortConnector,
+} from "./utils";
 
 import "./editor";
+// Second card type ships in the same bundle — its @customElement
+// decorator registers on module load, its window.customCards push
+// runs, and Rollup rolls it into ladestellen-austria-card.js.
+import "./parking-card";
 
 console.info(
   `%c  Ladestellen Austria Card  %c  ${localize("common.version")} ${CARD_VERSION}  `,
@@ -66,7 +81,6 @@ const DEFAULT_MAX_STATIONS = 10;
 const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
 type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
-type RackStatus = "ok" | "busy" | "warn" | "unknown" | "empty";
 
 const WEEKDAY_NAME_TO_IDX: Record<string, number> = {
   MONDAY: 0,
@@ -420,7 +434,7 @@ export class LadestellenAustriaCard extends LitElement {
         const stationTokens = new Set(
           (s.points ?? []).flatMap((p) =>
             (p.connectorType ?? []).map((c) =>
-              this._shortConnector(c.consumerName, c.key),
+              shortConnector(c.consumerName, c.key),
             ),
           ),
         );
@@ -566,7 +580,7 @@ export class LadestellenAustriaCard extends LitElement {
       new Set(
         points.flatMap((p) =>
           (p.connectorType ?? []).map((c) =>
-            this._shortConnector(c.consumerName, c.key),
+            shortConnector(c.consumerName, c.key),
           ),
         ),
       ),
@@ -581,7 +595,7 @@ export class LadestellenAustriaCard extends LitElement {
 
     const totalPoints = points.length;
     const availPoints = points.filter(
-      (p) => this._normStatus(p.status) === "AVAILABLE",
+      (p) => normStatus(p.status) === "AVAILABLE",
     ).length;
     const stationActive = station.stationStatus === "ACTIVE";
     const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
@@ -839,8 +853,8 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _renderRackSlot(point: Point): TemplateResult {
-    const powerType = this._pointPowerType(point);
-    const statusCat = this._rackSlotStatus(point.status);
+    const powerType = pointPowerType(point);
+    const statusCat = rackSlotStatus(point.status);
     const tooltip = this._pointTooltip(point);
     const ariaLabel = this._pointAriaLabel(point, powerType);
     const badge = powerType
@@ -872,8 +886,8 @@ export class LadestellenAustriaCard extends LitElement {
         </div>
       `;
     }
-    const connector = this._pointConnectorLabel(point);
-    const kwText = this._formatKw(point.capacityKw);
+    const connector = pointConnectorLabel(point);
+    const kwText = formatKw(point.capacityKw);
     return html`
       <div
         class="rack-slot"
@@ -903,135 +917,35 @@ export class LadestellenAustriaCard extends LitElement {
     const parts: string[] = [];
     if (powerType) parts.push(powerType.toUpperCase());
     if (point.capacityKw) {
-      parts.push(`${this._formatKw(point.capacityKw)} kW`);
+      parts.push(`${formatKw(point.capacityKw)} kW`);
     }
-    const connector = this._pointConnectorLabel(point);
+    const connector = pointConnectorLabel(point);
     if (connector && connector !== "–") parts.push(connector);
-    const status = this._pointStatusLabel(point.status);
+    const status = pointStatusLabel(point.status);
     if (status) parts.push(status);
     return parts.join(" · ");
-  }
-
-  // Resolve the slot's AC/DC label from point.electricityType. API emits
-  // values like "DC", "AC_1_PHASE", "AC_3_PHASE" — we collapse to two
-  // buckets since the phase detail isn't actionable at rack-glance level.
-  // Returns null when no recognised value is present.
-  private _pointPowerType(point: Point): "dc" | "ac" | null {
-    const types = point.electricityType ?? [];
-    if (types.some((t) => t === "DC" || t?.startsWith("DC"))) return "dc";
-    if (types.some((t) => t?.startsWith("AC"))) return "ac";
-    return null;
-  }
-
-  // The API is inconsistent with status casing + punctuation: the same
-  // "out of order" appears as `OUTOFORDER` in EVN responses but is
-  // documented as `OUT_OF_ORDER` in the DATEX II spec. Normalising
-  // removes both variants of that trap.
-  private _normStatus(status: string): string {
-    return (status ?? "").toUpperCase().replace(/_/g, "");
-  }
-
-  private _rackSlotStatus(status: string): RackStatus {
-    const s = this._normStatus(status);
-    if (s === "AVAILABLE") return "ok";
-    if (s === "CHARGING" || s === "OCCUPIED" || s === "RESERVED" || s === "BLOCKED") {
-      return "busy";
-    }
-    if (
-      s === "OUTOFORDER" ||
-      s === "FAULTED" ||
-      s === "INOPERATIVE" ||
-      s === "UNAVAILABLE"
-    ) {
-      return "warn";
-    }
-    // UNKNOWN means the operator isn't currently reporting a live status for
-    // this point — distinct from "empty" (PLANNED/REMOVED), which is for
-    // non-existent slots. UNKNOWN keeps kW + connector visible so users can
-    // still see what the point *is*; only the colour cue (neutral muted
-    // grey, no dashed border) signals "we don't have live data right now".
-    if (s === "UNKNOWN") return "unknown";
-    return "empty";
-  }
-
-  private _pointConnectorLabel(point: Point): string {
-    const first = (point.connectorType ?? [])[0];
-    if (!first) return "–";
-    return this._shortConnector(first.consumerName, first.key);
-  }
-
-  // Austrian comma decimals; preserves API precision (§3i). 3.7 → "3,7",
-  // 22 → "22", 80 → "80". Up to one fractional digit.
-  private _formatKw(v: number | undefined): string {
-    if (v == null || !Number.isFinite(v)) return "–";
-    try {
-      return new Intl.NumberFormat("de-AT", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 1,
-      }).format(v);
-    } catch {
-      return String(v).replace(".", ",");
-    }
-  }
-
-  // Raw cent-value formatter — used for blocking-fee rate (e.g. 10,01 ¢/min).
-  // Unlike _formatEuro (which divides by 100), this preserves the cent value.
-  private _formatCent(value: number): string {
-    if (!Number.isFinite(value)) return "0";
-    try {
-      return new Intl.NumberFormat("de-AT", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return String(value).replace(".", ",");
-    }
   }
 
   // Tooltip for a rack slot. evseId + localized status + any active fees.
   // Newline-separated; browsers render \n in native title tooltips.
   private _pointTooltip(point: Point): string {
     const lines = [
-      `${point.evseId ?? ""} · ${this._pointStatusLabel(point.status)}`.trim(),
+      `${point.evseId ?? ""} · ${pointStatusLabel(point.status)}`.trim(),
     ];
     const startCent = point.startFeeCent ?? 0;
     if (startCent > 0) {
       lines.push(
-        `${localize("card.start_fee_label")}: ${this._formatEuro(startCent)} €`,
+        `${localize("card.start_fee_label")}: ${formatEuro(startCent)} €`,
       );
     }
     const blockCent = point.blockingFeeCentMin ?? 0;
     const blockFrom = point.blockingFeeFromMinute ?? 0;
     if (blockCent > 0 && blockFrom > 0) {
       lines.push(
-        `${this._formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
+        `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
       );
     }
     return lines.join("\n");
-  }
-
-  private _pointStatusLabel(status: string): string {
-    if (!status) return "";
-    const s = this._normStatus(status);
-    const buckets: Record<string, string> = {
-      AVAILABLE: "available",
-      CHARGING: "charging",
-      OCCUPIED: "occupied",
-      RESERVED: "reserved",
-      BLOCKED: "blocked",
-      OUTOFORDER: "fault",
-      FAULTED: "fault",
-      INOPERATIVE: "fault",
-      UNAVAILABLE: "unavailable",
-      UNKNOWN: "unknown",
-      PLANNED: "planned",
-      REMOVED: "removed",
-    };
-    const bucket = buckets[s];
-    if (!bucket) return status;
-    const key = `card.point_status_${bucket}`;
-    const resolved = localize(key);
-    return resolved === key ? status : resolved;
   }
 
   private _renderOpeningHoursSection(
@@ -1249,14 +1163,14 @@ export class LadestellenAustriaCard extends LitElement {
     if (startFees.length > 0) {
       const maxCent = Math.max(...startFees);
       parts.push(
-        `+ ${this._formatEuro(maxCent)} € ${localize("card.start_fee_label")}`,
+        `+ ${formatEuro(maxCent)} € ${localize("card.start_fee_label")}`,
       );
     }
     if (blocking.length > 0) {
       const maxRate = Math.max(...blocking.map((v) => v.cent));
       const minFrom = Math.min(...blocking.map((v) => v.fromMin));
       parts.push(
-        `${this._formatCent(maxRate)} ${localize(
+        `${formatCent(maxRate)} ${localize(
           "card.blocking_fee_label",
         ).replace("{from}", String(minFrom))}`,
       );
@@ -1281,7 +1195,7 @@ export class LadestellenAustriaCard extends LitElement {
     let busy = 0;
     let warn = 0;
     for (const p of points) {
-      const s = this._normStatus(p.status);
+      const s = normStatus(p.status);
       if (s === "AVAILABLE") avail++;
       else if (
         s === "CHARGING" ||
@@ -1340,27 +1254,15 @@ export class LadestellenAustriaCard extends LitElement {
       .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
       .map((p) => p.priceCentKwh);
     if (kwhPrices.length > 0) {
-      return `${this._formatEuro(Math.min(...kwhPrices))} €/kWh`;
+      return `${formatEuro(Math.min(...kwhPrices))} €/kWh`;
     }
     const minPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentMin > 0)
       .map((p) => p.priceCentMin);
     if (minPrices.length > 0) {
-      return `${this._formatEuro(Math.min(...minPrices))} €/min`;
+      return `${formatEuro(Math.min(...minPrices))} €/min`;
     }
     return "";
-  }
-
-  private _formatEuro(cents: number): string {
-    const value = cents / 100;
-    try {
-      return new Intl.NumberFormat("de-AT", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return value.toFixed(2);
-    }
   }
 
   private _address(station: Station): string {
@@ -1434,28 +1336,6 @@ export class LadestellenAustriaCard extends LitElement {
       }).format(n);
     } catch {
       return n.toFixed(2);
-    }
-  }
-
-  private _shortConnector(consumer: string, key: string): string {
-    switch (consumer) {
-      case "TYPE_2_AC":
-        return "Type 2";
-      case "COMBO2_CCS_DC":
-        return "CCS";
-      case "CHADEMO":
-        return "CHAdeMO";
-      case "TYPE_1_AC":
-        return "Type 1";
-      case "TESLA_S":
-      case "TESLA_R":
-        return "Tesla";
-      case "OTHER":
-        if (key === "DOMESTIC_F") return "Schuko";
-        if (key?.startsWith("CEE")) return "CEE";
-        return key ?? "?";
-      default:
-        return consumer?.replace(/_/g, " ") ?? key ?? "?";
     }
   }
 

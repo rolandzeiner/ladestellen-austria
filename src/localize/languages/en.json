@@ -49,6 +49,21 @@
     "point_status_removed": "Removed",
     "tariff": "Tariff"
   },
+  "parking": {
+    "card_name": "Ladestellen Austria — Parking",
+    "description": "Single station, points rendered as parking slots viewed from above.",
+    "editor_station_heading": "Station",
+    "pick_station_hint": "Pick one station from the sensor. The card shows that station's charging points as parking slots.",
+    "no_station_selected": "Pick a station in the card editor.",
+    "station_not_found": "The selected station is not in the sensor's current results.",
+    "station_not_in_range": "Selected station not in range",
+    "available_count": "{avail} of {total} free",
+    "no_points": "No charging points reported for this station.",
+    "slot_status_free": "free",
+    "slot_status_busy": "in use",
+    "slot_status_warn": "out of order",
+    "slot_status_unknown": "unknown"
+  },
   "amenities": {
     "green_energy": "Green energy",
     "free_parking": "Free parking",
