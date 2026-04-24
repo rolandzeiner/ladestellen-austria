@@ -713,11 +713,9 @@ export const cardStyles = css`
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    /* Two-row grid: kW fills the large top cell and centres in both
-       axes; connector sits in the small bottom cell. Bottom padding is
-       kept clear of the status dot, which sits absolutely over the
-       bottom-right corner. */
-    padding: 8px 8px 16px;
+    /* Two-row grid: kW fills the large top cell, centred in both axes.
+       Bottom row is a flex band holding connector + status dot. */
+    padding: 8px;
     display: grid;
     grid-template-rows: 1fr auto;
     justify-items: center;
@@ -726,6 +724,12 @@ export const cardStyles = css`
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
     cursor: default;
+  }
+  .rack-bottom {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .rack-slot[data-status="ok"] {
     background: color-mix(in srgb, var(--success-color, #22c55e) 14%, transparent);
@@ -771,12 +775,12 @@ export const cardStyles = css`
     letter-spacing: 0.01em;
   }
   .rack-connector {
+    flex: 1;
+    min-width: 0;
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.005em;
-    /* Reserve the rightmost ~14px so the centred label doesn't run into
-       the bottom-right status dot on long connector names. */
-    max-width: calc(100% - 12px);
+    text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -789,17 +793,16 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
   }
-  /* Status dot — pulled out of the flex flow and tucked into the
-     bottom-right corner so it reads as a quiet indicator rather than a
-     centred headline. */
+  /* Status dot — bottom-right corner of the slot, in the same row as
+     the connector so they read as one bottom band. The warn-slot
+     variant (wrench above, dot alone below) keeps the dot right-
+     aligned too via margin-left: auto on the rack-bottom flex. */
   .rack-dot {
-    position: absolute;
-    bottom: 5px;
-    right: 6px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+    margin-left: auto;
   }
   .rack-dot.status-ok {
     background: var(--l-dot-ok);
@@ -995,7 +998,7 @@ export const cardStyles = css`
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 6px 4px 12px;
+      padding: 6px;
     }
     .rack-kw-num {
       font-size: 1rem;
@@ -1010,10 +1013,11 @@ export const cardStyles = css`
       --mdc-icon-size: 22px;
     }
     .rack-dot {
-      bottom: 4px;
-      right: 4px;
       width: 7px;
       height: 7px;
+    }
+    .rack-bottom {
+      gap: 4px;
     }
     .dc-badge {
       top: 2px;
