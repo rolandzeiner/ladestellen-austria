@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2025.1-blue.svg)](https://www.home-assistant.io/)
-[![Version](https://img.shields.io/badge/version-0.2.1-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
+[![Version](https://img.shields.io/badge/version-0.2.2-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![vibe-coded](https://img.shields.io/badge/vibe-coded-ff69b4?logo=musicbrainz&logoColor=white)](https://en.wikipedia.org/wiki/Vibe_coding)
 
@@ -19,7 +19,8 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - Reconfiguration flow to change credentials, location, or polling interval without losing entity history.
 - Strict-typed, async-only. *(0.2.0)*
 - **Dynamic location mode** *(0.2.0)* — optionally point the config entry at a `device_tracker` (e.g. your phone via the HA companion app) and the nearby-stations list follows your live GPS instead of a fixed address. Rate-limited to protect the upstream API: 1.5 km movement threshold, 10-min per-entry cooldown, 5-min domain-wide cooldown. Pinning is disabled in dynamic mode since the list changes as you move.
-- **WCAG 2.2 A+AA accessibility** *(0.2.1)* — both cards and their visual editors now pass the WCAG 2.2 A+AA baseline. Status dots carry three independent cues (colour + halo/ring geometry + fill-vs-hollow shape) so grayscale and colour-blind users can disambiguate live availability; editor form controls have explicit label associations; invalid entity selections render an accessible error alert; text font-sizes switched to `rem` so user text-size overrides scale proportionally.
+- **WCAG 2.2 A+AA accessibility** *(0.2.2)* — both cards and their visual editors now pass the WCAG 2.2 A+AA baseline. Status dots carry three independent cues (colour + halo geometry + fill-vs-hollow shape) so grayscale and colour-blind users can disambiguate live availability; editor form controls have explicit label associations; invalid entity selections render an accessible error alert; text font-sizes switched to `rem` so user text-size overrides scale proportionally.
+- **Lean coordinator** *(0.2.2)* — dropped the redundant DATEX II live-status fetch. The `/search` endpoint already returns live per-point statuses inline (AVAILABLE / CHARGING / OCCUPIED / OUTOFORDER / BLOCKED / INOPERATIVE / UNKNOWN), so coordinator refreshes go from 2 outbound E-Control requests per poll to 1 — roughly halving the rate-limit footprint under the ladestellen.at ToU §4 ceilings.
 
 ## Requirements
 
