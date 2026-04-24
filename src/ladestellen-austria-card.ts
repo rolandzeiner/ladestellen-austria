@@ -534,6 +534,7 @@ export class LadestellenAustriaCard extends LitElement {
       "station",
       expanded ? "expanded" : "",
       isPinned ? "pinned" : "",
+      level === "inactive" ? "inactive" : "",
     ]
       .filter(Boolean)
       .join(" ");
