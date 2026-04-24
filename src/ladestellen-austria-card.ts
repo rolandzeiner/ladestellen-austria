@@ -124,7 +124,10 @@ export class LadestellenAustriaCard extends LitElement {
       logo_adapt_to_theme: false,
       only_available: false,
       only_free: false,
+      only_open: false,
       connector_types: [],
+      amenities: [],
+      payment_methods: [],
       pinned_station_ids: [],
       ...config,
     };
@@ -376,10 +379,24 @@ export class LadestellenAustriaCard extends LitElement {
   private _filterStations(stations: Station[]): Station[] {
     const onlyAvailable = this.config.only_available ?? false;
     const onlyFree = this.config.only_free ?? false;
+    const onlyOpen = this.config.only_open ?? false;
     const wantedTokens = this.config.connector_types ?? [];
-    if (!onlyAvailable && !onlyFree && wantedTokens.length === 0) {
+    const wantedAmenities = this.config.amenities ?? [];
+    const wantedPayments = this.config.payment_methods ?? [];
+    if (
+      !onlyAvailable &&
+      !onlyFree &&
+      !onlyOpen &&
+      wantedTokens.length === 0 &&
+      wantedAmenities.length === 0 &&
+      wantedPayments.length === 0
+    ) {
       return stations;
     }
+    // Cache now + tz once for the only-open sweep; _isOpenNow is a
+    // per-station call so we don't want to rebuild Date/tz in the loop.
+    const now = new Date();
+    const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
     return stations.filter((s) => {
       if (onlyAvailable) {
         const hasActive =
@@ -390,6 +407,14 @@ export class LadestellenAustriaCard extends LitElement {
       if (onlyFree) {
         const hasFree = (s.points ?? []).some((p) => p.freeOfCharge);
         if (!hasFree) return false;
+      }
+      if (onlyOpen) {
+        // Stations with no opening-hours data (isOpenNow === null) are
+        // treated as "presumed open" — filtering them out would hide
+        // stations that are almost certainly accessible just because
+        // the operator hasn't bothered to publish hours.
+        const open = this._isOpenNow(s.openingHours, now, tz);
+        if (open === false) return false;
       }
       if (wantedTokens.length > 0) {
         const stationTokens = new Set(
@@ -402,8 +427,51 @@ export class LadestellenAustriaCard extends LitElement {
         const match = wantedTokens.some((t) => stationTokens.has(t));
         if (!match) return false;
       }
+      if (wantedAmenities.length > 0) {
+        // AND semantics — the station must carry every selected
+        // amenity flag. Narrowing is what users expect from an
+        // amenity filter (I need barrier-free AND roofed).
+        const everyMatch = wantedAmenities.every((key) =>
+          this._stationHasAmenity(s, key),
+        );
+        if (!everyMatch) return false;
+      }
+      if (wantedPayments.length > 0) {
+        // OR semantics — any point accepting any selected payment
+        // method is enough. You only need one working payment option.
+        const stationModes = new Set(
+          (s.points ?? []).flatMap((p) => p.authenticationMode ?? []),
+        );
+        const anyMatch = wantedPayments.some((m) => stationModes.has(m));
+        if (!anyMatch) return false;
+      }
       return true;
     });
+  }
+
+  private _stationHasAmenity(station: Station, key: string): boolean {
+    switch (key) {
+      case "green_energy":
+        return Boolean(station.greenEnergy);
+      case "austrian_ecolabel":
+        return Boolean(station.austrianEcoLabel);
+      case "free_parking":
+        return Boolean(station.freeParking);
+      case "roofed_parking":
+        return Boolean(station.roofedParking);
+      case "illuminated_parking":
+        return Boolean(station.illuminatedParking);
+      case "barrier_free":
+        return (station.barrierFreeParkingPlaces ?? 0) > 0;
+      case "catering":
+        return Boolean(station.cateringService);
+      case "bathrooms":
+        return Boolean(station.bathroomsAvailable);
+      case "resting":
+        return Boolean(station.restingFacilities);
+      default:
+        return false;
+    }
   }
 
   // §3c and §3d compliance rolled into a single footer row: logo-link

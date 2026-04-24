@@ -23,7 +23,17 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   logo_adapt_to_theme?: boolean;
   only_available?: boolean;
   only_free?: boolean;
+  only_open?: boolean;
   connector_types?: string[];
+  // Amenity keys a station must have. AND semantics — a station is
+  // included only if every selected amenity is present. Narrowing filter
+  // (a user selecting "barrier-free" + "roofed_parking" wants both).
+  amenities?: string[];
+  // Payment-method tokens (OCPI authenticationMode strings). OR
+  // semantics — a station is included if any of its points accept at
+  // least one selected method. "Any of these works" matches the real-
+  // world usage of wallet-style payment options.
+  payment_methods?: string[];
   // Stations pinned to the top of the list. Ordered — first entry shows
   // first. Pinned stations override filters and bypass sort, but still
   // count toward max_stations. A pinned ID that's not in the /search
@@ -43,6 +53,46 @@ export const CONNECTOR_FILTER_OPTIONS: string[] = [
   "Tesla",
   "Schuko",
   "CEE",
+];
+
+// Amenity filter options. `key` is stored in the config, `label_key`
+// resolves through the localize dictionary, `icon` renders the chip.
+// The same keys are used in _filterStations to index into Station
+// fields via the AMENITY_FLAG_GETTERS map.
+export interface AmenityFilterOption {
+  key: string;
+  icon: string;
+  label_key: string;
+}
+export const AMENITY_FILTER_OPTIONS: ReadonlyArray<AmenityFilterOption> = [
+  { key: "green_energy", icon: "mdi:leaf", label_key: "amenities.green_energy" },
+  { key: "austrian_ecolabel", icon: "mdi:certificate-outline", label_key: "amenities.austrian_ecolabel" },
+  { key: "free_parking", icon: "mdi:parking", label_key: "amenities.free_parking" },
+  { key: "roofed_parking", icon: "mdi:home-roof", label_key: "amenities.roofed_parking" },
+  { key: "illuminated_parking", icon: "mdi:lightbulb-outline", label_key: "amenities.illuminated_parking" },
+  { key: "barrier_free", icon: "mdi:wheelchair-accessibility", label_key: "amenities.barrier_free" },
+  { key: "catering", icon: "mdi:silverware-fork-knife", label_key: "amenities.catering" },
+  { key: "bathrooms", icon: "mdi:toilet", label_key: "amenities.bathrooms" },
+  { key: "resting", icon: "mdi:sofa", label_key: "amenities.resting" },
+];
+
+// Payment-method filter options. `key` is the raw OCPI
+// authenticationMode string the /search response emits on each point;
+// storing the raw string keeps the filter stable if we ever re-skin
+// auth labels.
+export interface PaymentFilterOption {
+  key: string;
+  icon: string;
+  label_key: string;
+}
+export const PAYMENT_FILTER_OPTIONS: ReadonlyArray<PaymentFilterOption> = [
+  { key: "APP", icon: "mdi:cellphone", label_key: "auth.app" },
+  { key: "QR", icon: "mdi:qrcode", label_key: "auth.qr" },
+  { key: "RFID_READER", icon: "mdi:credit-card-wireless-outline", label_key: "auth.rfid" },
+  { key: "CHARGING_CONTRACT", icon: "mdi:handshake-outline", label_key: "auth.contract" },
+  { key: "DEBIT_CARD", icon: "mdi:credit-card-outline", label_key: "auth.debit" },
+  { key: "CREDIT_CARD", icon: "mdi:credit-card", label_key: "auth.credit" },
+  { key: "CONTACTLESS_CARD_SUPPORT", icon: "mdi:contactless-payment", label_key: "auth.contactless" },
 ];
 
 export interface ConnectorType {

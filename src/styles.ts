@@ -1202,6 +1202,21 @@ export const editorStyles = css`
     border-color: var(--primary-color);
     font-weight: 600;
   }
+  /* Amenity / payment chips include an icon next to the label.
+     Slightly tighter padding so a dense chip-row wraps cleanly. */
+  .filter-chip.icon-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+  }
+  .filter-chip.icon-chip ha-icon {
+    --mdc-icon-size: 15px;
+    color: var(--secondary-text-color);
+  }
+  .filter-chip.icon-chip.active ha-icon {
+    color: var(--text-primary-color, #fff);
+  }
 
   /* Pin list — editor section for toggling which stations are pinned. */
   .pin-list {

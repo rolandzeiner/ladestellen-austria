@@ -13,7 +13,9 @@ import {
 } from "custom-card-helpers";
 
 import {
+  AMENITY_FILTER_OPTIONS,
   CONNECTOR_FILTER_OPTIONS,
+  PAYMENT_FILTER_OPTIONS,
   type LadestellenAustriaCardConfig,
   type Station,
 } from "./types";
@@ -38,6 +40,8 @@ export class LadestellenAustriaCardEditor
   protected render(): TemplateResult {
     setLanguage(this.hass?.language);
     const selectedConnectors = this._config.connector_types ?? [];
+    const selectedAmenities = this._config.amenities ?? [];
+    const selectedPayments = this._config.payment_methods ?? [];
     return html`
       <div class="editor">
         <div class="editor-section">
@@ -152,6 +156,15 @@ export class LadestellenAustriaCardEditor
             ></ha-switch>
           </div>
 
+          <div class="toggle-row">
+            <label>${localize("editor.only_open")}</label>
+            <ha-switch
+              .checked=${this._config.only_open ?? false}
+              .configValue=${"only_open"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
           <div class="editor-hint">${localize("editor.connector_filter_hint")}</div>
           <div class="chip-row">
             ${CONNECTOR_FILTER_OPTIONS.map(
@@ -164,6 +177,42 @@ export class LadestellenAustriaCardEditor
                   @click=${() => this._toggleConnector(token)}
                 >
                   ${token}
+                </button>
+              `,
+            )}
+          </div>
+
+          <div class="editor-hint">${localize("editor.amenity_filter_hint")}</div>
+          <div class="chip-row">
+            ${AMENITY_FILTER_OPTIONS.map(
+              (opt) => html`
+                <button
+                  type="button"
+                  class=${selectedAmenities.includes(opt.key)
+                    ? "filter-chip icon-chip active"
+                    : "filter-chip icon-chip"}
+                  @click=${() => this._toggleAmenity(opt.key)}
+                >
+                  <ha-icon icon=${opt.icon}></ha-icon>
+                  <span>${localize(opt.label_key)}</span>
+                </button>
+              `,
+            )}
+          </div>
+
+          <div class="editor-hint">${localize("editor.payment_filter_hint")}</div>
+          <div class="chip-row">
+            ${PAYMENT_FILTER_OPTIONS.map(
+              (opt) => html`
+                <button
+                  type="button"
+                  class=${selectedPayments.includes(opt.key)
+                    ? "filter-chip icon-chip active"
+                    : "filter-chip icon-chip"}
+                  @click=${() => this._togglePayment(opt.key)}
+                >
+                  <ha-icon icon=${opt.icon}></ha-icon>
+                  <span>${localize(opt.label_key)}</span>
                 </button>
               `,
             )}
@@ -264,6 +313,24 @@ export class LadestellenAustriaCardEditor
       ? current.filter((t) => t !== token)
       : [...current, token];
     this._config = { ...this._config, connector_types: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _toggleAmenity(key: string): void {
+    const current = this._config.amenities ?? [];
+    const next = current.includes(key)
+      ? current.filter((t) => t !== key)
+      : [...current, key];
+    this._config = { ...this._config, amenities: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _togglePayment(key: string): void {
+    const current = this._config.payment_methods ?? [];
+    const next = current.includes(key)
+      ? current.filter((t) => t !== key)
+      : [...current, key];
+    this._config = { ...this._config, payment_methods: next };
     fireEvent(this, "config-changed", { config: this._config });
   }
 
