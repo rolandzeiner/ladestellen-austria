@@ -38,6 +38,12 @@ export const cardStyles = css`
   ha-card {
     overflow: hidden;
     border-radius: var(--ha-card-border-radius, 14px);
+    /* Container query scope — every @container rule below resolves against
+       the actual card width, not the viewport. HA dashboards place cards
+       in columns of widely varying widths (250-700px+), so sizing against
+       the card itself is the correct 2026 pattern. */
+    container-type: inline-size;
+    container-name: lscard;
   }
 
   /* ----- Header (§3c brand-link, quiet top strip) --------------------- */
@@ -228,13 +234,31 @@ export const cardStyles = css`
     opacity: 0.6;
   }
 
-  /* Line 1: name (left, flex-1) + metrics (center, right-aligned) +
-     distance-pill (right) + chevron. */
+  /* Line 1: grid-based so we can reshuffle on narrow containers without
+     touching the HTML. Wide layout: name / metrics / distance / chevron
+     on a single line. Narrow layout: metrics wrap to their own row below
+     the name, keeping line 1 uncluttered. */
   .station-line-1 {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "name metrics distance chevron";
     align-items: baseline;
-    gap: var(--l-space-3);
+    column-gap: var(--l-space-3);
+    row-gap: 2px;
     min-width: 0;
+  }
+  .station-name {
+    grid-area: name;
+  }
+  .station-metrics {
+    grid-area: metrics;
+    justify-self: end;
+  }
+  .station-distance {
+    grid-area: distance;
+  }
+  .chevron {
+    grid-area: chevron;
   }
   .station-name {
     font-size: var(--l-fs-m);
@@ -246,17 +270,16 @@ export const cardStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
-    flex: 1;
   }
 
   .station-metrics {
     display: inline-flex;
     align-items: baseline;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 2px 6px;
     font-size: var(--l-fs-s);
     color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
     white-space: nowrap;
   }
   .metric {

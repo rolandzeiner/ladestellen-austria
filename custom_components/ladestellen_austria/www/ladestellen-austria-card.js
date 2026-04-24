@@ -27,6 +27,12 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
   ha-card {
     overflow: hidden;
     border-radius: var(--ha-card-border-radius, 14px);
+    /* Container query scope — every @container rule below resolves against
+       the actual card width, not the viewport. HA dashboards place cards
+       in columns of widely varying widths (250-700px+), so sizing against
+       the card itself is the correct 2026 pattern. */
+    container-type: inline-size;
+    container-name: lscard;
   }
 
   /* ----- Header (§3c brand-link, quiet top strip) --------------------- */
@@ -217,13 +223,31 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     opacity: 0.6;
   }
 
-  /* Line 1: name (left, flex-1) + metrics (center, right-aligned) +
-     distance-pill (right) + chevron. */
+  /* Line 1: grid-based so we can reshuffle on narrow containers without
+     touching the HTML. Wide layout: name / metrics / distance / chevron
+     on a single line. Narrow layout: metrics wrap to their own row below
+     the name, keeping line 1 uncluttered. */
   .station-line-1 {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "name metrics distance chevron";
     align-items: baseline;
-    gap: var(--l-space-3);
+    column-gap: var(--l-space-3);
+    row-gap: 2px;
     min-width: 0;
+  }
+  .station-name {
+    grid-area: name;
+  }
+  .station-metrics {
+    grid-area: metrics;
+    justify-self: end;
+  }
+  .station-distance {
+    grid-area: distance;
+  }
+  .chevron {
+    grid-area: chevron;
   }
   .station-name {
     font-size: var(--l-fs-m);
@@ -235,17 +259,16 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
-    flex: 1;
   }
 
   .station-metrics {
     display: inline-flex;
     align-items: baseline;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 2px 6px;
     font-size: var(--l-fs-s);
     color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
     white-space: nowrap;
   }
   .metric {
@@ -649,7 +672,7 @@ function t(t,e,i,s){var r,a=arguments.length,n=a<3?e:null===s?s=Object.getOwnPro
           <div class="editor-hint">${St("editor.hint_compliance")}</div>
         </div>
       </div>
-    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Mt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Mt(this,"config-changed",{config:this._config}))}static{this.styles=zt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-11  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Ht=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_amenities:!0,show_pricing:!0,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Ct(this.hass?.language),!this.hass||!this.config)return V`<ha-card
+    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Mt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Mt(this,"config-changed",{config:this._config}))}static{this.styles=zt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-12  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Ht=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_amenities:!0,show_pricing:!0,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Ct(this.hass?.language),!this.hass||!this.config)return V`<ha-card
         ><div class="empty-state">${St("common.loading")}</div></ha-card
       >`;const t=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!t)return V`
         <ha-card>
