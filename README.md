@@ -1,8 +1,10 @@
 # Ladestellen Austria
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
-[![HA min version](https://img.shields.io/badge/HA-2025.1%2B-blue.svg)](https://www.home-assistant.io/)
+[![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2025.1-blue.svg)](https://www.home-assistant.io/)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/rolandzeiner/ladestellen-austria/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![vibe-coded](https://img.shields.io/badge/vibe-coded-ff69b4?logo=musicbrainz&logoColor=white)](https://en.wikipedia.org/wiki/Vibe_coding)
 
 Home Assistant custom integration for the Austrian EV charging station directory (*Ladestellenverzeichnis*), powered by **E-Control Austria's** official API.
 
@@ -26,7 +28,9 @@ Home Assistant custom integration for the Austrian EV charging station directory
 
 ## Installation
 
-### Via HACS (recommended)
+### HACS (recommended)
+
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rolandzeiner&repository=ladestellen-austria&category=integration)
 
 1. Open HACS → *Integrations* → *⋮ → Custom repositories*.
 2. Add `https://github.com/rolandzeiner/ladestellen-austria` with category *Integration*.
@@ -39,6 +43,8 @@ Home Assistant custom integration for the Austrian EV charging station directory
 
 ## Setup
 
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ladestellen_austria)
+
 1. Register for an API key at [ladestellen.at](https://www.ladestellen.at/). During signup enter the **bare hostname** of your Home Assistant external URL (no protocol, no port, no path) — e.g. `www.example.com` — as your authorized referer domain.
 2. In HA: *Settings → Devices & services → Add integration → Ladestellen Austria*.
 3. Fill in:
@@ -46,6 +52,7 @@ Home Assistant custom integration for the Austrian EV charging station directory
    - **Registered domain** — pre-filled from `hass.config.external_url`; must exactly match what you registered in step 1.
    - **Location** — pre-filled with your HA home coordinates; adjust via the map picker if you want a different search origin.
    - **Update interval** — defaults to 10 minutes.
+   - **Dynamic location tracker** *(optional)* — pick a `device_tracker` to follow live GPS instead of the fixed location above. See [Dynamic location mode](#dynamic-location-mode).
 4. Submit. The integration performs a trial `/search` call to confirm both the key and the domain are accepted before creating the entry.
 
 ### Dynamic location mode
@@ -58,6 +65,20 @@ Optional. If you set the **Dynamic location tracker** field to a `device_tracker
 - **Fallback timer:** 6 hours — if the device never moves, a refresh still runs on this safety interval.
 
 When dynamic mode is active, the main card hides its pinned-stations section (pins are preserved in the config for when you switch back to static mode) and shows a small *Tracking: device_tracker.…* indicator under the hero. The initial *Location* field you entered at setup time becomes a fallback — used when the tracker has no coordinates (e.g. phone off / companion-app permissions revoked), at which point the integration also raises a Repairs issue.
+
+## Lovelace Cards
+
+The integration ships two custom cards in a single bundle. Both auto-register as a Lovelace resource on HA start — no manual resource registration. Add either via the visual "Add card" picker.
+
+### Main card — `ladestellen-austria-card`
+
+Distance-to-nearest hero + an expandable list of nearby stations. Each station row carries kW + connector chips + distance pill + live-availability dot; tapping a row reveals opening hours, a per-point rack view (DC/AC badge, kW, connector, status, wrench for out-of-order points), payment methods, start/blocking fees, and address. Supports filters (only-available, only-free, only-open, connector types, amenities, payment methods) and pinned stations. When the sensor is in *Dynamic location mode* the pin list is automatically hidden.
+
+Required by §3c/§3d of the ToU, the card always shows the E-Control logo-link and the *Datenquelle: E-Control* attribution footer — these cannot be hidden.
+
+### Parking card — `ladestellen-austria-parking-card`
+
+Single-station focus. Each point of the chosen station renders as a parking slot viewed from above, with painted-lane separators and a dark asphalt surface. AVAILABLE points pop with a success-tinted glow; busy / out-of-order / unknown points are desaturated and muted so the "where can I plug in right now" read is instant. Minimalistic by design — a dashboard-tile companion to the main list card.
 
 ## Entities
 
@@ -126,7 +147,31 @@ The integration polls `GET /search?latitude=…&longitude=…` every **10 minute
 2. In HACS, click *Remove* on the integration card.
 3. Optionally revoke your API key at ladestellen.at.
 
-## Data & license
+## Development
+
+### Lovelace cards
+
+The two custom cards (`ladestellen-austria-card` + `ladestellen-austria-parking-card`) are written in TypeScript with Lit 3 and bundled by Rollup into a single `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`. End users install via HACS and never run `npm`; contributors do:
+
+```bash
+npm install
+npm run build       # production bundle (terser-minified)
+npm run dev         # watch mode for iteration
+```
+
+`src/const.ts` and `custom_components/ladestellen_austria/const.py` both carry `CARD_VERSION` — they must stay byte-identical, or the frontend version check shows an infinite reload banner. Bump both together when releasing.
+
+### Python
+
+```bash
+ruff check .
+mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
+python3 -m pytest tests/ -v
+```
+
+All three must be clean before committing. Config-flow changes are covered by `tests/test_config_flow.py`; coordinator + dynamic-mode behaviour by `tests/test_coordinator.py`.
+
+## Attribution
 
 Charging-station data is served by the official Austrian *Ladestellenverzeichnis* at [api.e-control.at](https://api.e-control.at), operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK (Federal Ministry for Climate Action)](https://www.bmk.gv.at/). The dataset is catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api).
 
@@ -167,6 +212,14 @@ When you register for an API key at [admin.ladestellen.at](https://admin.ladeste
 
 Full ToU: https://admin.ladestellen.at/#/api/terms-of-use
 
+## License
+
+MIT – see [LICENSE](LICENSE)
+
+## Disclaimer
+
+This integration is not affiliated with or endorsed by E-Control Austria, the BMK, or the operators of ladestellen.at. All charging-station data is provided by the [E-Control Ladestellenverzeichnis API](https://www.ladestellen.at/) under the terms of use summarised above. The developer assumes no liability for the accuracy, completeness, or timeliness of the displayed data. Use at your own risk.
+
 ---
 
-This integration is an independent project. Not affiliated with, endorsed by, or sponsored by E-Control Austria, BMK, or the operators of ladestellen.at.
+Diese Integration steht in keiner Verbindung zur E-Control Austria, dem BMK oder den Betreibern von ladestellen.at und wird von diesen nicht unterstützt. Alle Ladestellen-Daten stammen vom [E-Control-Ladestellenverzeichnis](https://www.ladestellen.at/) und unterliegen den oben zusammengefassten Nutzungsbedingungen. Für die Richtigkeit, Vollständigkeit und Aktualität der angezeigten Daten wird keine Haftung übernommen. Nutzung auf eigene Verantwortung.
