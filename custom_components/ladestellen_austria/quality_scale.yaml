@@ -6,8 +6,8 @@ rules:
   appropriate-polling:
     status: done
   brands:
-    status: todo
-    comment: Brand assets (icon.png 256x256, icon@2x.png 512x512, logo variants) must be added under custom_components/ladestellen_austria/brand/ before the first non-beta release. HA 2026.3+ reads local files first; the home-assistant/brands repo no longer accepts custom-integration PRs.
+    status: done
+    comment: icon.png (256x256) + icon@2x.png (512x512) + logo.png shipped under custom_components/ladestellen_austria/brand/. HA 2026.3+ reads local files first; the home-assistant/brands repo no longer accepts custom-integration PRs.
   common-modules:
     status: done
   config-flow:
