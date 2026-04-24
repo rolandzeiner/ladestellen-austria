@@ -25,7 +25,28 @@
     "availability": "Availability",
     "pinned": "Pinned",
     "unpin": "Remove pin",
-    "orphan_pin_title": "Pinned station not in range"
+    "orphan_pin_title": "Pinned station not in range",
+    "operator_heading": "Operator",
+    "charging_points_heading": "Charging points",
+    "opening_hours_heading": "Opening hours",
+    "payment_heading": "Payment",
+    "open_now": "Open now",
+    "closed_now": "Closed",
+    "closed_now_row": "Closed now",
+    "always_open_short": "24h",
+    "unknown_hours": "No information",
+    "start_fee_label": "start fee",
+    "blocking_fee_label": "¢/min from {from} min.",
+    "point_status_available": "Available",
+    "point_status_charging": "Charging",
+    "point_status_occupied": "Occupied",
+    "point_status_reserved": "Reserved",
+    "point_status_blocked": "Blocked",
+    "point_status_fault": "Out of order",
+    "point_status_unavailable": "Unavailable",
+    "point_status_unknown": "Unknown",
+    "point_status_planned": "Planned",
+    "point_status_removed": "Removed"
   },
   "amenities": {
     "green_energy": "Green energy",
@@ -34,6 +55,24 @@
     "catering": "Catering nearby",
     "bathrooms": "Restrooms",
     "resting": "Resting area"
+  },
+  "auth": {
+    "app": "App",
+    "qr": "QR code",
+    "rfid": "RFID",
+    "contract": "Contract",
+    "debit": "Debit card",
+    "credit": "Credit card",
+    "contactless": "Contactless"
+  },
+  "weekday": {
+    "mo": "Mo",
+    "tu": "Tu",
+    "we": "We",
+    "th": "Th",
+    "fr": "Fr",
+    "sa": "Sa",
+    "su": "Su"
   },
   "editor": {
     "section_main": "Main",

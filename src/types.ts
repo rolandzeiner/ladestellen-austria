@@ -68,6 +68,13 @@ export interface Point {
   authenticationMode: string[];
 }
 
+export interface OpeningHours {
+  fromWeekday: string;
+  fromTime: string;
+  toWeekday: string;
+  toTime: string;
+}
+
 export interface Station {
   stationId: string;
   label: string;
@@ -98,5 +105,6 @@ export interface Station {
   parkingPlaces: number;
   barrierFreeParkingPlaces: number;
   priceUrl: string | null;
+  openingHours?: OpeningHours[];
   points: Point[];
 }

@@ -24,6 +24,7 @@ import {
 
 import type {
   LadestellenAustriaCardConfig,
+  OpeningHours,
   Point,
   Station,
 } from "./types";
@@ -65,6 +66,27 @@ const DEFAULT_MAX_STATIONS = 10;
 const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
 type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
+type RackStatus = "ok" | "busy" | "warn" | "empty";
+
+const WEEKDAY_NAME_TO_IDX: Record<string, number> = {
+  MONDAY: 0,
+  TUESDAY: 1,
+  WEDNESDAY: 2,
+  THURSDAY: 3,
+  FRIDAY: 4,
+  SATURDAY: 5,
+  SUNDAY: 6,
+};
+
+const WEEKDAY_SHORT_TO_IDX: Record<string, number> = {
+  Mon: 0,
+  Tue: 1,
+  Wed: 2,
+  Thu: 3,
+  Fri: 4,
+  Sat: 5,
+  Sun: 6,
+};
 
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
@@ -492,11 +514,14 @@ export class LadestellenAustriaCard extends LitElement {
     const totalPoints = points.length;
     const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
     const stationActive = station.stationStatus === "ACTIVE";
+    const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
+    const isOpenNow = this._isOpenNow(station.openingHours, new Date(), tz);
     const level = this._statusLevel(
       liveAvailable,
       stationActive,
       availPoints,
       totalPoints,
+      isOpenNow,
     );
 
     const expanded = this._expanded.has(station.stationId);
@@ -587,10 +612,7 @@ export class LadestellenAustriaCard extends LitElement {
         ${expanded
           ? this._renderStationDetail(
               station,
-              availPoints,
-              totalPoints,
-              liveAvailable,
-              stationActive,
+              isOpenNow,
               showAmenities,
               mapsUrl,
             )
@@ -600,33 +622,61 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
 
+  // Expanded-panel layout (top → bottom):
+  //   Operator · Ladepunkte (rack [+ fees line]) · Öffnungszeiten (+ live chip)
+  //   · Bezahlung · Ausstattung · Adresse · Actions.
+  // The single-number "3/4 frei" chip that used to head this panel is gone —
+  // the rack carries per-point availability at higher information density, so
+  // keeping the chip alongside would have been redundant noise.
   private _renderStationDetail(
     station: Station,
-    availPoints: number,
-    totalPoints: number,
-    liveAvailable: boolean,
-    stationActive: boolean,
+    isOpenNow: boolean | null,
     showAmenities: boolean,
     mapsUrl: string,
   ): TemplateResult {
     const amenities = this._amenityItems(station);
-    const showStatus = liveAvailable || !stationActive;
+    const points = station.points ?? [];
     const address = this._address(station);
-    // Order within the expanded panel: availability → amenities → address
-    // → actions. Address sits second-to-last because tapping the Maps
-    // action reveals the location visually anyway — the written address
-    // is a supporting reference, not a primary finding.
+    const paymentChips = this._paymentChips(points);
+    const feesLine = this._feesLine(points);
+    const operatorName = station.operatorName || station.owner || "";
     return html`
       <div class="detail">
-        ${showStatus
+        ${operatorName
+          ? html`<div class="operator-line">
+              <span class="detail-label">
+                ${localize("card.operator_heading")}
+              </span>
+              <span class="operator-name">${operatorName}</span>
+            </div>`
+          : nothing}
+        ${points.length > 0
           ? html`<div class="detail-section">
-              <div class="detail-label">${localize("card.availability")}</div>
-              ${this._statusLine(
-                liveAvailable,
-                stationActive,
-                availPoints,
-                totalPoints,
-              )}
+              <div class="detail-label">
+                ${localize("card.charging_points_heading")}
+              </div>
+              ${this._renderRack(points)}
+              ${feesLine
+                ? html`<div class="fees-line">${feesLine}</div>`
+                : nothing}
+            </div>`
+          : nothing}
+        ${this._renderOpeningHoursSection(station.openingHours, isOpenNow)}
+        ${paymentChips.length > 0
+          ? html`<div class="detail-section">
+              <div class="detail-label">
+                ${localize("card.payment_heading")}
+              </div>
+              <div class="payment-row">
+                ${paymentChips.map(
+                  (a) => html`
+                    <span class="payment-chip" title=${a.label}>
+                      <ha-icon icon=${a.icon}></ha-icon>
+                      <span>${a.label}</span>
+                    </span>
+                  `,
+                )}
+              </div>
             </div>`
           : nothing}
         ${showAmenities && amenities.length > 0
@@ -692,13 +742,357 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
+  private _renderRack(points: Point[]): TemplateResult {
+    return html`
+      <div class="rack">
+        ${points.map((p) => this._renderRackSlot(p))}
+      </div>
+    `;
+  }
+
+  private _renderRackSlot(point: Point): TemplateResult {
+    const isDC = (point.electricityType ?? []).includes("DC");
+    const statusCat = this._rackSlotStatus(point.status);
+    const connector = this._pointConnectorLabel(point);
+    const kwText = this._formatKw(point.capacityKw);
+    const tooltip = this._pointTooltip(point);
+    return html`
+      <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
+        ${isDC ? html`<span class="dc-badge">DC</span>` : nothing}
+        <span class="rack-kw">
+          <span class="rack-kw-num">${kwText}</span
+          ><span class="rack-kw-unit">kW</span>
+        </span>
+        <span class="rack-connector">${connector}</span>
+        <span class="rack-dot status-${statusCat}"></span>
+      </div>
+    `;
+  }
+
+  private _rackSlotStatus(status: string): RackStatus {
+    switch (status) {
+      case "AVAILABLE":
+        return "ok";
+      case "CHARGING":
+      case "OCCUPIED":
+      case "RESERVED":
+      case "BLOCKED":
+        return "busy";
+      case "OUT_OF_ORDER":
+      case "FAULTED":
+      case "INOPERATIVE":
+      case "UNAVAILABLE":
+        return "warn";
+      default:
+        return "empty";
+    }
+  }
+
+  private _pointConnectorLabel(point: Point): string {
+    const first = (point.connectorType ?? [])[0];
+    if (!first) return "–";
+    return this._shortConnector(first.consumerName, first.key);
+  }
+
+  // Austrian comma decimals; preserves API precision (§3i). 3.7 → "3,7",
+  // 22 → "22", 80 → "80". Up to one fractional digit.
+  private _formatKw(v: number | undefined): string {
+    if (v == null || !Number.isFinite(v)) return "–";
+    try {
+      return new Intl.NumberFormat("de-AT", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      }).format(v);
+    } catch {
+      return String(v).replace(".", ",");
+    }
+  }
+
+  // Raw cent-value formatter — used for blocking-fee rate (e.g. 10,01 ¢/min).
+  // Unlike _formatEuro (which divides by 100), this preserves the cent value.
+  private _formatCent(value: number): string {
+    if (!Number.isFinite(value)) return "0";
+    try {
+      return new Intl.NumberFormat("de-AT", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return String(value).replace(".", ",");
+    }
+  }
+
+  // Tooltip for a rack slot. evseId + localized status + any active fees.
+  // Newline-separated; browsers render \n in native title tooltips.
+  private _pointTooltip(point: Point): string {
+    const lines = [
+      `${point.evseId ?? ""} · ${this._pointStatusLabel(point.status)}`.trim(),
+    ];
+    const startCent = point.startFeeCent ?? 0;
+    if (startCent > 0) {
+      lines.push(
+        `${localize("card.start_fee_label")}: ${this._formatEuro(startCent)} €`,
+      );
+    }
+    const blockCent = point.blockingFeeCentMin ?? 0;
+    const blockFrom = point.blockingFeeFromMinute ?? 0;
+    if (blockCent > 0 && blockFrom > 0) {
+      lines.push(
+        `${this._formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
+      );
+    }
+    return lines.join("\n");
+  }
+
+  private _pointStatusLabel(status: string): string {
+    if (!status) return "";
+    const key = `card.point_status_${status.toLowerCase()}`;
+    const resolved = localize(key);
+    return resolved === key ? status : resolved;
+  }
+
+  private _renderOpeningHoursSection(
+    hours: OpeningHours[] | undefined,
+    isOpenNow: boolean | null,
+  ): TemplateResult | typeof nothing {
+    if (!hours || hours.length === 0) return nothing;
+    const lines = this._formatOpeningHours(hours);
+    if (lines.length === 0) return nothing;
+    const chipClass =
+      isOpenNow === true
+        ? "status-ok"
+        : isOpenNow === false
+          ? "status-inactive"
+          : null;
+    const chipText =
+      isOpenNow === true
+        ? localize("card.open_now")
+        : isOpenNow === false
+          ? localize("card.closed_now")
+          : null;
+    return html`
+      <div class="detail-section">
+        <div class="detail-label">
+          ${localize("card.opening_hours_heading")}
+        </div>
+        <div class="hours-row">
+          <div class="hours-lines">
+            ${lines.map((l) => html`<div class="hours-line">${l}</div>`)}
+          </div>
+          ${chipText
+            ? html`<span class=${`hours-chip ${chipClass ?? ""}`}>
+                <span class=${`status-dot ${chipClass ?? ""}`}></span>
+                ${chipText}
+              </span>`
+            : nothing}
+        </div>
+      </div>
+    `;
+  }
+
+  private _formatOpeningHours(hours: OpeningHours[]): string[] {
+    const out: string[] = [];
+    for (const h of hours) {
+      const line = this._formatSingleRange(h);
+      if (line) out.push(line);
+    }
+    return out;
+  }
+
+  private _formatSingleRange(h: OpeningHours): string | null {
+    const from = this._shortDay(h.fromWeekday);
+    const to = this._shortDay(h.toWeekday);
+    if (!from || !to) return null;
+    const isFull24h =
+      h.fromTime === "00:00" &&
+      (h.toTime === "23:59" || h.toTime === "24:00");
+    const sameDay = h.fromWeekday === h.toWeekday;
+    const dayRange = sameDay ? from : `${from}–${to}`;
+    if (isFull24h) {
+      return `${dayRange} ${localize("card.always_open_short")}`;
+    }
+    return `${dayRange} ${h.fromTime}–${h.toTime}`;
+  }
+
+  private _shortDay(name: string): string {
+    switch ((name ?? "").toUpperCase()) {
+      case "MONDAY":
+        return localize("weekday.mo");
+      case "TUESDAY":
+        return localize("weekday.tu");
+      case "WEDNESDAY":
+        return localize("weekday.we");
+      case "THURSDAY":
+        return localize("weekday.th");
+      case "FRIDAY":
+        return localize("weekday.fr");
+      case "SATURDAY":
+        return localize("weekday.sa");
+      case "SUNDAY":
+        return localize("weekday.su");
+      default:
+        return "";
+    }
+  }
+
+  // Is the station inside any of its opening ranges at `now` (in `tz`)?
+  // Returns null when hours are missing or unparseable — callers can then
+  // treat the closed-now signal as unknown. Ranges that wrap the week
+  // boundary (from > to) are handled via OR, matching the behaviour a
+  // single 7-day schedule expects.
+  private _isOpenNow(
+    hours: OpeningHours[] | undefined,
+    now: Date,
+    tz: string,
+  ): boolean | null {
+    if (!hours || hours.length === 0) return null;
+    const nowMow = this._minuteOfWeek(now, tz);
+    if (nowMow == null) return null;
+    for (const h of hours) {
+      const fromMow = this._hoursToMow(h.fromWeekday, h.fromTime);
+      const toMow = this._hoursToMow(h.toWeekday, h.toTime);
+      if (fromMow == null || toMow == null) continue;
+      if (fromMow <= toMow) {
+        if (nowMow >= fromMow && nowMow <= toMow) return true;
+      } else {
+        if (nowMow >= fromMow || nowMow <= toMow) return true;
+      }
+    }
+    return false;
+  }
+
+  private _minuteOfWeek(now: Date, tz: string): number | null {
+    try {
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      const parts = fmt.formatToParts(now);
+      const wk = parts.find((p) => p.type === "weekday")?.value ?? "";
+      const hr = parts.find((p) => p.type === "hour")?.value ?? "";
+      const mn = parts.find((p) => p.type === "minute")?.value ?? "";
+      const weekday = WEEKDAY_SHORT_TO_IDX[wk];
+      if (weekday === undefined) return null;
+      let hour = parseInt(hr, 10);
+      const minute = parseInt(mn, 10);
+      if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+      // Safari with hour12:false occasionally reports "24" for midnight.
+      if (hour === 24) hour = 0;
+      return weekday * 1440 + hour * 60 + minute;
+    } catch {
+      return null;
+    }
+  }
+
+  private _hoursToMow(dayName: string, time: string): number | null {
+    const day = WEEKDAY_NAME_TO_IDX[(dayName ?? "").toUpperCase()];
+    if (day === undefined) return null;
+    const [hStr, mStr] = (time ?? "").split(":");
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr, 10);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    return day * 1440 + h * 60 + m;
+  }
+
+  private _paymentChips(
+    points: Point[],
+  ): Array<{ icon: string; label: string }> {
+    const seen = new Set<string>();
+    const out: Array<{ icon: string; label: string }> = [];
+    for (const p of points) {
+      for (const mode of p.authenticationMode ?? []) {
+        if (seen.has(mode)) continue;
+        seen.add(mode);
+        const mapped = this._authLabel(mode);
+        if (mapped) out.push(mapped);
+      }
+    }
+    return out;
+  }
+
+  private _authLabel(
+    mode: string,
+  ): { icon: string; label: string } | null {
+    switch (mode) {
+      case "APP":
+        return { icon: "mdi:cellphone", label: localize("auth.app") };
+      case "QR":
+        return { icon: "mdi:qrcode", label: localize("auth.qr") };
+      case "RFID_READER":
+        return {
+          icon: "mdi:credit-card-wireless-outline",
+          label: localize("auth.rfid"),
+        };
+      case "CHARGING_CONTRACT":
+        return {
+          icon: "mdi:handshake-outline",
+          label: localize("auth.contract"),
+        };
+      case "DEBIT_CARD":
+        return {
+          icon: "mdi:credit-card-outline",
+          label: localize("auth.debit"),
+        };
+      case "CREDIT_CARD":
+        return { icon: "mdi:credit-card", label: localize("auth.credit") };
+      case "CONTACTLESS_CARD_SUPPORT":
+        return {
+          icon: "mdi:contactless-payment",
+          label: localize("auth.contactless"),
+        };
+      default:
+        return null;
+    }
+  }
+
+  // One-line fee summary (or null). Uses the max of each extra fee across a
+  // station's points — mixed-fee stations are rare and showing a range is
+  // noisier than showing the worst case. Hidden when every point is free of
+  // extras.
+  private _feesLine(points: Point[]): string | null {
+    const startFees = points
+      .map((p) => p.startFeeCent ?? 0)
+      .filter((v) => v > 0);
+    const blocking = points
+      .map((p) => ({
+        cent: p.blockingFeeCentMin ?? 0,
+        fromMin: p.blockingFeeFromMinute ?? 0,
+      }))
+      .filter((v) => v.cent > 0 && v.fromMin > 0);
+    const parts: string[] = [];
+    if (startFees.length > 0) {
+      const maxCent = Math.max(...startFees);
+      parts.push(
+        `+ ${this._formatEuro(maxCent)} € ${localize("card.start_fee_label")}`,
+      );
+    }
+    if (blocking.length > 0) {
+      const maxRate = Math.max(...blocking.map((v) => v.cent));
+      const minFrom = Math.min(...blocking.map((v) => v.fromMin));
+      parts.push(
+        `${this._formatCent(maxRate)} ${localize(
+          "card.blocking_fee_label",
+        ).replace("{from}", String(minFrom))}`,
+      );
+    }
+    return parts.length > 0 ? parts.join(", ") : null;
+  }
+
   private _statusLevel(
     liveAvailable: boolean,
     stationActive: boolean,
     avail: number,
     total: number,
+    isOpenNow: boolean | null = null,
   ): StatusLevel {
     if (!stationActive) return "inactive";
+    // Closed-now greys the row dot regardless of live count — a station
+    // with 4/4 free but closed is not actionable. Null isOpenNow means no
+    // opening-hours data; treat as always-open for row-status purposes.
+    if (isOpenNow === false) return "inactive";
     if (!liveAvailable || total === 0) return "unknown";
     if (avail === 0) return "busy";
     if (avail < total) return "partial";
@@ -713,33 +1107,6 @@ export class LadestellenAustriaCard extends LitElement {
     if (level === "inactive") return localize("card.inactive");
     if (level === "unknown") return localize("card.status_unknown");
     return `${avail} / ${total} ${localize("card.live_suffix")}`;
-  }
-
-  private _statusLine(
-    liveAvailable: boolean,
-    stationActive: boolean,
-    avail: number,
-    total: number,
-  ): TemplateResult {
-    const level = this._statusLevel(liveAvailable, stationActive, avail, total);
-    if (level === "inactive") {
-      return html`<div class="status-row status-${level}">
-        <span class="status-dot status-${level}"></span>
-        ${localize("card.inactive")}
-      </div>`;
-    }
-    if (level === "unknown") {
-      return html`<div class="status-row status-${level}">
-        <span class="status-dot status-${level}"></span>
-        ${localize("card.status_unknown")}
-      </div>`;
-    }
-    return html`<div class="status-row status-${level}">
-      <span class="status-dot status-${level}"></span>
-      ${localize("card.status_count")
-        .replace("{avail}", String(avail))
-        .replace("{total}", String(total))}
-    </div>`;
   }
 
   private _toggle(stationId: string): void {
