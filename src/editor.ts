@@ -17,7 +17,7 @@ import {
   type LadestellenAustriaCardConfig,
 } from "./types";
 import { editorStyles } from "./styles";
-import { localize } from "./localize/localize";
+import { localize, setLanguage } from "./localize/localize";
 
 @customElement("ladestellen-austria-card-editor")
 export class LadestellenAustriaCardEditor
@@ -35,6 +35,7 @@ export class LadestellenAustriaCardEditor
   }
 
   protected render(): TemplateResult {
+    setLanguage(this.hass?.language);
     const selectedConnectors = this._config.connector_types ?? [];
     return html`
       <div class="editor">
