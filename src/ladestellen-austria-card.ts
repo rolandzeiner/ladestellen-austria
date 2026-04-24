@@ -402,56 +402,52 @@ export class LadestellenAustriaCard extends LitElement {
             class=${`status-dot status-${level}`}
             aria-label=${this._statusAria(level, availPoints, totalPoints)}
           ></span>
-          <div class="station-text">
-            <div class="station-line-1">
-              <span class="station-metrics">
-                ${maxKw > 0
-                  ? html`<span
-                      class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}
-                      >${maxKw}&thinsp;kW</span
-                    >`
-                  : nothing}
-                ${visibleConnectors.map(
-                  (t) => html`<span class="pill plug">${t}</span>`,
-                )}
-                ${extraConnectors > 0
-                  ? html`<span class="pill plug plug-more"
-                      >+${extraConnectors}</span
-                    >`
-                  : nothing}
-              </span>
-              <div class="row-right-stack">
-                ${showPricing && priceText
-                  ? html`<span
-                      class=${priceIsFree
-                        ? "metric-price metric-free"
-                        : "metric-price"}
-                      >${priceText}</span
-                    >`
-                  : nothing}
-                <a
-                  class="station-distance"
-                  href=${mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label=${localize("card.open_in_maps")}
-                  title=${localize("card.open_in_maps")}
-                  @click=${(ev: Event) => ev.stopPropagation()}
-                >
-                  <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-                  <span class="distance-value">
-                    ${this._formatKm(station.distance)}<span class="unit"
-                      >km</span
-                    >
-                  </span>
-                </a>
-              </div>
-              <ha-icon
-                class="chevron"
-                icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
-              ></ha-icon>
-            </div>
+          <div class="station-grid">
+            <span class="station-metrics">
+              ${maxKw > 0
+                ? html`<span
+                    class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}
+                    >${maxKw}&thinsp;kW</span
+                  >`
+                : nothing}
+              ${visibleConnectors.map(
+                (t) => html`<span class="pill plug">${t}</span>`,
+              )}
+              ${extraConnectors > 0
+                ? html`<span class="pill plug plug-more"
+                    >+${extraConnectors}</span
+                  >`
+                : nothing}
+            </span>
+            ${showPricing && priceText
+              ? html`<span
+                  class=${priceIsFree
+                    ? "metric-price metric-free"
+                    : "metric-price"}
+                  >${priceText}</span
+                >`
+              : html`<span class="metric-price-placeholder"></span>`}
+            <ha-icon
+              class="chevron"
+              icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
+            ></ha-icon>
             <div class="station-name">${station.label}</div>
+            <a
+              class="station-distance"
+              href=${mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label=${localize("card.open_in_maps")}
+              title=${localize("card.open_in_maps")}
+              @click=${(ev: Event) => ev.stopPropagation()}
+            >
+              <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+              <span class="distance-value">
+                ${this._formatKm(station.distance)}<span class="unit"
+                  >km</span
+                >
+              </span>
+            </a>
           </div>
         </div>
         ${expanded

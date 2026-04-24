@@ -191,13 +191,6 @@ export const cardStyles = css`
     padding: var(--l-space-3) var(--l-space-4);
     align-items: flex-start;
   }
-  .station-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
 
   /* Status dot — 9px circle that communicates live availability at a glance.
      Aligned to the baseline of the first text line for tidy vertical rhythm. */
@@ -234,17 +227,23 @@ export const cardStyles = css`
     opacity: 0.6;
   }
 
-  /* Line 1: metrics on the left, right-stack (price above distance) in
-     the middle column, chevron on the right. Stacking price + distance
-     in a right-aligned column lets the eye compare prices + distances
-     vertically down the list. */
-  .station-line-1 {
+  /* 2-row grid for the station row. Line 1 holds the metrics (left) and
+     the price (right, just before the chevron). Line 2 holds the station
+     name (left) and the distance pill (right). Chevron spans both rows
+     so it remains vertically centred against the whole row cluster.
+     Price-right + distance-right alignment makes both columns stack
+     vertically across stations, so users can scan prices down one
+     column and distances down the other. */
+  .station-grid {
+    flex: 1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: "metrics stack chevron";
-    align-items: center;
+    grid-template-areas:
+      "metrics price    chevron"
+      "name    distance chevron";
     column-gap: var(--l-space-3);
-    row-gap: 2px;
+    row-gap: 4px;
+    align-items: center;
     min-width: 0;
   }
   .station-metrics {
@@ -252,17 +251,21 @@ export const cardStyles = css`
     justify-self: start;
     align-self: center;
   }
-  .row-right-stack {
-    grid-area: stack;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    min-width: 0;
+  .metric-price,
+  .metric-price-placeholder {
+    grid-area: price;
+    justify-self: end;
+    align-self: center;
   }
   .chevron {
     grid-area: chevron;
     align-self: center;
+  }
+  .station-name {
+    grid-area: name;
+  }
+  .station-distance {
+    grid-area: distance;
   }
   /* Name sits on line 2 as a secondary identifier. Kept legible but
      visually subordinate to the metrics line above. */
