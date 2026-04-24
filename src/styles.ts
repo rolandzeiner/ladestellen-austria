@@ -315,6 +315,11 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
     letter-spacing: 0.01em;
   }
+  /* DC fast-charge: both the number and the unit take the warning
+     accent so the full "80 kW" reads as one amber token. */
+  .metric-kw--dc {
+    color: var(--warning-color, #f57c00);
+  }
   .metric-kw--dc .kw-unit {
     color: var(--warning-color, #f57c00);
   }
