@@ -234,13 +234,24 @@ export class LadestellenAustriaCardEditor
     const pinnedSet = new Set(pinned);
     const liveIds = new Set(stations.map((s) => s.stationId));
     const orphanIds = pinned.filter((id) => !liveIds.has(id));
+    // When the chosen sensor follows a device_tracker, pinning is moot —
+    // the nearby-stations list changes every time the user moves. Show a
+    // hint instead of the pin list, but keep the section visible so users
+    // don't wonder where their old pins went (they're preserved in the
+    // config until the user switches back to static mode).
+    const dynamicMode =
+      (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
 
     return html`
       <div class="editor-section">
         <div class="section-header">${localize("editor.section_pinned")}</div>
         <div class="editor-hint">${localize("editor.pin_hint")}</div>
 
-        ${!entityId
+        ${dynamicMode
+          ? html`<div class="editor-hint editor-hint--muted">
+              ${localize("editor.pin_disabled_dynamic")}
+            </div>`
+          : !entityId
           ? html`<div class="editor-hint editor-hint--muted">
               ${localize("editor.pin_select_sensor_first")}
             </div>`

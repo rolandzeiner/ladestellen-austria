@@ -16,6 +16,7 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - Reauth flow when the API rejects stored credentials.
 - Reconfiguration flow to change credentials, location, or polling interval without losing entity history.
 - Strict-typed, async-only. *(0.1.0)*
+- **Dynamic location mode** *(0.1.0)* — optionally point the config entry at a `device_tracker` (e.g. your phone via the HA companion app) and the nearby-stations list follows your live GPS instead of a fixed address. Rate-limited to protect the upstream API: 1.5 km movement threshold, 10-min per-entry cooldown, 5-min domain-wide cooldown. Pinning is disabled in dynamic mode since the list changes as you move.
 
 ## Requirements
 
@@ -47,6 +48,17 @@ Home Assistant custom integration for the Austrian EV charging station directory
    - **Update interval** — defaults to 10 minutes.
 4. Submit. The integration performs a trial `/search` call to confirm both the key and the domain are accepted before creating the entry.
 
+### Dynamic location mode
+
+Optional. If you set the **Dynamic location tracker** field to a `device_tracker` entity (typically `device_tracker.<your_phone>` from the HA companion app), the coordinator uses the tracker's live GPS coordinates on every refresh instead of the fixed *Location* field above. Refreshes are triggered by tracker movement, not the scan interval, and are rate-limited so a phone that reports every few seconds doesn't hammer E-Control:
+
+- **Distance threshold:** 1.5 km — moves below that (GPS jitter, walking inside a parking lot) are ignored.
+- **Per-entry cooldown:** 10 minutes — the same entry won't refresh twice within that window even if you cross the distance threshold.
+- **Domain-wide cooldown:** 5 minutes — two entries sharing the same tracker won't both fire on the same state change.
+- **Fallback timer:** 6 hours — if the device never moves, a refresh still runs on this safety interval.
+
+When dynamic mode is active, the main card hides its pinned-stations section (pins are preserved in the config for when you switch back to static mode) and shows a small *Tracking: device_tracker.…* indicator under the hero. The initial *Location* field you entered at setup time becomes a fallback — used when the tracker has no coordinates (e.g. phone off / companion-app permissions revoked), at which point the integration also raises a Repairs issue.
+
 ## Entities
 
 | Entity | State | Attributes |
@@ -62,8 +74,9 @@ Icon: `mdi:ev-station`. Device-class: `distance`. State-class: `measurement`.
 | `name` | yes | `Ladestellen Austria` | Entry title; becomes the device name. |
 | `api_key` | yes | — | From ladestellen.at. Stored as a secret; redacted in diagnostics. |
 | `domain` | yes | HA external URL hostname | Bare hostname, no protocol. Stored as a secret; redacted in diagnostics. |
-| `location` | yes | HA home coordinates | Map picker. Latitude + longitude sent to `/search`. |
-| `scan_interval` | no | `10` | Minutes between upstream refreshes (5–720). |
+| `location` | yes | HA home coordinates | Map picker. Latitude + longitude sent to `/search`. In dynamic mode this becomes a fallback — used when the tracker has no coordinates. |
+| `scan_interval` | no | `10` | Minutes between upstream refreshes (5–720). Ignored in dynamic mode; a 6-hour safety-net timer is used instead. |
+| `dynamic_entity` | no | *(empty)* | Optional `device_tracker` entity. When set, the entry runs in dynamic mode (see *Setup → Dynamic location mode*). |
 
 ## Use cases
 

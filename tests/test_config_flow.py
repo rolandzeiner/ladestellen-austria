@@ -11,6 +11,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from custom_components.ladestellen_austria.const import (
     CONF_API_KEY,
     CONF_DOMAIN,
+    CONF_DYNAMIC_ENTITY,
     DOMAIN,
 )
 
@@ -176,3 +177,56 @@ async def test_reconfigure_updates_entry(
     assert refreshed is not None
     assert refreshed.unique_id == original_unique_id
     assert refreshed.data[CONF_SCAN_INTERVAL] == 60
+
+
+async def test_form_creates_entry_with_dynamic_tracker(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """When the user picks a device_tracker, the entry stores it and the
+    unique_id switches to the dynamic-mode formula so distinct trackers
+    produce distinct entries."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**VALID_USER_INPUT, CONF_DYNAMIC_ENTITY: "device_tracker.phone"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_DYNAMIC_ENTITY] == "device_tracker.phone"
+    # Stored location is the initial form value — just a fallback in
+    # dynamic mode. The unique_id branch confirms the flow took the
+    # dynamic path.
+    entry = hass.config_entries.async_get_entry(result["result"].entry_id)
+    assert entry is not None
+    assert entry.unique_id == "www.meineseite.at:dynamic:device_tracker.phone"
+
+
+async def test_dynamic_entries_do_not_collide_by_location(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """Two dynamic entries at the same initial location are still
+    distinct as long as the tracker entity_ids differ — the unique_id
+    formula keys off the tracker, not the coords."""
+    # First dynamic entry.
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**VALID_USER_INPUT, CONF_DYNAMIC_ENTITY: "device_tracker.phone"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+
+    # Second dynamic entry — same fallback location, different tracker.
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**VALID_USER_INPUT, CONF_DYNAMIC_ENTITY: "device_tracker.tablet"},
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    entry = hass.config_entries.async_get_entry(result["result"].entry_id)
+    assert entry is not None
+    assert entry.unique_id == "www.meineseite.at:dynamic:device_tracker.tablet"

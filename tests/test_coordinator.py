@@ -1,6 +1,7 @@
 """Tests for the Ladestellen Austria coordinator."""
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -8,12 +9,15 @@ import pytest
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ladestellen_austria.const import (
     CONF_API_KEY,
     CONF_DOMAIN,
+    CONF_DYNAMIC_ENTITY,
     DOMAIN,
+    DOMAIN_LAST_API_CALL_KEY,
 )
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
@@ -171,3 +175,203 @@ def test_merge_live_status_overwrites_point_status() -> None:
     _merge_live_status(stations, live_map)
     assert stations[0]["points"][0]["status"] == "OCCUPIED"
     assert stations[0]["points"][1]["status"] == "AVAILABLE"  # unchanged
+
+
+# ---------------------------------------------------------------------------
+# Dynamic tracker mode — properties + update_interval selection
+# ---------------------------------------------------------------------------
+
+
+async def test_dynamic_mode_property_false_for_static(
+    hass: HomeAssistant,
+) -> None:
+    """dynamic_mode is False when no tracker entity is configured."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator.dynamic_mode is False
+    assert coordinator.dynamic_entity is None
+
+
+async def test_dynamic_mode_property_true_for_tracker(
+    hass: HomeAssistant,
+) -> None:
+    """dynamic_mode is True when a tracker entity is configured."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator.dynamic_mode is True
+    assert coordinator.dynamic_entity == "device_tracker.phone"
+
+
+async def test_dynamic_mode_uses_safety_interval(hass: HomeAssistant) -> None:
+    """Dynamic entries use the 6-hour safety interval, not scan_interval."""
+    entry = _make_entry(
+        {CONF_DYNAMIC_ENTITY: "device_tracker.phone", CONF_SCAN_INTERVAL: 30}
+    )
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator.update_interval == timedelta(hours=6)
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — _should_update rate-limit guards
+# ---------------------------------------------------------------------------
+
+
+async def test_should_update_first_call_passes(hass: HomeAssistant) -> None:
+    """First call with no prior position clears all three guards."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator._should_update(48.21, 16.37) is True
+
+
+async def test_should_update_blocks_on_distance_threshold(
+    hass: HomeAssistant,
+) -> None:
+    """A move below DYNAMIC_DISTANCE_THRESHOLD_M (1500 m) is ignored."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    coordinator._last_fetch_lat = 48.21
+    coordinator._last_fetch_lng = 16.37
+    coordinator._last_fetch_time = dt_util.utcnow() - timedelta(hours=1)
+    # Roughly 10 m away — below the 1500 m threshold.
+    assert coordinator._should_update(48.2101, 16.3701) is False
+
+
+async def test_should_update_passes_when_moved_far(hass: HomeAssistant) -> None:
+    """A move above DYNAMIC_DISTANCE_THRESHOLD_M and past entry cooldown
+    passes all three guards."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    coordinator._last_fetch_lat = 48.21
+    coordinator._last_fetch_lng = 16.37
+    coordinator._last_fetch_time = dt_util.utcnow() - timedelta(hours=1)
+    # ~15 km away
+    assert coordinator._should_update(48.35, 16.5) is True
+
+
+async def test_should_update_blocks_on_entry_cooldown(
+    hass: HomeAssistant,
+) -> None:
+    """A refresh within DYNAMIC_COOLDOWN_MINUTES (10 min) is ignored
+    even if the user moved a great distance."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    coordinator._last_fetch_lat = 48.0
+    coordinator._last_fetch_lng = 15.0
+    coordinator._last_fetch_time = dt_util.utcnow()  # just now
+    assert coordinator._should_update(49.0, 16.0) is False
+
+
+async def test_should_update_blocks_on_domain_cooldown(
+    hass: HomeAssistant,
+) -> None:
+    """A recent call from ANY entry blocks further refreshes for
+    DYNAMIC_DOMAIN_COOLDOWN_MINUTES (5 min)."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = (
+        dt_util.utcnow()
+    )
+    assert coordinator._should_update(48.21, 16.37) is False
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — tracker subscribe / teardown
+# ---------------------------------------------------------------------------
+
+
+async def test_async_setup_subscribes_tracker(hass: HomeAssistant) -> None:
+    """Dynamic mode registers a state-change listener during _async_setup."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator._unsubscribe_tracker is None
+    await coordinator._async_setup()
+    assert coordinator._unsubscribe_tracker is not None
+    coordinator.async_teardown()
+    assert coordinator._unsubscribe_tracker is None
+
+
+async def test_async_setup_noop_in_static_mode(hass: HomeAssistant) -> None:
+    """Static mode skips the listener registration."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    await coordinator._async_setup()
+    assert coordinator._unsubscribe_tracker is None
+    coordinator.async_teardown()  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — tracker-missing Repairs issue lifecycle
+# ---------------------------------------------------------------------------
+
+
+async def test_tracker_missing_raises_repair_issue(hass: HomeAssistant) -> None:
+    """_get_entity_coords raises a Repairs issue when the tracker has
+    no coordinates, falling back to the entry's configured location."""
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    hass.states.async_set("device_tracker.phone", "home", {})
+    state = hass.states.get("device_tracker.phone")
+    lat, lng = coordinator._get_entity_coords(state)
+
+    # Fell back to the entry's configured location.
+    assert lat == 48.21
+    assert lng == 16.37
+    # Repairs issue was raised.
+    registry = ir.async_get(hass)
+    issue = registry.async_get_issue(
+        DOMAIN, f"tracker_missing_{entry.entry_id}"
+    )
+    assert issue is not None
+    assert issue.translation_key == "tracker_missing"
+    assert coordinator._tracker_issue_raised is True
+
+
+async def test_tracker_restored_clears_repair_issue(
+    hass: HomeAssistant,
+) -> None:
+    """Once the tracker reports coordinates again the Repairs issue clears."""
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    # Raise first.
+    hass.states.async_set("device_tracker.phone", "home", {})
+    coordinator._get_entity_coords(hass.states.get("device_tracker.phone"))
+    registry = ir.async_get(hass)
+    assert (
+        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
+        is not None
+    )
+
+    # Now simulate the tracker reporting coords again.
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    lat, lng = coordinator._get_entity_coords(
+        hass.states.get("device_tracker.phone")
+    )
+    assert lat == 48.35
+    assert lng == 16.5
+    assert (
+        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
+        is None
+    )
+    assert coordinator._tracker_issue_raised is False

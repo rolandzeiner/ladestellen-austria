@@ -77,6 +77,38 @@ export const cardStyles = css`
     filter: brightness(0) invert(1);
   }
 
+  /* Dynamic-mode indicator — a small pill under the hero reminding
+     the user the list is tracking a device_tracker, not the fixed
+     config location. Only rendered when the sensor reports
+     dynamic_mode: true. */
+  .dynamic-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 var(--l-space-4) var(--l-space-3);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(
+      in srgb,
+      var(--primary-color) 12%,
+      transparent
+    );
+    color: var(--primary-text-color);
+    font-size: var(--l-fs-xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+    max-width: calc(100% - 2 * var(--l-space-4));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dynamic-indicator ha-icon {
+    --mdc-icon-size: 14px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+  }
+
   /* Optional user-set card title. Only rendered when config.name differs
      from the default "Ladestellen Austria". */
   .custom-title {

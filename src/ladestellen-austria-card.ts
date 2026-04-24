@@ -192,11 +192,23 @@ export class LadestellenAustriaCard extends LitElement {
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
     const liveAvailable =
       (stateObj.attributes["live_status_available"] as boolean) === true;
+    // Dynamic-tracker mode signals: the sensor follows a device_tracker's
+    // GPS instead of the fixed config coords. Pinning is meaningless in
+    // this mode (the list of nearby stations changes as the user moves),
+    // so we short-circuit any configured pins to an empty list. The
+    // config itself is preserved untouched, so switching back to static
+    // mode restores the previously-pinned stations.
+    const dynamicMode =
+      (stateObj.attributes["dynamic_mode"] as boolean) === true;
+    const dynamicEntity =
+      (stateObj.attributes["dynamic_entity"] as string | undefined) ?? null;
 
     // Partition by pin status. Pinned first in user-defined order,
     // bypassing filters + sort. Orphan pins (IDs not found in the API
     // response) render as placeholder rows at their pin-order position.
-    const pinnedIds = this.config.pinned_station_ids ?? [];
+    const pinnedIds = dynamicMode
+      ? []
+      : (this.config.pinned_station_ids ?? []);
     const pinnedItems = this._collectPinnedItems(pinnedIds, allStations);
     const pinnedLiveStationIds = new Set(
       pinnedItems
@@ -253,6 +265,17 @@ export class LadestellenAustriaCard extends LitElement {
               filtered.length,
               allStations.length,
             )
+          : nothing}
+        ${dynamicMode && dynamicEntity
+          ? html`<div class="dynamic-indicator">
+              <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
+              <span
+                >${localize("card.dynamic_follows_entity").replace(
+                  "{entity}",
+                  dynamicEntity,
+                )}</span
+              >
+            </div>`
           : nothing}
         ${visible.length > 0
           ? html`<ul class="stations">

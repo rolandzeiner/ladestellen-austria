@@ -9,10 +9,12 @@
           "api_key": "API key",
           "domain": "Registered domain",
           "location": "Location",
-          "scan_interval": "Update interval (minutes)"
+          "scan_interval": "Update interval (minutes)",
+          "dynamic_entity": "Dynamic location tracker"
         },
         "data_description": {
-          "domain": "The full domain name you entered at ladestellen.at, without protocol, port or path. Must match the host your Home Assistant requests are served from."
+          "domain": "The full domain name you entered at ladestellen.at, without protocol, port or path. Must match the host your Home Assistant requests are served from.",
+          "dynamic_entity": "Optional: select a device_tracker (e.g. your phone via the HA companion app) to refresh the station list from your live GPS position. Leave empty for fixed-location mode. In dynamic mode the update interval above is replaced by a 6-hour safety-net timer — actual refreshes are driven by tracker movement (min. 1.5 km / 10 min between refreshes)."
         }
       },
       "reconfigure": {
@@ -22,7 +24,11 @@
           "api_key": "API key",
           "domain": "Registered domain",
           "location": "Location",
-          "scan_interval": "Update interval (minutes)"
+          "scan_interval": "Update interval (minutes)",
+          "dynamic_entity": "Dynamic location tracker"
+        },
+        "data_description": {
+          "dynamic_entity": "Optional: select a device_tracker to refresh from live GPS. Leave empty for fixed-location mode. Pinned stations are hidden in dynamic mode — the list follows your position instead."
         }
       },
       "reauth_confirm": {
@@ -82,6 +88,12 @@
     },
     "api_invalid_response": {
       "message": "Ladestellen Austria API returned an unexpected response (status {status}): {error}"
+    }
+  },
+  "issues": {
+    "tracker_missing": {
+      "title": "Location tracker unavailable",
+      "description": "The device_tracker entity **{entity_id}** configured for dynamic mode on **{entry_title}** is unavailable or reports no coordinates. Updates are falling back to the entry's configured location. Either restore the tracker, or reconfigure this entry to switch to fixed-location mode."
     }
   }
 }

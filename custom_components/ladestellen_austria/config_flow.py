@@ -23,6 +23,8 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     LocationSelector,
     LocationSelectorConfig,
     NumberSelector,
@@ -38,6 +40,7 @@ from .const import (
     API_KEY_HEADER,
     CONF_API_KEY,
     CONF_DOMAIN,
+    CONF_DYNAMIC_ENTITY,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     REFERER_HEADER,
@@ -79,6 +82,7 @@ def _build_schema(
     defaults: dict[str, Any],
     include_name: bool = False,
     include_location: bool = True,
+    include_dynamic: bool = False,
 ) -> vol.Schema:
     """Build the user/reconfigure/options schema."""
     fields: dict[Any, Any] = {}
@@ -119,6 +123,18 @@ def _build_schema(
             mode=NumberSelectorMode.BOX,
         )
     )
+    if include_dynamic:
+        # Optional device_tracker picker. An existing value is preserved
+        # in the default (so reconfigure shows the currently-selected
+        # tracker), but the field itself is always optional so users can
+        # clear it back to static mode.
+        existing = defaults.get(CONF_DYNAMIC_ENTITY) or None
+        key = (
+            vol.Optional(CONF_DYNAMIC_ENTITY, default=existing)
+            if existing
+            else vol.Optional(CONF_DYNAMIC_ENTITY)
+        )
+        fields[key] = EntitySelector(EntitySelectorConfig(domain="device_tracker"))
     return vol.Schema(fields)
 
 
@@ -195,6 +211,7 @@ def _validate_user_input(
         CONF_SCAN_INTERVAL: int(
             user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         ),
+        CONF_DYNAMIC_ENTITY: user_input.get(CONF_DYNAMIC_ENTITY) or None,
     }
     return cleaned, errors
 
@@ -207,18 +224,28 @@ def _build_entry_data(cleaned: dict[str, Any]) -> dict[str, Any]:
         CONF_LATITUDE: cleaned[CONF_LATITUDE],
         CONF_LONGITUDE: cleaned[CONF_LONGITUDE],
         CONF_SCAN_INTERVAL: cleaned[CONF_SCAN_INTERVAL],
+        CONF_DYNAMIC_ENTITY: cleaned.get(CONF_DYNAMIC_ENTITY) or None,
     }
 
 
 def _compute_unique_id(cleaned: dict[str, Any]) -> str:
-    """Stable unique_id formula — FROZEN from v0.1.0 onward.
+    """Stable unique_id formula.
 
+    Static mode — FROZEN from v0.1.0 onward: `{domain}:{lat_round3}:{lng_round3}`.
     Combining domain + coarse coords lets the same API key serve multiple
     regional entries without collision. Three decimals of lat/lng is ~110 m
     precision — fine-grained enough that a second entry at a truly different
     location doesn't collide, coarse enough that micro-adjustments in the map
     picker don't create duplicates.
+
+    Dynamic mode (beta-50): `{domain}:dynamic:{entity_id}`. A dynamic
+    entry's live position changes constantly, so tying the unique_id to
+    lat/lng would make the ID unstable. The tracker entity_id is the
+    user's intended identity for the entry and stays fixed across moves.
     """
+    dynamic_entity = cleaned.get(CONF_DYNAMIC_ENTITY) or None
+    if dynamic_entity:
+        return f"{cleaned[CONF_DOMAIN]}:dynamic:{dynamic_entity}"
     lat = round(float(cleaned[CONF_LATITUDE]), 3)
     lng = round(float(cleaned[CONF_LONGITUDE]), 3)
     return f"{cleaned[CONF_DOMAIN]}:{lat}:{lng}"
@@ -307,7 +334,9 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
         }
         return self.async_show_form(
             step_id="user",
-            data_schema=_build_schema(defaults, include_name=True),
+            data_schema=_build_schema(
+                defaults, include_name=True, include_dynamic=True
+            ),
             errors=errors,
             description_placeholders={"registration_url": REGISTRATION_URL},
         )
@@ -346,10 +375,11 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 "longitude": current.get(CONF_LONGITUDE, self.hass.config.longitude),
             },
             CONF_SCAN_INTERVAL: current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            CONF_DYNAMIC_ENTITY: current.get(CONF_DYNAMIC_ENTITY) or None,
         }
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=_build_schema(current_defaults),
+            data_schema=_build_schema(current_defaults, include_dynamic=True),
             errors=errors,
             description_placeholders={"registration_url": REGISTRATION_URL},
         )

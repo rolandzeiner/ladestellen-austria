@@ -47,7 +47,8 @@
     "point_status_unknown": "Unknown",
     "point_status_planned": "Planned",
     "point_status_removed": "Removed",
-    "tariff": "Tariff"
+    "tariff": "Tariff",
+    "dynamic_follows_entity": "Tracking: {entity}"
   },
   "parking": {
     "card_name": "Ladestellen Austria — Parking",
@@ -117,6 +118,7 @@
     "pin_select_sensor_first": "Select a sensor first to see available stations.",
     "pin_no_stations_yet": "No stations returned yet — wait for the next refresh.",
     "pin_orphans_heading": "Pinned but not in range (click to remove):",
-    "pin_unpin": "Remove"
+    "pin_unpin": "Remove",
+    "pin_disabled_dynamic": "Dynamic location mode is active on this sensor — pinned stations are disabled because the list follows your current position. Existing pins are preserved for when you switch back to fixed mode."
   }
 }
