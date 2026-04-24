@@ -202,6 +202,46 @@ async def test_form_creates_entry_with_dynamic_tracker(
     assert entry.unique_id == "www.meineseite.at:dynamic:device_tracker.phone"
 
 
+async def test_reconfigure_switches_static_to_dynamic(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """Reconfigure flow accepts switching an existing static entry into
+    dynamic mode even though that changes the unique_id formula."""
+    # Create a static entry first.
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    await hass.config_entries.flow.async_configure(
+        result["flow_id"], VALID_USER_INPUT
+    )
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    assert entry.unique_id == "www.meineseite.at:48.21:16.37"
+
+    # Now reconfigure, adding a tracker.
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
+    )
+    reconfigure_input = {
+        k: v for k, v in VALID_USER_INPUT.items() if k != "name"
+    }
+    reconfigure_input[CONF_DYNAMIC_ENTITY] = "device_tracker.phone"
+    result = await hass.config_entries.flow.async_configure(
+        flow["flow_id"], reconfigure_input
+    )
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+
+    refreshed = hass.config_entries.async_get_entry(entry.entry_id)
+    assert refreshed is not None
+    # unique_id flipped to the dynamic formula.
+    assert refreshed.unique_id == "www.meineseite.at:dynamic:device_tracker.phone"
+    assert refreshed.data[CONF_DYNAMIC_ENTITY] == "device_tracker.phone"
+
+
 async def test_dynamic_entries_do_not_collide_by_location(
     hass: HomeAssistant, mock_fetch: AsyncMock
 ) -> None:
