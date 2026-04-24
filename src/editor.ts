@@ -119,6 +119,15 @@ export class LadestellenAustriaCardEditor
               @change=${this._valueChanged}
             ></ha-switch>
           </div>
+
+          <div class="toggle-row">
+            <label>${localize("editor.logo_adapt_to_theme")}</label>
+            <ha-switch
+              .checked=${this._config.logo_adapt_to_theme ?? false}
+              .configValue=${"logo_adapt_to_theme"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
         </div>
 
         <div class="editor-section">

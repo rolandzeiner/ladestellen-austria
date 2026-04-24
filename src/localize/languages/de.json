@@ -43,6 +43,7 @@
     "show_pricing": "Preise anzeigen",
     "show_amenities": "Ausstattungs-Details anzeigen",
     "sort_by_power": "Nach Leistung sortieren (schnellste zuerst)",
+    "logo_adapt_to_theme": "Logo an Design anpassen (schwarz auf hell, weiß auf dunkel)",
     "only_available": "Nur aktuell verfügbare Ladestellen",
     "only_free": "Nur Ladestellen mit Gratis-Laden",
     "connector_filter_hint": "Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",
