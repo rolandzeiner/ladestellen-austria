@@ -98,6 +98,7 @@ export class LadestellenAustriaCard extends LitElement {
       show_amenities: true,
       show_pricing: true,
       sort_by_power: false,
+      logo_adapt_to_theme: false,
       only_available: false,
       only_free: false,
       connector_types: [],
@@ -244,8 +245,21 @@ export class LadestellenAustriaCard extends LitElement {
   // www/ directory, served by HA's static-path registration under
   // /ladestellen_austria/. The <img> + <a> wrapper preserves the legal
   // link-back to www.e-control.at; never remove the href or the alt text.
+  //
+  // When logo_adapt_to_theme is on, we mask the PNG to pure black (light
+  // theme) or pure white (dark theme) via CSS filter, so the logo reads
+  // as a silhouette matching --primary-text-color. Dark-mode detection
+  // uses hass.themes.darkMode — HA's authoritative source, which updates
+  // reactively when the user flips themes.
   private _renderHeader(): TemplateResult {
     const title = this.config?.name ?? "Ladestellen Austria";
+    const adaptive = this.config?.logo_adapt_to_theme === true;
+    const darkMode = Boolean(
+      (this.hass?.themes as { darkMode?: boolean } | undefined)?.darkMode,
+    );
+    const logoClasses = adaptive
+      ? `brand-logo adaptive ${darkMode ? "adaptive-dark" : "adaptive-light"}`
+      : "brand-logo";
     return html`
       <div class="header">
         <a
@@ -257,7 +271,7 @@ export class LadestellenAustriaCard extends LitElement {
           @click=${(ev: Event) => ev.stopPropagation()}
         >
           <img
-            class="brand-logo"
+            class=${logoClasses}
             src="/ladestellen_austria/e-control_logo.png"
             alt="E-Control"
           />

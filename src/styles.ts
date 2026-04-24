@@ -63,15 +63,26 @@ export const cardStyles = css`
   .brand-link:hover {
     opacity: 0.7;
   }
-  /* Official E-Control logo PNG (2274x598, RGBA). Rendered at ~24px tall
-     — the logo has a light background built in, so no wrapper tint is
-     needed in either light or dark themes. Width auto-scales. */
+  /* Official E-Control logo PNG (2274x598, RGBA). Rendered at ~24px tall,
+     width auto-scales to preserve the aspect ratio. */
   .brand-logo {
     display: block;
     height: 24px;
     width: auto;
     max-width: 160px;
     object-fit: contain;
+    transition: filter 160ms var(--l-ease);
+  }
+  /* Optional theme-adaptive rendering. Turn the PNG's RGBA into a pure
+     black silhouette (light theme) or pure white (dark theme) via a
+     2-step filter: brightness(0) collapses all channels to black while
+     preserving alpha, then invert(1) flips black → white for dark mode.
+     Enabled by the card's logo_adapt_to_theme config (default off). */
+  .brand-logo.adaptive.adaptive-light {
+    filter: brightness(0);
+  }
+  .brand-logo.adaptive.adaptive-dark {
+    filter: brightness(0) invert(1);
   }
   .header-title {
     font-size: var(--l-fs-xs);
