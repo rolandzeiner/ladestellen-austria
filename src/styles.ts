@@ -234,14 +234,15 @@ export const cardStyles = css`
     opacity: 0.6;
   }
 
-  /* Line 1: metrics (the user's real question: "what, how fast, how much")
-     take the primary position. Distance + chevron sit on the right. Name
-     moves to line 2 as a subtitle; address moves to the expanded detail. */
+  /* Line 1: metrics on the left, right-stack (price above distance) in
+     the middle column, chevron on the right. Stacking price + distance
+     in a right-aligned column lets the eye compare prices + distances
+     vertically down the list. */
   .station-line-1 {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: "metrics distance chevron";
-    align-items: baseline;
+    grid-template-areas: "metrics stack chevron";
+    align-items: center;
     column-gap: var(--l-space-3);
     row-gap: 2px;
     min-width: 0;
@@ -249,12 +250,19 @@ export const cardStyles = css`
   .station-metrics {
     grid-area: metrics;
     justify-self: start;
+    align-self: center;
   }
-  .station-distance {
-    grid-area: distance;
+  .row-right-stack {
+    grid-area: stack;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 0;
   }
   .chevron {
     grid-area: chevron;
+    align-self: center;
   }
   /* Name sits on line 2 as a secondary identifier. Kept legible but
      visually subordinate to the metrics line above. */
@@ -320,10 +328,16 @@ export const cardStyles = css`
       transparent
     );
   }
+  /* Price sits above distance in the right-stack — right-aligned so
+     digits line up column-wise for easy comparison across rows. */
   .metric-price {
     color: var(--primary-text-color);
+    font-size: var(--l-fs-s);
     font-weight: var(--l-fw-med);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+    line-height: 1.2;
+    white-space: nowrap;
   }
   .metric-free {
     color: var(--success-color, #2e7d32);
