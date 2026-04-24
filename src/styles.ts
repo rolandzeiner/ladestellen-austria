@@ -729,11 +729,12 @@ export const cardStyles = css`
     position: relative;
     flex: 0 0 80px;
     width: 80px;
-    /* Dynamic height — content + padding size the slot. kW + connector
-       sit as a tight vertically-centred group; dot + power-badge live
-       absolute at the top so removing the bottom row freed the extra
-       square height. min-height keeps a regular slot at least as tall
-       as a warn slot (wrench icon), so a mixed row stays consistent. */
+    /* Content + padding drive the slot height; min-height is a floor so
+       mixed rows (warn slots with their wrench icon + regular slots with
+       kW+connector) stay consistent. flex-start keeps kW pinned to the
+       top padding boundary so the badge→kW visual gap exactly matches
+       the CSS-defined kW→connector gap; warn slots use flex:1 on the
+       wrench to self-centre in the remaining space. */
     min-height: 58px;
     box-sizing: border-box;
     border-radius: 10px;
@@ -741,7 +742,7 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),
