@@ -185,9 +185,11 @@ export class LadestellenAustriaCard extends LitElement {
     setLanguage(this.hass?.language);
 
     if (!this.hass || !this.config) {
-      return html`<ha-card
-        ><div class="empty-state">${localize("common.loading")}</div></ha-card
-      >`;
+      return html`<ha-card>
+        <div class="card-content">
+          <div class="empty-state">${localize("common.loading")}</div>
+        </div>
+      </ha-card>`;
     }
 
     const stateObj = this.config.entity
@@ -197,8 +199,10 @@ export class LadestellenAustriaCard extends LitElement {
     if (!stateObj) {
       return html`
         <ha-card>
-          <div class="empty-state">${localize("card.no_entity")}</div>
-          ${this._renderFooter(undefined)}
+          <div class="card-content">
+            <div class="empty-state">${localize("card.no_entity")}</div>
+            ${this._renderFooter(undefined)}
+          </div>
         </ha-card>
       `;
     }
@@ -269,46 +273,48 @@ export class LadestellenAustriaCard extends LitElement {
 
     return html`
       <ha-card>
-        ${customTitle
-          ? html`<h3 class="custom-title">${customTitle}</h3>`
-          : nothing}
-        ${showHero
-          ? this._renderHero(
-              nearestByDistance,
-              farthestShown,
-              filtered.length,
-              allStations.length,
-            )
-          : nothing}
-        ${dynamicMode && dynamicEntity
-          ? html`<div class="dynamic-indicator">
-              <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
-              <span
-                >${localize("card.dynamic_follows_entity").replace(
-                  "{entity}",
-                  dynamicEntity,
-                )}</span
-              >
-            </div>`
-          : nothing}
-        ${visible.length > 0
-          ? html`<ul class="stations">
-              ${visible.map((item) =>
-                item.kind === "live"
-                  ? this._renderStation(
-                      item.station,
-                      liveAvailable,
-                      pinnedLiveStationIds.has(item.station.stationId),
-                    )
-                  : this._renderOrphanPin(item.id),
-              )}
-            </ul>`
-          : html`<div class="empty-state">
-              ${localize("card.no_stations")}
-            </div>`}
-        ${this._renderFooter(
-          stateObj.attributes["attribution"] as string | undefined,
-        )}
+        <div class="card-content">
+          ${customTitle
+            ? html`<h3 class="custom-title">${customTitle}</h3>`
+            : nothing}
+          ${showHero
+            ? this._renderHero(
+                nearestByDistance,
+                farthestShown,
+                filtered.length,
+                allStations.length,
+              )
+            : nothing}
+          ${dynamicMode && dynamicEntity
+            ? html`<div class="dynamic-indicator">
+                <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
+                <span
+                  >${localize("card.dynamic_follows_entity").replace(
+                    "{entity}",
+                    dynamicEntity,
+                  )}</span
+                >
+              </div>`
+            : nothing}
+          ${visible.length > 0
+            ? html`<ul class="stations">
+                ${visible.map((item) =>
+                  item.kind === "live"
+                    ? this._renderStation(
+                        item.station,
+                        liveAvailable,
+                        pinnedLiveStationIds.has(item.station.stationId),
+                      )
+                    : this._renderOrphanPin(item.id),
+                )}
+              </ul>`
+            : html`<div class="empty-state">
+                ${localize("card.no_stations")}
+              </div>`}
+          ${this._renderFooter(
+            stateObj.attributes["attribution"] as string | undefined,
+          )}
+        </div>
       </ha-card>
     `;
   }

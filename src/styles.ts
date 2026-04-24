@@ -46,6 +46,14 @@ export const cardStyles = css`
     container-name: lscard;
   }
 
+  /* Card-content wrapper — follows HA's slotted-child convention so ha-card's
+     shadow-DOM selectors apply cleanly, but we reset the default 16px padding
+     because every block inside supplies its own spacing tuned to the 2-column
+     compact layout. Keeping the wrapper is purely semantic hygiene. */
+  .card-content {
+    padding: 0;
+  }
+
   /* ----- Brand (used in the footer: §3c logo-link + §3d attribution) --- */
   .brand-link {
     display: inline-flex;
@@ -247,7 +255,10 @@ export const cardStyles = css`
   }
 
   /* Status dot — 9px circle that communicates live availability at a glance.
-     Aligned to the baseline of the first text line for tidy vertical rhythm. */
+     Aligned to the baseline of the first text line for tidy vertical rhythm.
+     WCAG 1.4.1 (use of color) — each state ships THREE independent cues:
+     colour, halo/ring geometry, AND fill-vs-hollow shape. Grayscale displays,
+     protanopia, and sun-glare viewing all disambiguate without hue. */
   .status-dot {
     width: 9px;
     height: 9px;
@@ -255,29 +266,45 @@ export const cardStyles = css`
     flex-shrink: 0;
     margin-top: 7px; /* aligns with the baseline of .station-name */
     background: currentColor;
+    box-sizing: border-box;
   }
   .status-dot.status-ok {
+    /* Shape: solid disc + soft halo. Baseline "healthy" state. */
     color: var(--l-dot-ok);
     box-shadow: 0 0 0 3px
       color-mix(in srgb, var(--l-dot-ok) 18%, transparent);
   }
   .status-dot.status-partial {
+    /* Shape: solid disc + contrasting inner "pip" via inset shadow,
+       producing a ringed-dot distinct from the plain ok disc. */
     color: var(--l-dot-partial);
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--l-dot-partial) 20%, transparent);
+    box-shadow:
+      inset 0 0 0 2px
+        color-mix(in srgb, var(--l-dot-partial) 35%, white 65%),
+      0 0 0 3px color-mix(in srgb, var(--l-dot-partial) 20%, transparent);
   }
   .status-dot.status-busy {
+    /* Shape: solid disc + thick solid outer ring (visual "weight"
+       emphasises saturation, even at 100 % grayscale). */
     color: var(--l-dot-busy);
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--l-dot-busy) 18%, transparent);
+    box-shadow:
+      0 0 0 1.5px var(--ha-card-background, var(--card-background-color, #fff)),
+      0 0 0 3.5px var(--l-dot-busy);
   }
   .status-dot.status-inactive {
-    color: var(--l-dot-inactive);
+    /* Shape: hollow ring (no fill), distinct from the three filled
+       active states regardless of colour. */
+    color: transparent;
+    background: transparent;
+    border: 1.5px solid var(--l-dot-inactive);
     opacity: 0.7;
   }
   .status-dot.status-unknown {
+    /* Shape: hollow dashed ring (further distinct from inactive's
+       solid ring). */
     color: transparent;
-    border: 1.5px solid var(--secondary-text-color);
+    background: transparent;
+    border: 1.5px dashed var(--secondary-text-color);
     opacity: 0.6;
   }
 
@@ -929,7 +956,7 @@ export const cardStyles = css`
      the warning accent (fast-charge signal); AC stays secondary so
      it recedes on the common case. */
   .power-badge {
-    font-size: 9px;
+    font-size: 0.5625rem; /* 9px @ 16px root — WCAG 1.4.4 resize-text */
     font-weight: var(--l-fw-bld);
     letter-spacing: 0.08em;
     line-height: 1;
@@ -1137,7 +1164,7 @@ export const cardStyles = css`
       font-size: 0.65rem;
     }
     .rack-connector {
-      font-size: 10px;
+      font-size: 0.625rem; /* 10px @ 16px root — WCAG 1.4.4 */
     }
     .rack-warn-icon {
       --mdc-icon-size: 22px;
@@ -1149,7 +1176,7 @@ export const cardStyles = css`
       height: 7px;
     }
     .power-badge {
-      font-size: 8px;
+      font-size: 0.5rem; /* 8px @ 16px root — WCAG 1.4.4 */
       letter-spacing: 0.06em;
     }
   }
@@ -1167,7 +1194,7 @@ export const cardStyles = css`
       font-size: var(--l-fs-s);
     }
     .distance-value .unit {
-      font-size: 10px;
+      font-size: 0.625rem; /* 10px @ 16px root — WCAG 1.4.4 */
     }
     .station-distance {
       padding: 2px 8px;
@@ -1475,7 +1502,7 @@ export const parkingLotStyles = css`
   }
 
   .slot-power-badge {
-    font-size: 9px;
+    font-size: 0.5625rem; /* 9px @ 16px root — WCAG 1.4.4 */
     font-weight: var(--l-fw-bld);
     letter-spacing: 0.08em;
     line-height: 1;

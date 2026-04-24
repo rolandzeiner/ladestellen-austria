@@ -34,7 +34,17 @@ export class LadestellenAustriaCardEditor
   };
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
-    this._config = { ...config };
+    // WCAG 3.3.7 (redundant entry) — derive `name` from the selected
+    // sensor's friendly_name when the user hasn't explicitly set it, so
+    // the second field doesn't re-ask for data already implied by the
+    // first.
+    const friendlyName =
+      config.entity && this.hass?.states[config.entity]?.attributes
+        .friendly_name;
+    this._config = {
+      name: typeof friendlyName === "string" ? friendlyName : undefined,
+      ...config,
+    };
   }
 
   protected render(): TemplateResult {
@@ -42,6 +52,12 @@ export class LadestellenAustriaCardEditor
     const selectedConnectors = this._config.connector_types ?? [];
     const selectedAmenities = this._config.amenities ?? [];
     const selectedPayments = this._config.payment_methods ?? [];
+    // WCAG 3.3.1 (error identification) — flag an entity that isn't in
+    // hass.states so the error is conveyed in text, not just by the
+    // downstream empty-state. aria-describedby points AT users at the
+    // <ha-alert> rendered below.
+    const entityInvalid =
+      !!this._config.entity && !!this.hass && !this.hass.states[this._config.entity];
     return html`
       <div class="editor">
         <div class="editor-section">
@@ -58,8 +74,18 @@ export class LadestellenAustriaCardEditor
                   .configValue=${"entity"}
                   .label=${localize("editor.entity")}
                   .required=${true}
+                  aria-invalid=${entityInvalid ? "true" : "false"}
+                  aria-describedby=${entityInvalid ? "entity-error" : nothing}
                   @value-changed=${this._valueChanged}
                 ></ha-selector>
+                ${entityInvalid
+                  ? html`<ha-alert
+                      id="entity-error"
+                      alert-type="error"
+                    >
+                      ${localize("editor.entity_missing")}
+                    </ha-alert>`
+                  : nothing}
               `
             : html`<p>${localize("common.loading")}</p>`}
 
@@ -90,8 +116,11 @@ export class LadestellenAustriaCardEditor
             : nothing}
 
           <div class="toggle-row">
-            <label>${localize("editor.show_hero")}</label>
+            <label for="toggle-show-hero"
+              >${localize("editor.show_hero")}</label
+            >
             <ha-switch
+              id="toggle-show-hero"
               .checked=${this._config.show_hero !== false}
               .configValue=${"show_hero"}
               @change=${this._valueChanged}
@@ -99,8 +128,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.show_pricing")}</label>
+            <label for="toggle-show-pricing"
+              >${localize("editor.show_pricing")}</label
+            >
             <ha-switch
+              id="toggle-show-pricing"
               .checked=${this._config.show_pricing ?? true}
               .configValue=${"show_pricing"}
               @change=${this._valueChanged}
@@ -108,8 +140,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.show_amenities")}</label>
+            <label for="toggle-show-amenities"
+              >${localize("editor.show_amenities")}</label
+            >
             <ha-switch
+              id="toggle-show-amenities"
               .checked=${this._config.show_amenities ?? true}
               .configValue=${"show_amenities"}
               @change=${this._valueChanged}
@@ -117,8 +152,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.sort_by_power")}</label>
+            <label for="toggle-sort-by-power"
+              >${localize("editor.sort_by_power")}</label
+            >
             <ha-switch
+              id="toggle-sort-by-power"
               .checked=${this._config.sort_by_power ?? false}
               .configValue=${"sort_by_power"}
               @change=${this._valueChanged}
@@ -126,8 +164,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.logo_adapt_to_theme")}</label>
+            <label for="toggle-logo-adapt"
+              >${localize("editor.logo_adapt_to_theme")}</label
+            >
             <ha-switch
+              id="toggle-logo-adapt"
               .checked=${this._config.logo_adapt_to_theme ?? false}
               .configValue=${"logo_adapt_to_theme"}
               @change=${this._valueChanged}
@@ -139,8 +180,11 @@ export class LadestellenAustriaCardEditor
           <div class="section-header">${localize("editor.section_filters")}</div>
 
           <div class="toggle-row">
-            <label>${localize("editor.only_available")}</label>
+            <label for="toggle-only-available"
+              >${localize("editor.only_available")}</label
+            >
             <ha-switch
+              id="toggle-only-available"
               .checked=${this._config.only_available ?? false}
               .configValue=${"only_available"}
               @change=${this._valueChanged}
@@ -148,8 +192,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.only_free")}</label>
+            <label for="toggle-only-free"
+              >${localize("editor.only_free")}</label
+            >
             <ha-switch
+              id="toggle-only-free"
               .checked=${this._config.only_free ?? false}
               .configValue=${"only_free"}
               @change=${this._valueChanged}
@@ -157,8 +204,11 @@ export class LadestellenAustriaCardEditor
           </div>
 
           <div class="toggle-row">
-            <label>${localize("editor.only_open")}</label>
+            <label for="toggle-only-open"
+              >${localize("editor.only_open")}</label
+            >
             <ha-switch
+              id="toggle-only-open"
               .checked=${this._config.only_open ?? false}
               .configValue=${"only_open"}
               @change=${this._valueChanged}

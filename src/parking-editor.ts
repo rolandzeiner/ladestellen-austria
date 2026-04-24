@@ -43,6 +43,10 @@ export class LadestellenAustriaParkingCardEditor
     const stateObj = entityId ? this.hass?.states[entityId] : undefined;
     const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
     const selectedId = this._config.station_id ?? "";
+    // WCAG 3.3.1 (error identification) — flag an invalid entity in
+    // text so the error isn't only conveyed by downstream empty states.
+    const entityInvalid =
+      !!entityId && !!this.hass && !this.hass.states[entityId];
     return html`
       <div class="editor">
         <div class="editor-section">
@@ -62,8 +66,18 @@ export class LadestellenAustriaParkingCardEditor
                   .configValue=${"entity"}
                   .label=${localize("editor.entity")}
                   .required=${true}
+                  aria-invalid=${entityInvalid ? "true" : "false"}
+                  aria-describedby=${entityInvalid ? "entity-error" : nothing}
                   @value-changed=${this._valueChanged}
                 ></ha-selector>
+                ${entityInvalid
+                  ? html`<ha-alert
+                      id="entity-error"
+                      alert-type="error"
+                    >
+                      ${localize("editor.entity_missing")}
+                    </ha-alert>`
+                  : nothing}
               `
             : html`<p>${localize("common.loading")}</p>`}
 
