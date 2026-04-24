@@ -689,10 +689,14 @@ export const cardStyles = css`
     min-width: 0;
   }
 
-  /* ----- Rack (per-point availability grid, nextbike-style) --------- */
+  /* ----- Rack (per-point availability grid, nextbike-style) ---------
+     Centred cluster — small point counts (1-4 typical) sit in the middle
+     of the container rather than left-hugging, which kept looking like a
+     half-empty row. */
   .rack {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     padding: 10px;
     border-radius: 10px;
@@ -709,12 +713,12 @@ export const cardStyles = css`
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    padding: 8px 6px 6px;
+    padding: 10px 8px 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 2px;
+    justify-content: center;
+    gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
@@ -786,7 +790,13 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
   }
+  /* Status dot — pulled out of the flex flow and tucked into the
+     bottom-right corner so it reads as a quiet indicator rather than a
+     centred headline. */
   .rack-dot {
+    position: absolute;
+    bottom: 5px;
+    right: 6px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -806,22 +816,16 @@ export const cardStyles = css`
     border: 1px solid
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
+  /* DC accent — a small amber lightning bolt in the top-left corner.
+     Paired with the already-amber "kW" unit below, it reads as a single
+     DC token without stamping a narrow text badge into the slot. */
   .dc-badge {
     position: absolute;
-    top: 4px;
-    right: 5px;
-    font-size: 9px;
-    font-weight: var(--l-fw-bld);
-    letter-spacing: 0.06em;
+    top: 3px;
+    left: 4px;
+    --mdc-icon-size: 14px;
     color: var(--warning-color, #f57c00);
     line-height: 1;
-    padding: 1px 3px;
-    border-radius: 3px;
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f57c00) 12%,
-      transparent
-    );
   }
 
   /* Fees line under the rack — quiet secondary text. */
@@ -992,7 +996,7 @@ export const cardStyles = css`
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 6px 4px 4px;
+      padding: 8px 4px 12px;
     }
     .rack-kw-num {
       font-size: 1rem;
@@ -1006,9 +1010,16 @@ export const cardStyles = css`
     .rack-warn-icon {
       --mdc-icon-size: 22px;
     }
+    .rack-dot {
+      bottom: 4px;
+      right: 4px;
+      width: 7px;
+      height: 7px;
+    }
     .dc-badge {
-      font-size: 8px;
-      padding: 1px 2px;
+      top: 2px;
+      left: 3px;
+      --mdc-icon-size: 11px;
     }
   }
 

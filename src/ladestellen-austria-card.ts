@@ -762,7 +762,9 @@ export class LadestellenAustriaCard extends LitElement {
     if (statusCat === "warn") {
       return html`
         <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
-          ${isDC ? html`<span class="dc-badge">DC</span>` : nothing}
+          ${isDC
+            ? html`<ha-icon class="dc-badge" icon="mdi:flash"></ha-icon>`
+            : nothing}
           <ha-icon
             class="rack-warn-icon"
             icon="mdi:wrench-outline"
@@ -775,7 +777,9 @@ export class LadestellenAustriaCard extends LitElement {
     const kwText = this._formatKw(point.capacityKw);
     return html`
       <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
-        ${isDC ? html`<span class="dc-badge">DC</span>` : nothing}
+        ${isDC
+          ? html`<ha-icon class="dc-badge" icon="mdi:flash"></ha-icon>`
+          : nothing}
         <span class="rack-kw">
           <span class="rack-kw-num">${kwText}</span
           ><span class="rack-kw-unit">kW</span>
