@@ -713,9 +713,11 @@ export const cardStyles = css`
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    /* Two-row grid: kW fills the large top cell, centred in both axes.
-       Bottom row is a flex band holding connector + status dot. */
-    padding: 8px;
+    /* Two-row grid: kW fills the large top cell, connector lives in the
+       auto bottom cell. Status dot is absolute-positioned in the bottom-
+       right corner so a long connector label clips via ellipsis instead
+       of pushing the dot out of the box. */
+    padding: 8px 8px 6px;
     display: grid;
     grid-template-rows: 1fr auto;
     justify-items: center;
@@ -724,12 +726,6 @@ export const cardStyles = css`
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
     cursor: default;
-  }
-  .rack-bottom {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 6px;
   }
   .rack-slot[data-status="ok"] {
     background: color-mix(in srgb, var(--success-color, #22c55e) 14%, transparent);
@@ -775,8 +771,10 @@ export const cardStyles = css`
     letter-spacing: 0.01em;
   }
   .rack-connector {
-    flex: 1;
-    min-width: 0;
+    justify-self: center;
+    /* Reserve ~14px on the right so the centred label stays clear of the
+       absolute-positioned status dot; overflow clips via ellipsis. */
+    max-width: calc(100% - 14px);
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.005em;
@@ -793,16 +791,18 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
   }
-  /* Status dot — bottom-right corner of the slot, in the same row as
-     the connector so they read as one bottom band. The warn-slot
-     variant (wrench above, dot alone below) keeps the dot right-
-     aligned too via margin-left: auto on the rack-bottom flex. */
+  /* Status dot — anchored to the slot's bottom-right corner. Sitting
+     absolute keeps it inside the slot even when the connector label
+     overflows; the connector's right-margin reservation handles the
+     text/dot collision. */
   .rack-dot {
+    position: absolute;
+    bottom: 5px;
+    right: 6px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
-    margin-left: auto;
   }
   .rack-dot.status-ok {
     background: var(--l-dot-ok);
@@ -1007,7 +1007,7 @@ export const cardStyles = css`
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 6px;
+      padding: 6px 6px 4px;
     }
     .rack-kw-num {
       font-size: 1rem;
@@ -1017,16 +1017,16 @@ export const cardStyles = css`
     }
     .rack-connector {
       font-size: 10px;
+      max-width: calc(100% - 12px);
     }
     .rack-warn-icon {
       --mdc-icon-size: 22px;
     }
     .rack-dot {
+      bottom: 4px;
+      right: 5px;
       width: 7px;
       height: 7px;
-    }
-    .rack-bottom {
-      gap: 4px;
     }
     .power-badge {
       top: 3px;
