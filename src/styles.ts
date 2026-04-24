@@ -713,15 +713,15 @@ export const cardStyles = css`
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    /* Two-row grid: kW fills the large top cell, connector lives in the
-       auto bottom cell. Status dot is absolute-positioned in the bottom-
-       right corner so a long connector label clips via ellipsis instead
-       of pushing the dot out of the box. */
-    padding: 8px 8px 6px;
-    display: grid;
-    grid-template-rows: 1fr auto;
-    justify-items: center;
+    /* kW + connector sit as a tight vertically-centred group (small gap
+       between them); the status dot lives absolute in the bottom-right
+       corner so it stays put regardless of connector length. */
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
@@ -771,7 +771,6 @@ export const cardStyles = css`
     letter-spacing: 0.01em;
   }
   .rack-connector {
-    justify-self: center;
     /* Reserve ~14px on the right so the centred label stays clear of the
        absolute-positioned status dot; overflow clips via ellipsis. */
     max-width: calc(100% - 14px);
@@ -1007,7 +1006,8 @@ export const cardStyles = css`
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 6px 6px 4px;
+      padding: 6px;
+      gap: 2px;
     }
     .rack-kw-num {
       font-size: 1rem;

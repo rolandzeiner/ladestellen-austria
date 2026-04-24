@@ -702,15 +702,15 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     height: 72px;
     box-sizing: border-box;
     border-radius: 10px;
-    /* Two-row grid: kW fills the large top cell, connector lives in the
-       auto bottom cell. Status dot is absolute-positioned in the bottom-
-       right corner so a long connector label clips via ellipsis instead
-       of pushing the dot out of the box. */
-    padding: 8px 8px 6px;
-    display: grid;
-    grid-template-rows: 1fr auto;
-    justify-items: center;
+    /* kW + connector sit as a tight vertically-centred group (small gap
+       between them); the status dot lives absolute in the bottom-right
+       corner so it stays put regardless of connector length. */
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),
       border-color 160ms var(--l-ease);
@@ -760,7 +760,6 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
     letter-spacing: 0.01em;
   }
   .rack-connector {
-    justify-self: center;
     /* Reserve ~14px on the right so the centred label stays clear of the
        absolute-positioned status dot; overflow clips via ellipsis. */
     max-width: calc(100% - 14px);
@@ -996,7 +995,8 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
       flex: 0 0 60px;
       width: 60px;
       height: 56px;
-      padding: 6px 6px 4px;
+      padding: 6px;
+      gap: 2px;
     }
     .rack-kw-num {
       font-size: 1rem;
@@ -1349,7 +1349,7 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
               </div>
             `:W}
       </div>
-    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-36  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
+    `}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},fe(this,"config-changed",{config:this._config})}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},fe(this,"config-changed",{config:this._config})}_valueChanged(e){if(!this._config||!this.hass)return;const t=e.target;if(!t.configValue)return;const i=void 0!==t.checked?t.checked:e.detail?.value??t.value;this._config[t.configValue]!==i&&(this._config={...this._config,[t.configValue]:i},fe(this,"config-changed",{config:this._config}))}static{this.styles=Me}};e([he({attribute:!1})],Ie.prototype,"hass",void 0),e([ue()],Ie.prototype,"_config",void 0),Ie=e([ce("ladestellen-austria-card-editor")],Ie),console.info(`%c  Ladestellen Austria Card  %c  ${Ne("common.version")} 0.1.0-beta-37  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});const Fe={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},He={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let Ve=class extends se{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e)throw new Error(Ne("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(!this.config)return!1;if(e.has("config")||e.has("_expanded"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}render(){if(Re(this.hass?.language),!this.hass||!this.config)return B`<ha-card
         ><div class="empty-state">${Ne("common.loading")}</div></ha-card
       >`;const e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return B`
         <ha-card>
