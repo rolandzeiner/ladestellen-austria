@@ -34,8 +34,23 @@ function resolveTranslation(
  * didn't match the languages map and silently fell back to English —
  * the reason the card read English on Austrian HA installs.
  */
+// Explicitly-set active language, pushed from the card's render() via
+// setLanguage(this.hass.language). Takes priority over localStorage +
+// navigator because `hass.language` is the server-side source of truth —
+// it mirrors HA's configured user-profile language even when the frontend
+// hasn't written it to localStorage.
+let activeLanguage: string | undefined;
+
+/** Push the active HA UI language from a component that has `hass`. */
+export function setLanguage(lang: string | undefined | null): void {
+  if (typeof lang === "string" && lang.length > 0) {
+    activeLanguage = lang;
+  }
+}
+
 function getLang(): string {
   const raw =
+    activeLanguage ||
     localStorage.getItem("selectedLanguage") ||
     (typeof navigator !== "undefined" ? navigator.language : "") ||
     "en";

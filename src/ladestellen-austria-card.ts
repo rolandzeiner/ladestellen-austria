@@ -27,7 +27,7 @@ import type {
   Station,
 } from "./types";
 import { CARD_VERSION } from "./const";
-import { localize } from "./localize/localize";
+import { localize, setLanguage } from "./localize/localize";
 import { cardStyles } from "./styles";
 
 import "./editor";
@@ -121,6 +121,11 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   protected render(): TemplateResult {
+    // Push hass.language into the localize() helper on every render so the
+    // card always matches HA's server-side user-profile language setting,
+    // regardless of whether the frontend ever wrote to localStorage.
+    setLanguage(this.hass?.language);
+
     if (!this.hass || !this.config) {
       return html`<ha-card
         ><div class="empty-state">${localize("common.loading")}</div></ha-card
