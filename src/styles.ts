@@ -56,9 +56,11 @@ export const cardStyles = css`
   .brand-link:hover {
     opacity: 0.7;
   }
-  /* Official E-Control logo PNG (2274x598, RGBA). Width auto-scales to
-     preserve the aspect ratio. 20px tall in the footer reads as a
-     credit-line mark, not a hero — subtle but still legible. */
+  /* Official E-Control logo (vector SVG — previously a 2274x598 PNG,
+     now resolution-independent so the brightness(0)/invert(1) adaptive
+     filter renders crisp at any DPI). Width auto-scales to preserve
+     aspect ratio. 20px tall in the footer reads as a credit-line
+     mark, not a hero — subtle but still legible. */
   .brand-logo {
     display: block;
     height: 20px;

@@ -553,7 +553,7 @@ export class LadestellenAustriaCard extends LitElement {
         >
           <img
             class=${logoClasses}
-            src="/ladestellen_austria/e-control_logo.png"
+            src="/ladestellen_austria/e-control_logo.svg"
             alt="E-Control"
           />
         </a>
