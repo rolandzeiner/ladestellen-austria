@@ -336,7 +336,6 @@ export class LadestellenAustriaCard extends LitElement {
           ></span>
           <div class="station-text">
             <div class="station-line-1">
-              <span class="station-name">${station.label}</span>
               <span class="station-metrics">
                 ${metricsParts.map(
                   (part, i) => html`
@@ -371,7 +370,7 @@ export class LadestellenAustriaCard extends LitElement {
                 icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
               ></ha-icon>
             </div>
-            <div class="station-line-2">${this._address(station) || "—"}</div>
+            <div class="station-name">${station.label}</div>
           </div>
         </div>
         ${expanded
@@ -409,8 +408,17 @@ export class LadestellenAustriaCard extends LitElement {
   ): TemplateResult {
     const amenities = this._amenityItems(station);
     const showStatus = liveAvailable || !stationActive;
+    const address = this._address(station);
     return html`
       <div class="detail">
+        ${address
+          ? html`<div class="detail-section">
+              <div class="detail-label">
+                ${localize("card.address_heading")}
+              </div>
+              <div class="detail-address">${address}</div>
+            </div>`
+          : nothing}
         ${showStatus
           ? html`<div class="detail-section">
               <div class="detail-label">${localize("card.availability")}</div>

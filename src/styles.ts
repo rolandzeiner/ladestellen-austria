@@ -234,25 +234,21 @@ export const cardStyles = css`
     opacity: 0.6;
   }
 
-  /* Line 1: grid-based so we can reshuffle on narrow containers without
-     touching the HTML. Wide layout: name / metrics / distance / chevron
-     on a single line. Narrow layout: metrics wrap to their own row below
-     the name, keeping line 1 uncluttered. */
+  /* Line 1: metrics (the user's real question: "what, how fast, how much")
+     take the primary position. Distance + chevron sit on the right. Name
+     moves to line 2 as a subtitle; address moves to the expanded detail. */
   .station-line-1 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    grid-template-areas: "name metrics distance chevron";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "metrics distance chevron";
     align-items: baseline;
     column-gap: var(--l-space-3);
     row-gap: 2px;
     min-width: 0;
   }
-  .station-name {
-    grid-area: name;
-  }
   .station-metrics {
     grid-area: metrics;
-    justify-self: end;
+    justify-self: start;
   }
   .station-distance {
     grid-area: distance;
@@ -260,16 +256,17 @@ export const cardStyles = css`
   .chevron {
     grid-area: chevron;
   }
+  /* Name sits on line 2 as a secondary identifier. Kept legible but
+     visually subordinate to the metrics line above. */
   .station-name {
-    font-size: var(--l-fs-m);
-    font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    line-height: 1.35;
-    letter-spacing: -0.002em;
+    font-size: var(--l-fs-s);
+    font-weight: var(--l-fw-reg);
+    color: var(--secondary-text-color);
+    line-height: 1.4;
+    letter-spacing: 0.005em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
   }
 
   .station-metrics {
@@ -277,8 +274,8 @@ export const cardStyles = css`
     align-items: baseline;
     flex-wrap: wrap;
     gap: 2px 6px;
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
+    font-size: var(--l-fs-m);
+    color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -306,9 +303,9 @@ export const cardStyles = css`
     font-weight: var(--l-fw-bld);
   }
   .metrics-sep {
-    color: var(--divider-color);
+    color: var(--secondary-text-color);
     font-weight: var(--l-fw-reg);
-    opacity: 0.8;
+    opacity: 0.45;
   }
 
   /* Distance-pill — map link. Pin + number together, compact click target. */
@@ -358,15 +355,13 @@ export const cardStyles = css`
     transition: transform 200ms var(--l-ease);
   }
 
-  /* Line 2: address (muted, always visible). */
-  .station-line-2 {
+  /* (Line 2 is now .station-name — address moved to .detail-address in
+     the expanded panel.) */
+  .detail-address {
     font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-    line-height: 1.35;
-    letter-spacing: 0.005em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--primary-text-color);
+    line-height: 1.4;
+    letter-spacing: 0.003em;
   }
 
   /* ----- Expanded detail -------------------------------------------- */
@@ -524,6 +519,94 @@ export const cardStyles = css`
     text-align: center;
     color: var(--secondary-text-color);
     font-size: var(--l-fs-s);
+  }
+
+  /* ==========================================================
+     RESPONSIVE: container queries against the card's own width
+     ========================================================== */
+
+  /* Compact — below ~440px (most phone dashboards). Line 1 stays as
+     metrics + distance + chevron; line 2 stays as the station name.
+     Only typography and padding tighten. */
+  @container lscard (max-width: 439px) {
+    .station-body {
+      padding: 10px var(--l-space-3);
+      gap: var(--l-space-2);
+    }
+    .station-metrics {
+      font-size: var(--l-fs-s);
+    }
+    .station-name {
+      font-size: var(--l-fs-xs);
+    }
+
+    /* Hero stacks vertically so the big number and context each get
+       their own line. */
+    .hero {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--l-space-2);
+      padding: var(--l-space-3) var(--l-space-3) var(--l-space-4);
+    }
+    .hero-context {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .header {
+      padding: 8px var(--l-space-3);
+    }
+    .header-title {
+      display: none;
+    }
+
+    .detail {
+      padding: 0 var(--l-space-3) var(--l-space-3)
+        calc(var(--l-space-3) + 9px + var(--l-space-2));
+    }
+    .amenities {
+      gap: 4px 10px;
+    }
+    .action-btn {
+      font-size: var(--l-fs-xs);
+      padding: 5px 10px;
+    }
+    .footer {
+      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
+    }
+  }
+
+  /* Ultra-compact — below 320px. Drop more ornamentation; let overflow
+     wrap instead of ellipsis-truncate. */
+  @container lscard (max-width: 319px) {
+    .station-body {
+      padding: 8px var(--l-space-3);
+    }
+    .station-metrics {
+      font-size: var(--l-fs-xs);
+    }
+    .distance-value {
+      font-size: var(--l-fs-s);
+    }
+    .distance-value .unit {
+      font-size: 10px;
+    }
+    .station-distance {
+      padding: 2px 8px;
+    }
+    .station-distance ha-icon {
+      --mdc-icon-size: 14px;
+    }
+    .chevron {
+      --mdc-icon-size: 16px;
+    }
+    .hero {
+      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
+    }
+    .hero-context-1,
+    .hero-context-2 {
+      white-space: normal;
+    }
   }
 `;
 
