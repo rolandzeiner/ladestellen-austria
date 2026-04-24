@@ -46,14 +46,7 @@ export const cardStyles = css`
     container-name: lscard;
   }
 
-  /* ----- Header (§3c brand-link, quiet top strip) --------------------- */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--l-space-3);
-    padding: 10px var(--l-space-4);
-  }
+  /* ----- Brand (used in the footer: §3c logo-link + §3d attribution) --- */
   .brand-link {
     display: inline-flex;
     align-items: center;
@@ -63,28 +56,31 @@ export const cardStyles = css`
   .brand-link:hover {
     opacity: 0.7;
   }
-  /* Official E-Control logo PNG (2274x598, RGBA). Rendered at ~24px tall,
-     width auto-scales to preserve the aspect ratio. */
+  /* Official E-Control logo PNG (2274x598, RGBA). Width auto-scales to
+     preserve the aspect ratio. 20px tall in the footer reads as a
+     credit-line mark, not a hero — subtle but still legible. */
   .brand-logo {
     display: block;
-    height: 24px;
+    height: 20px;
     width: auto;
-    max-width: 160px;
+    max-width: 140px;
     object-fit: contain;
     transition: filter 160ms var(--l-ease);
   }
-  /* Optional theme-adaptive rendering. Turn the PNG's RGBA into a pure
-     black silhouette (light theme) or pure white (dark theme) via a
-     2-step filter: brightness(0) collapses all channels to black while
-     preserving alpha, then invert(1) flips black → white for dark mode.
-     Enabled by the card's logo_adapt_to_theme config (default off). */
+  /* Optional theme-adaptive rendering. brightness(0) collapses all
+     channels to black while keeping alpha; invert(1) flips to white for
+     dark mode. Enabled by the card's logo_adapt_to_theme config. */
   .brand-logo.adaptive.adaptive-light {
     filter: brightness(0);
   }
   .brand-logo.adaptive.adaptive-dark {
     filter: brightness(0) invert(1);
   }
-  .header-title {
+
+  /* Optional user-set card title. Only rendered when config.name differs
+     from the default "Ladestellen Austria". */
+  .custom-title {
+    padding: var(--l-space-3) var(--l-space-4) 0;
     font-size: var(--l-fs-xs);
     font-weight: var(--l-fw-med);
     letter-spacing: 0.06em;
@@ -283,33 +279,82 @@ export const cardStyles = css`
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  .metric {
-    font-weight: var(--l-fw-reg);
-  }
+  /* kW reads as a digital readout — system monospace gives it the
+     electrifying/tech feel the user asked for, while staying 100%
+     system-native (no CDN). Tinted pill adds visual weight so it reads
+     as the row's leading metric. DC switches to --warning-color for
+     the fast-charge accent. */
   .metric-kw {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
     color: var(--primary-color);
+    font-family: ui-monospace, "SFMono-Regular", "SF Mono", "Menlo",
+      "Monaco", "Cascadia Code", "Cascadia Mono", "Consolas",
+      "Liberation Mono", "DejaVu Sans Mono", monospace;
     font-weight: var(--l-fw-bld);
-    letter-spacing: 0;
+    font-size: var(--l-fs-m);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    white-space: nowrap;
+    transition: background-color 160ms var(--l-ease);
   }
   .metric-kw--dc {
     color: var(--warning-color, #f57c00);
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f57c00) 14%,
+      transparent
+    );
   }
-  .metric-plug {
-    color: var(--primary-text-color);
-    font-weight: var(--l-fw-med);
+  .station:hover .metric-kw {
+    background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+  .station:hover .metric-kw--dc {
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f57c00) 18%,
+      transparent
+    );
   }
   .metric-price {
     color: var(--primary-text-color);
     font-weight: var(--l-fw-med);
+    font-variant-numeric: tabular-nums;
   }
   .metric-free {
     color: var(--success-color, #2e7d32);
     font-weight: var(--l-fw-bld);
   }
-  .metrics-sep {
+
+  /* Connector chips — neutral tint so they read as secondary to kW. */
+  .pill.plug {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 12%,
+      transparent
+    );
+    color: var(--primary-text-color);
+    font-size: var(--l-fs-xs);
+    font-weight: var(--l-fw-med);
+    letter-spacing: 0.015em;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+  .pill.plug.plug-more {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 6%,
+      transparent
+    );
     color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-    opacity: 0.45;
   }
 
   /* Distance-pill — map link. Pin + number together, compact click target. */
@@ -506,15 +551,21 @@ export const cardStyles = css`
     color: var(--primary-color);
   }
 
-  /* Footer (§3d attribution) */
+  /* Footer — §3c logo-link on the left, §3d attribution on the right.
+     Both compliance items collapse into a single credit-line row. */
   .footer {
-    padding: var(--l-space-2) var(--l-space-4) var(--l-space-3);
-    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--l-space-3);
+    padding: 10px var(--l-space-4);
+    border-top: 1px solid var(--divider-color);
+  }
+  .attribution-text {
     font-size: var(--l-fs-xs);
     color: var(--secondary-text-color);
     letter-spacing: 0.03em;
-    opacity: 0.75;
-    border-top: 1px solid var(--divider-color);
+    opacity: 0.8;
   }
 
   /* Empty states */
@@ -557,11 +608,8 @@ export const cardStyles = css`
       text-align: left;
     }
 
-    .header {
-      padding: 8px var(--l-space-3);
-    }
-    .header-title {
-      display: none;
+    .custom-title {
+      padding: var(--l-space-2) var(--l-space-3) 0;
     }
 
     .detail {
@@ -576,7 +624,15 @@ export const cardStyles = css`
       padding: 5px 10px;
     }
     .footer {
-      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
+      padding: 8px var(--l-space-3);
+      gap: var(--l-space-2);
+    }
+    .brand-logo {
+      height: 18px;
+    }
+    .metric-kw {
+      font-size: var(--l-fs-s);
+      padding: 2px 8px;
     }
   }
 
