@@ -726,15 +726,19 @@ export const cardStyles = css`
     );
   }
   .rack-slot {
+    /* Layout model:
+       - Positioned container. Power badge (top-centre) and status dot
+         (top-left) are absolute overlays; they sit outside the flex flow
+         so they don't affect centring of the main content.
+       - Main content (kW + connector, or the warn wrench) is a flex
+         column. justify-content: center vertically balances kW+connector
+         as a single group; align-items: center handles horizontal.
+       - min-height floor keeps a row of mixed warn/regular slots at a
+         consistent height. Content may exceed it; the slot grows to
+         content-size when needed. */
     position: relative;
     flex: 0 0 80px;
     width: 80px;
-    /* Content + padding drive the slot height; min-height is a floor so
-       mixed rows (warn slots with their wrench icon + regular slots with
-       kW+connector) stay consistent. flex-start keeps kW pinned to the
-       top padding boundary so the badge→kW visual gap exactly matches
-       the CSS-defined kW→connector gap; warn slots use flex:1 on the
-       wrench to self-centre in the remaining space. */
     min-height: 58px;
     box-sizing: border-box;
     border-radius: 10px;
@@ -742,7 +746,7 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 3px;
     border: 1px solid transparent;
     transition: background-color 160ms var(--l-ease),

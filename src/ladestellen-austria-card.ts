@@ -756,6 +756,7 @@ export class LadestellenAustriaCard extends LitElement {
     const powerType = this._pointPowerType(point);
     const statusCat = this._rackSlotStatus(point.status);
     const tooltip = this._pointTooltip(point);
+    const ariaLabel = this._pointAriaLabel(point, powerType);
     const badge = powerType
       ? html`<span class="power-badge" data-type=${powerType}
           >${powerType.toUpperCase()}</span
@@ -767,7 +768,13 @@ export class LadestellenAustriaCard extends LitElement {
     // dot stay for consistency with the rest of the rack.
     if (statusCat === "warn") {
       return html`
-        <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
+        <div
+          class="rack-slot"
+          role="group"
+          aria-label=${ariaLabel}
+          data-status=${statusCat}
+          title=${tooltip}
+        >
           ${badge}
           <ha-icon
             class="rack-warn-icon"
@@ -780,7 +787,13 @@ export class LadestellenAustriaCard extends LitElement {
     const connector = this._pointConnectorLabel(point);
     const kwText = this._formatKw(point.capacityKw);
     return html`
-      <div class="rack-slot" data-status=${statusCat} title=${tooltip}>
+      <div
+        class="rack-slot"
+        role="group"
+        aria-label=${ariaLabel}
+        data-status=${statusCat}
+        title=${tooltip}
+      >
         ${badge}
         <span class="rack-kw">
           <span class="rack-kw-num">${kwText}</span
@@ -790,6 +803,25 @@ export class LadestellenAustriaCard extends LitElement {
         <span class="rack-dot status-${statusCat}"></span>
       </div>
     `;
+  }
+
+  // Screen-reader label for a rack slot — composed from the same signals
+  // visible on screen (power-type, kW, connector, localized status) so
+  // assistive tech gets parity with sighted users.
+  private _pointAriaLabel(
+    point: Point,
+    powerType: "dc" | "ac" | null,
+  ): string {
+    const parts: string[] = [];
+    if (powerType) parts.push(powerType.toUpperCase());
+    if (point.capacityKw) {
+      parts.push(`${this._formatKw(point.capacityKw)} kW`);
+    }
+    const connector = this._pointConnectorLabel(point);
+    if (connector && connector !== "–") parts.push(connector);
+    const status = this._pointStatusLabel(point.status);
+    if (status) parts.push(status);
+    return parts.join(" · ");
   }
 
   // Resolve the slot's AC/DC label from point.electricityType. API emits
