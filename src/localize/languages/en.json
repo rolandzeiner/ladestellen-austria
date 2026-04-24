@@ -42,6 +42,7 @@
     "show_hero": "Show hero summary",
     "show_pricing": "Show pricing",
     "show_amenities": "Show amenity details",
+    "sort_by_power": "Sort by power (fastest first)",
     "only_available": "Only currently available stations",
     "only_free": "Only stations with free charging",
     "connector_filter_hint": "Tap connector types to only show stations offering at least one of them. Empty = no filter.",
