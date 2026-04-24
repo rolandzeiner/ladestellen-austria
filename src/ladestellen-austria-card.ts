@@ -240,9 +240,10 @@ export class LadestellenAustriaCard extends LitElement {
     });
   }
 
-  // §3c — E-Control logo-link required. Minimal top strip: brand on the
-  // left, card title on the right. Quiet, stays out of the scanning path
-  // to the data below.
+  // §3c — E-Control logo-link required. The PNG lives in the integration's
+  // www/ directory, served by HA's static-path registration under
+  // /ladestellen_austria/. The <img> + <a> wrapper preserves the legal
+  // link-back to www.e-control.at; never remove the href or the alt text.
   private _renderHeader(): TemplateResult {
     const title = this.config?.name ?? "Ladestellen Austria";
     return html`
@@ -255,9 +256,11 @@ export class LadestellenAustriaCard extends LitElement {
           aria-label="E-Control"
           @click=${(ev: Event) => ev.stopPropagation()}
         >
-          <span class="brand-logo"
-            ><span class="accent">E</span>-CONTROL</span
-          >
+          <img
+            class="brand-logo"
+            src="/ladestellen_austria/e-control_logo.png"
+            alt="E-Control"
+          />
         </a>
         <span class="header-title">${title}</span>
       </div>
