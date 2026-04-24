@@ -7,7 +7,6 @@ from typing import Any
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
-    SensorStateClass,
 )
 from homeassistant.const import UnitOfLength
 from homeassistant.core import HomeAssistant
@@ -40,9 +39,14 @@ class NearestStationSensor(
 
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.DISTANCE
-    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
     _attr_suggested_display_precision = 2
+    # Deliberately no state_class: distance-to-nearest-POI isn't a
+    # statistical measurement (the location is fixed; the value only
+    # changes when upstream data refreshes). Registering LTS caused the
+    # "Maßeinheit hat sich geändert" warning when the unit records drifted
+    # between null (unknown) and km. Dropping state_class stops new stats
+    # collection — existing orphan stats cleared via HA's Statistics UI.
     # Required verbatim by §3d of the ladestellen.at Nutzungsbedingungen:
     # "Der Nutzer muss die Datenquelle unmittelbar bei den von der E-Control
     # angezeigten Daten durch folgenden Verweis anführen: 'Datenquelle:
