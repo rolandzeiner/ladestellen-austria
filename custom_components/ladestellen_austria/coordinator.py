@@ -75,9 +75,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._domain: str = config[CONF_DOMAIN]
         self._latitude: float = float(config[CONF_LATITUDE])
         self._longitude: float = float(config[CONF_LONGITUDE])
-        self._dynamic_entity: str | None = (
-            config.get(CONF_DYNAMIC_ENTITY) or None
-        )
+        self._dynamic_entity: str | None = config.get(CONF_DYNAMIC_ENTITY)
         self._session = async_get_clientsession(hass)
 
         self._issue_raised: bool = False
@@ -137,7 +135,6 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "Dynamic mode: watching %s for location changes",
                 self._dynamic_entity,
             )
-        return None
 
     @callback
     def async_teardown(self) -> None:
