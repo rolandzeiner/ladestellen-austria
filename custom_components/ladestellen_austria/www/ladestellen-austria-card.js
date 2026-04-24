@@ -180,13 +180,6 @@ function t(t,e,i,a){var s,r=arguments.length,n=r<3?e:null===a?a=Object.getOwnPro
     padding: var(--l-space-3) var(--l-space-4);
     align-items: flex-start;
   }
-  .station-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
 
   /* Status dot — 9px circle that communicates live availability at a glance.
      Aligned to the baseline of the first text line for tidy vertical rhythm. */
@@ -223,17 +216,23 @@ function t(t,e,i,a){var s,r=arguments.length,n=r<3?e:null===a?a=Object.getOwnPro
     opacity: 0.6;
   }
 
-  /* Line 1: metrics on the left, right-stack (price above distance) in
-     the middle column, chevron on the right. Stacking price + distance
-     in a right-aligned column lets the eye compare prices + distances
-     vertically down the list. */
-  .station-line-1 {
+  /* 2-row grid for the station row. Line 1 holds the metrics (left) and
+     the price (right, just before the chevron). Line 2 holds the station
+     name (left) and the distance pill (right). Chevron spans both rows
+     so it remains vertically centred against the whole row cluster.
+     Price-right + distance-right alignment makes both columns stack
+     vertically across stations, so users can scan prices down one
+     column and distances down the other. */
+  .station-grid {
+    flex: 1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: "metrics stack chevron";
-    align-items: center;
+    grid-template-areas:
+      "metrics price    chevron"
+      "name    distance chevron";
     column-gap: var(--l-space-3);
-    row-gap: 2px;
+    row-gap: 4px;
+    align-items: center;
     min-width: 0;
   }
   .station-metrics {
@@ -241,17 +240,21 @@ function t(t,e,i,a){var s,r=arguments.length,n=r<3?e:null===a?a=Object.getOwnPro
     justify-self: start;
     align-self: center;
   }
-  .row-right-stack {
-    grid-area: stack;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    min-width: 0;
+  .metric-price,
+  .metric-price-placeholder {
+    grid-area: price;
+    justify-self: end;
+    align-self: center;
   }
   .chevron {
     grid-area: chevron;
     align-self: center;
+  }
+  .station-name {
+    grid-area: name;
+  }
+  .station-distance {
+    grid-area: distance;
   }
   /* Name sits on line 2 as a secondary identifier. Kept legible but
      visually subordinate to the metrics line above. */
@@ -856,7 +859,7 @@ function t(t,e,i,a){var s,r=arguments.length,n=r<3?e:null===a?a=Object.getOwnPro
           <div class="editor-hint">${St("editor.hint_compliance")}</div>
         </div>
       </div>
-    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Tt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Tt(this,"config-changed",{config:this._config}))}static{this.styles=Pt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-21  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Nt=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Et(this.hass?.language),!this.hass||!this.config)return F`<ha-card
+    `}_toggleConnector(t){const e=this._config.connector_types??[],i=e.includes(t)?e.filter(e=>e!==t):[...e,t];this._config={...this._config,connector_types:i},Tt(this,"config-changed",{config:this._config})}_valueChanged(t){if(!this._config||!this.hass)return;const e=t.target;if(!e.configValue)return;const i=void 0!==e.checked?e.checked:t.detail?.value??e.value;this._config[e.configValue]!==i&&(this._config={...this._config,[e.configValue]:i},Tt(this,"config-changed",{config:this._config}))}static{this.styles=Pt}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("ladestellen-austria-card-editor")],Ut),console.info(`%c  Ladestellen Austria Card  %c  ${St("common.version")} 0.1.0-beta-22  `,"color: white; font-weight: bold; background: #3FA535","color: white; font-weight: bold; background: dimgray"),window.customCards=window.customCards||[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria"});let Nt=class extends ot{constructor(){super(...arguments),this._expanded=new Set}static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(t,e){const i=e.find(t=>t.startsWith("sensor.")&&t.includes("ladestelle"));return{entity:i??""}}setConfig(t){if(!t)throw new Error(St("common.invalid_configuration"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,connector_types:[],...t}}shouldUpdate(t){if(!this.config)return!1;if(t.has("config")||t.has("_expanded"))return!0;const e=t.get("hass");return!e||!this.config.entity||e.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const t=this.config?.max_stations??10;return Math.min(3+Math.ceil(t/3),10)}render(){if(Et(this.hass?.language),!this.hass||!this.config)return F`<ha-card
         ><div class="empty-state">${St("common.loading")}</div></ha-card
       >`;const t=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!t)return F`
         <ha-card>
@@ -921,46 +924,42 @@ function t(t,e,i,a){var s,r=arguments.length,n=r<3?e:null===a?a=Object.getOwnPro
             class=${`status-dot status-${u}`}
             aria-label=${this._statusAria(u,h,d)}
           ></span>
-          <div class="station-text">
-            <div class="station-line-1">
-              <span class="station-metrics">
-                ${s>0?F`<span
-                      class=${a?"metric-kw metric-kw--dc":"metric-kw"}
-                      >${s}&thinsp;kW</span
-                    >`:K}
-                ${n.map(t=>F`<span class="pill plug">${t}</span>`)}
-                ${o>0?F`<span class="pill plug plug-more"
-                      >+${o}</span
-                    >`:K}
-              </span>
-              <div class="row-right-stack">
-                ${v&&l?F`<span
-                      class=${c?"metric-price metric-free":"metric-price"}
-                      >${l}</span
-                    >`:K}
-                <a
-                  class="station-distance"
-                  href=${f}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label=${St("card.open_in_maps")}
-                  title=${St("card.open_in_maps")}
-                  @click=${t=>t.stopPropagation()}
-                >
-                  <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-                  <span class="distance-value">
-                    ${this._formatKm(t.distance)}<span class="unit"
-                      >km</span
-                    >
-                  </span>
-                </a>
-              </div>
-              <ha-icon
-                class="chevron"
-                icon=${g?"mdi:chevron-up":"mdi:chevron-down"}
-              ></ha-icon>
-            </div>
+          <div class="station-grid">
+            <span class="station-metrics">
+              ${s>0?F`<span
+                    class=${a?"metric-kw metric-kw--dc":"metric-kw"}
+                    >${s}&thinsp;kW</span
+                  >`:K}
+              ${n.map(t=>F`<span class="pill plug">${t}</span>`)}
+              ${o>0?F`<span class="pill plug plug-more"
+                    >+${o}</span
+                  >`:K}
+            </span>
+            ${v&&l?F`<span
+                  class=${c?"metric-price metric-free":"metric-price"}
+                  >${l}</span
+                >`:F`<span class="metric-price-placeholder"></span>`}
+            <ha-icon
+              class="chevron"
+              icon=${g?"mdi:chevron-up":"mdi:chevron-down"}
+            ></ha-icon>
             <div class="station-name">${t.label}</div>
+            <a
+              class="station-distance"
+              href=${f}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label=${St("card.open_in_maps")}
+              title=${St("card.open_in_maps")}
+              @click=${t=>t.stopPropagation()}
+            >
+              <ha-icon icon="mdi:map-marker-outline"></ha-icon>
+              <span class="distance-value">
+                ${this._formatKm(t.distance)}<span class="unit"
+                  >km</span
+                >
+              </span>
+            </a>
           </div>
         </div>
         ${g?this._renderStationDetail(t,h,d,e,p,m,f):K}
