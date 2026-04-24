@@ -512,15 +512,16 @@ export class LadestellenAustriaCard extends LitElement {
     const priceIsFree = points.some((p) => p.freeOfCharge);
 
     const totalPoints = points.length;
-    const availPoints = points.filter((p) => p.status === "AVAILABLE").length;
+    const availPoints = points.filter(
+      (p) => this._normStatus(p.status) === "AVAILABLE",
+    ).length;
     const stationActive = station.stationStatus === "ACTIVE";
     const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
     const isOpenNow = this._isOpenNow(station.openingHours, new Date(), tz);
     const level = this._statusLevel(
       liveAvailable,
       stationActive,
-      availPoints,
-      totalPoints,
+      points,
       isOpenNow,
     );
 
@@ -769,23 +770,29 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
+  // The API is inconsistent with status casing + punctuation: the same
+  // "out of order" appears as `OUTOFORDER` in EVN responses but is
+  // documented as `OUT_OF_ORDER` in the DATEX II spec. Normalising
+  // removes both variants of that trap.
+  private _normStatus(status: string): string {
+    return (status ?? "").toUpperCase().replace(/_/g, "");
+  }
+
   private _rackSlotStatus(status: string): RackStatus {
-    switch (status) {
-      case "AVAILABLE":
-        return "ok";
-      case "CHARGING":
-      case "OCCUPIED":
-      case "RESERVED":
-      case "BLOCKED":
-        return "busy";
-      case "OUT_OF_ORDER":
-      case "FAULTED":
-      case "INOPERATIVE":
-      case "UNAVAILABLE":
-        return "warn";
-      default:
-        return "empty";
+    const s = this._normStatus(status);
+    if (s === "AVAILABLE") return "ok";
+    if (s === "CHARGING" || s === "OCCUPIED" || s === "RESERVED" || s === "BLOCKED") {
+      return "busy";
     }
+    if (
+      s === "OUTOFORDER" ||
+      s === "FAULTED" ||
+      s === "INOPERATIVE" ||
+      s === "UNAVAILABLE"
+    ) {
+      return "warn";
+    }
+    return "empty";
   }
 
   private _pointConnectorLabel(point: Point): string {
@@ -846,7 +853,24 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _pointStatusLabel(status: string): string {
     if (!status) return "";
-    const key = `card.point_status_${status.toLowerCase()}`;
+    const s = this._normStatus(status);
+    const buckets: Record<string, string> = {
+      AVAILABLE: "available",
+      CHARGING: "charging",
+      OCCUPIED: "occupied",
+      RESERVED: "reserved",
+      BLOCKED: "blocked",
+      OUTOFORDER: "fault",
+      FAULTED: "fault",
+      INOPERATIVE: "fault",
+      UNAVAILABLE: "unavailable",
+      UNKNOWN: "unknown",
+      PLANNED: "planned",
+      REMOVED: "removed",
+    };
+    const bucket = buckets[s];
+    if (!bucket) return status;
+    const key = `card.point_status_${bucket}`;
     const resolved = localize(key);
     return resolved === key ? status : resolved;
   }
@@ -1084,8 +1108,7 @@ export class LadestellenAustriaCard extends LitElement {
   private _statusLevel(
     liveAvailable: boolean,
     stationActive: boolean,
-    avail: number,
-    total: number,
+    points: Point[],
     isOpenNow: boolean | null = null,
   ): StatusLevel {
     if (!stationActive) return "inactive";
@@ -1093,8 +1116,36 @@ export class LadestellenAustriaCard extends LitElement {
     // with 4/4 free but closed is not actionable. Null isOpenNow means no
     // opening-hours data; treat as always-open for row-status purposes.
     if (isOpenNow === false) return "inactive";
+    const total = points.length;
     if (!liveAvailable || total === 0) return "unknown";
-    if (avail === 0) return "busy";
+    let avail = 0;
+    let busy = 0;
+    let warn = 0;
+    for (const p of points) {
+      const s = this._normStatus(p.status);
+      if (s === "AVAILABLE") avail++;
+      else if (
+        s === "CHARGING" ||
+        s === "OCCUPIED" ||
+        s === "RESERVED" ||
+        s === "BLOCKED"
+      )
+        busy++;
+      else if (
+        s === "OUTOFORDER" ||
+        s === "FAULTED" ||
+        s === "INOPERATIVE" ||
+        s === "UNAVAILABLE"
+      )
+        warn++;
+    }
+    if (avail === 0) {
+      // Distinguish "nobody free because the whole station is broken" from
+      // "nobody free because everyone's charging". The former reads inactive
+      // (grey) — the station isn't actionable. The latter stays busy (red).
+      if (busy === 0 && warn > 0) return "inactive";
+      return "busy";
+    }
     if (avail < total) return "partial";
     return "ok";
   }
