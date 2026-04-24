@@ -765,6 +765,21 @@ export const cardStyles = css`
     background: color-mix(in srgb, var(--warning-color, #f59e0b) 12%, transparent);
     border-color: color-mix(in srgb, var(--warning-color, #f59e0b) 35%, transparent);
   }
+  /* UNKNOWN — live status not reported by the operator. Solid muted grey
+     tile so kW + connector stay legible; no dashed border (that's
+     reserved for "empty" = PLANNED/REMOVED slot placeholders). */
+  .rack-slot[data-status="unknown"] {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 6%,
+      transparent
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--secondary-text-color) 20%,
+      transparent
+    );
+  }
   .rack-slot[data-status="empty"] {
     background: color-mix(
       in srgb,
@@ -830,6 +845,13 @@ export const cardStyles = css`
   }
   .rack-dot.status-warn {
     background: var(--l-dot-partial);
+  }
+  .rack-dot.status-unknown {
+    background: color-mix(
+      in srgb,
+      var(--secondary-text-color) 55%,
+      transparent
+    );
   }
   .rack-dot.status-empty {
     background: transparent;

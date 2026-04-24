@@ -66,7 +66,7 @@ const DEFAULT_MAX_STATIONS = 10;
 const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
 type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
-type RackStatus = "ok" | "busy" | "warn" | "empty";
+type RackStatus = "ok" | "busy" | "warn" | "unknown" | "empty";
 
 const WEEKDAY_NAME_TO_IDX: Record<string, number> = {
   MONDAY: 0,
@@ -857,6 +857,12 @@ export class LadestellenAustriaCard extends LitElement {
     ) {
       return "warn";
     }
+    // UNKNOWN means the operator isn't currently reporting a live status for
+    // this point — distinct from "empty" (PLANNED/REMOVED), which is for
+    // non-existent slots. UNKNOWN keeps kW + connector visible so users can
+    // still see what the point *is*; only the colour cue (neutral muted
+    // grey, no dashed border) signals "we don't have live data right now".
+    if (s === "UNKNOWN") return "unknown";
     return "empty";
   }
 
