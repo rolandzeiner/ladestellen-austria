@@ -139,6 +139,94 @@ export class LadestellenAustriaParkingCardEditor
         </div>
 
         <div class="editor-section">
+          <div class="section-header">
+            ${localize("editor.section_appearance")}
+          </div>
+
+          <div class="toggle-row">
+            <label for="parking-toggle-show-free"
+              >${localize("editor.show_free_count")}</label
+            >
+            <ha-switch
+              id="parking-toggle-show-free"
+              .checked=${this._config.show_free_count !== false}
+              .configValue=${"show_free_count"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="toggle-row">
+            <label for="parking-toggle-logo-adapt"
+              >${localize("editor.logo_adapt_to_theme")}</label
+            >
+            <ha-switch
+              id="parking-toggle-logo-adapt"
+              .checked=${this._config.logo_adapt_to_theme ?? false}
+              .configValue=${"logo_adapt_to_theme"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <ha-selector
+            .hass=${this.hass}
+            .selector=${{
+              select: {
+                mode: "dropdown",
+                options: [
+                  {
+                    value: "random",
+                    label: localize("editor.car_color_random"),
+                  },
+                  {
+                    value: "theme",
+                    label: localize("editor.car_color_theme"),
+                  },
+                  {
+                    value: "fixed",
+                    label: localize("editor.car_color_fixed"),
+                  },
+                ],
+              },
+            }}
+            .value=${this._config.car_color_mode ?? "random"}
+            .configValue=${"car_color_mode"}
+            .label=${localize("editor.car_color_mode")}
+            @value-changed=${this._valueChanged}
+          ></ha-selector>
+
+          ${this._config.car_color_mode === "fixed"
+            ? html`<div class="toggle-row">
+                <span>${localize("editor.car_color_pick")}</span>
+                <label
+                  class="color-swatch"
+                  style=${`--swatch-color: ${
+                    this._config.car_color_fixed || "#1d4ed8"
+                  };`}
+                >
+                  <ha-icon
+                    icon="mdi:palette-swatch-variant"
+                    aria-hidden="true"
+                  ></ha-icon>
+                  <span class="color-swatch-hex"
+                    >${(
+                      this._config.car_color_fixed || "#1d4ed8"
+                    ).toUpperCase()}</span
+                  >
+                  <input
+                    type="color"
+                    class="color-swatch-input"
+                    .value=${this._config.car_color_fixed || "#1d4ed8"}
+                    .configValue=${"car_color_fixed"}
+                    aria-label=${localize("editor.car_color_pick")}
+                    @input=${this._valueChanged}
+                    @change=${this._valueChanged}
+                  />
+                </label>
+              </div>`
+            : nothing}
+        </div>
+
+        <div class="editor-section">
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
         </div>
       </div>
@@ -157,13 +245,22 @@ export class LadestellenAustriaParkingCardEditor
       configValue?: keyof ParkingLotCardConfig;
       value?: unknown;
       checked?: boolean;
+      type?: string;
+      tagName?: string;
     };
     if (!target.configValue) return;
 
-    const newValue =
-      target.checked !== undefined
-        ? target.checked
-        : ((ev as CustomEvent).detail?.value ?? target.value);
+    // Discriminate booleans by tag/type, not by `target.checked !==
+    // undefined`. Every <input> exposes `.checked` as a real boolean
+    // (false on a colour input), so the old check silently routed
+    // colour-picker events to the boolean branch and overwrote the
+    // config field with `false`.
+    const tag = (target.tagName ?? "").toUpperCase();
+    const isToggle = tag === "HA-SWITCH" || target.type === "checkbox";
+
+    const newValue = isToggle
+      ? Boolean(target.checked)
+      : ((ev as CustomEvent).detail?.value ?? target.value);
 
     if (this._config[target.configValue] === newValue) return;
 

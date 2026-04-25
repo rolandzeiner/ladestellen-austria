@@ -187,7 +187,9 @@ export class LadestellenAustriaCard extends LitElement {
     if (!this.hass || !this.config) {
       return html`<ha-card>
         <div class="card-content">
-          <div class="empty-state">${localize("common.loading")}</div>
+          <div class="wrap">
+            <div class="empty-state">${localize("common.loading")}</div>
+          </div>
         </div>
       </ha-card>`;
     }
@@ -200,7 +202,9 @@ export class LadestellenAustriaCard extends LitElement {
       return html`
         <ha-card>
           <div class="card-content">
-            <div class="empty-state">${localize("card.no_entity")}</div>
+            <div class="wrap">
+              <div class="empty-state">${localize("card.no_entity")}</div>
+            </div>
             ${this._renderFooter(undefined)}
           </div>
         </ha-card>
@@ -266,51 +270,69 @@ export class LadestellenAustriaCard extends LitElement {
         : undefined;
 
     const showHero = this.config.show_hero !== false;
-    const customTitle =
-      this.config.name && this.config.name !== "Ladestellen Austria"
+    const titleText =
+      this.config.name && this.config.name.trim()
         ? this.config.name
-        : null;
+        : "Ladestellen Austria";
+    const headerSubtitle = nearestByDistance
+      ? this._heroCity(nearestByDistance)
+      : "";
 
     return html`
       <ha-card>
         <div class="card-content">
-          ${customTitle
-            ? html`<h3 class="custom-title">${customTitle}</h3>`
-            : nothing}
-          ${showHero
-            ? this._renderHero(
-                nearestByDistance,
-                farthestShown,
-                filtered.length,
-                allStations.length,
-              )
-            : nothing}
-          ${dynamicMode && dynamicEntity
-            ? html`<div class="dynamic-indicator">
-                <ha-icon icon="mdi:crosshairs-gps"></ha-icon>
-                <span
-                  >${localize("card.dynamic_follows_entity").replace(
-                    "{entity}",
-                    dynamicEntity,
-                  )}</span
-                >
-              </div>`
-            : nothing}
-          ${visible.length > 0
-            ? html`<ul class="stations">
-                ${visible.map((item) =>
-                  item.kind === "live"
-                    ? this._renderStation(
-                        item.station,
-                        liveAvailable,
-                        pinnedLiveStationIds.has(item.station.stationId),
-                      )
-                    : this._renderOrphanPin(item.id),
-                )}
-              </ul>`
-            : html`<div class="empty-state">
-                ${localize("card.no_stations")}
-              </div>`}
+          <div class="wrap">
+            <header class="header">
+              <div class="icon-tile" aria-hidden="true">
+                <ha-icon icon="mdi:ev-station"></ha-icon>
+              </div>
+              <div class="header-text">
+                <h2 class="title">${titleText}</h2>
+                ${headerSubtitle
+                  ? html`<p class="subtitle">${headerSubtitle}</p>`
+                  : nothing}
+              </div>
+            </header>
+            ${showHero
+              ? this._renderHero(
+                  nearestByDistance,
+                  farthestShown,
+                  filtered.length,
+                  allStations.length,
+                )
+              : nothing}
+            ${dynamicMode && dynamicEntity
+              ? html`<div class="flags">
+                  <span class="flag">
+                    <ha-icon
+                      icon="mdi:crosshairs-gps"
+                      aria-hidden="true"
+                    ></ha-icon>
+                    <span
+                      >${localize("card.dynamic_follows_entity").replace(
+                        "{entity}",
+                        dynamicEntity,
+                      )}</span
+                    >
+                  </span>
+                </div>`
+              : nothing}
+            ${visible.length > 0
+              ? html`<ul class="stations">
+                  ${visible.map((item) =>
+                    item.kind === "live"
+                      ? this._renderStation(
+                          item.station,
+                          liveAvailable,
+                          pinnedLiveStationIds.has(item.station.stationId),
+                        )
+                      : this._renderOrphanPin(item.id),
+                  )}
+                </ul>`
+              : html`<div class="empty-state">
+                  ${localize("card.no_stations")}
+                </div>`}
+          </div>
           ${this._renderFooter(
             stateObj.attributes["attribution"] as string | undefined,
           )}
@@ -318,6 +340,7 @@ export class LadestellenAustriaCard extends LitElement {
       </ha-card>
     `;
   }
+
 
   private _sortStations(stations: Station[]): Station[] {
     // Both sort modes get a free > busy tier between the primary sort
@@ -407,27 +430,35 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _renderOrphanPin(id: string): TemplateResult {
     return html`
-      <li class="station orphan-pin" role="listitem">
-        <div class="station-body orphan-body">
-          <ha-icon class="orphan-icon" icon="mdi:pin-off-outline"></ha-icon>
-          <div class="orphan-text">
-            <div class="orphan-title">
-              ${localize("card.orphan_pin_title")}
+      <li class="station is-orphan" role="listitem">
+        <div class="station-body">
+          <ha-icon
+            class="orphan-icon"
+            icon="mdi:pin-off-outline"
+            aria-hidden="true"
+          ></ha-icon>
+          <div class="station-main">
+            <div class="row-secondary">
+              <span class="station-name"
+                >${localize("card.orphan_pin_title")}</span
+              >
             </div>
             <div class="orphan-id">${id}</div>
           </div>
-          <button
-            class="orphan-remove"
-            type="button"
-            aria-label=${localize("card.unpin")}
-            title=${localize("card.unpin")}
-            @click=${(ev: Event) => {
-              ev.stopPropagation();
-              this._unpinStation(id);
-            }}
-          >
-            <ha-icon icon="mdi:close"></ha-icon>
-          </button>
+          <div class="station-actions">
+            <button
+              class="icon-action"
+              type="button"
+              aria-label=${localize("card.unpin")}
+              title=${localize("card.unpin")}
+              @click=${(ev: Event) => {
+                ev.stopPropagation();
+                this._unpinStation(id);
+              }}
+            >
+              <ha-icon icon="mdi:close" aria-hidden="true"></ha-icon>
+            </button>
+          </div>
         </div>
       </li>
     `;
@@ -576,7 +607,7 @@ export class LadestellenAustriaCard extends LitElement {
   ): TemplateResult {
     if (!nearest) {
       return html`<section class="hero hero--empty" aria-live="polite">
-        <div class="hero-label">${localize("card.no_stations")}</div>
+        ${localize("card.no_stations")}
       </section>`;
     }
     const km = this._formatKm(nearest.distance);
@@ -593,15 +624,16 @@ export class LadestellenAustriaCard extends LitElement {
             .replace("{total}", String(rawTotal));
     return html`
       <section class="hero" aria-live="polite">
-        <div class="hero-value">
-          <span class="hero-number">${km}</span>
-          <span class="hero-unit">km</span>
-        </div>
-        <div class="hero-context">
-          <div class="hero-context-1">
-            ${localize("card.hero_context").replace("{city}", cityLabel)}
+        <div class="metric">
+          <div class="metric-value">
+            <span class="metric-num">${km}</span>
+            <span class="metric-of">km</span>
           </div>
-          <div class="hero-context-2">${countText} · ${rangeText}</div>
+          <div class="metric-label">${cityLabel}</div>
+        </div>
+        <div class="chip-row">
+          <span class="chip">${rangeText}</span>
+          <span class="chip muted">${countText}</span>
         </div>
       </section>
     `;
@@ -658,11 +690,18 @@ export class LadestellenAustriaCard extends LitElement {
     const cls = [
       "station",
       expanded ? "expanded" : "",
-      isPinned ? "pinned" : "",
-      level === "inactive" ? "inactive" : "",
+      isPinned ? "is-pinned" : "",
+      level === "inactive" ? "is-inactive" : "",
     ]
       .filter(Boolean)
       .join(" ");
+
+    const cityLine = [station.postCode, station.city].filter(Boolean).join(" ");
+    const distanceText = Number.isFinite(station.distance)
+      ? `${this._formatKm(station.distance)} km`
+      : "";
+    const locParts = [cityLine, distanceText].filter(Boolean);
+    const locText = locParts.join(" · ");
 
     return html`
       <li
@@ -676,64 +715,65 @@ export class LadestellenAustriaCard extends LitElement {
         <div class="station-body">
           <span
             class=${`status-dot status-${level}`}
+            role="img"
             aria-label=${this._statusAria(level, availPoints, totalPoints)}
           ></span>
-          <div class="station-grid">
-            <span class="station-metrics">
-              ${isPinned
-                ? html`<ha-icon
-                    class="pin-indicator"
-                    icon="mdi:pin"
-                    title=${localize("card.pinned")}
-                    aria-label=${localize("card.pinned")}
-                  ></ha-icon>`
-                : nothing}
+          <div class="station-main">
+            <div class="row-primary">
               ${maxKw > 0
-                ? html`<span
-                    class=${isDC ? "metric-kw metric-kw--dc" : "metric-kw"}
-                  >
+                ? html`<span class=${isDC ? "metric-kw dc" : "metric-kw"}>
                     <span class="kw-num">${maxKw}</span
                     ><span class="kw-unit">kW</span>
                   </span>`
                 : nothing}
-              ${visibleConnectors.map(
-                (t) => html`<span class="pill plug">${t}</span>`,
-              )}
-              ${extraConnectors > 0
-                ? html`<span class="pill plug plug-more"
-                    >+${extraConnectors}</span
+              ${showPricing && priceText
+                ? html`<span
+                    class=${priceIsFree
+                      ? "metric-price free"
+                      : "metric-price"}
+                    >${priceText}</span
                   >`
                 : nothing}
-            </span>
-            ${showPricing && priceText
-              ? html`<span
-                  class=${priceIsFree
-                    ? "metric-price metric-free"
-                    : "metric-price"}
-                  >${priceText}</span
-                >`
-              : html`<span class="metric-price-placeholder"></span>`}
-            <ha-icon
-              class="chevron"
-              icon=${expanded ? "mdi:chevron-up" : "mdi:chevron-down"}
-            ></ha-icon>
-            <div class="station-name">${station.label}</div>
+              ${visibleConnectors.map(
+                (t) => html`<span class="chip muted">${t}</span>`,
+              )}
+              ${extraConnectors > 0
+                ? html`<span class="chip muted">+${extraConnectors}</span>`
+                : nothing}
+              ${isPinned
+                ? html`<span class="chip pin" title=${localize("card.pinned")}>
+                    <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
+                    <span>${localize("card.pinned")}</span>
+                  </span>`
+                : nothing}
+            </div>
+            <div class="row-secondary">
+              <span class="station-name">${station.label}</span>
+              ${locText
+                ? html`<span class="station-loc">${locText}</span>`
+                : nothing}
+            </div>
+          </div>
+          <div class="station-actions">
             <a
-              class="station-distance"
+              class="icon-action"
               href=${mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label=${localize("card.open_in_maps")}
+              aria-label=${`${localize("card.open_in_maps")}: ${station.label}`}
               title=${localize("card.open_in_maps")}
               @click=${(ev: Event) => ev.stopPropagation()}
             >
-              <ha-icon icon="mdi:map-marker-outline"></ha-icon>
-              <span class="distance-value">
-                ${this._formatKm(station.distance)}<span class="unit"
-                  >km</span
-                >
-              </span>
+              <ha-icon
+                icon="mdi:map-marker-outline"
+                aria-hidden="true"
+              ></ha-icon>
             </a>
+            <ha-icon
+              class="chevron"
+              icon="mdi:chevron-down"
+              aria-hidden="true"
+            ></ha-icon>
           </div>
         </div>
         ${expanded
@@ -779,12 +819,15 @@ export class LadestellenAustriaCard extends LitElement {
           : nothing}
         ${station.description
           ? html`<div class="station-note">
-              <ha-icon icon="mdi:information-outline"></ha-icon>
+              <ha-icon
+                icon="mdi:information-outline"
+                aria-hidden="true"
+              ></ha-icon>
               <span>${station.description}</span>
             </div>`
           : nothing}
         ${points.length > 0
-          ? html`<div class="detail-section">
+          ? html`<div class="rack-block">
               <div class="detail-label">
                 ${localize("card.charging_points_heading")}
               </div>
@@ -800,11 +843,11 @@ export class LadestellenAustriaCard extends LitElement {
               <div class="detail-label">
                 ${localize("card.payment_heading")}
               </div>
-              <div class="payment-row">
+              <div class="chip-row">
                 ${paymentChips.map(
                   (a) => html`
-                    <span class="payment-chip" title=${a.label}>
-                      <ha-icon icon=${a.icon}></ha-icon>
+                    <span class="chip muted" title=${a.label}>
+                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
                       <span>${a.label}</span>
                     </span>
                   `,
@@ -817,11 +860,11 @@ export class LadestellenAustriaCard extends LitElement {
               <div class="detail-label">
                 ${localize("card.amenities_heading")}
               </div>
-              <div class="amenities">
+              <div class="chip-row">
                 ${amenities.map(
                   (a) => html`
-                    <span class="amenity" title=${a.label}>
-                      <ha-icon icon=${a.icon}></ha-icon>
+                    <span class="chip muted" title=${a.label}>
+                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
                       <span>${a.label}</span>
                     </span>
                   `,
@@ -834,51 +877,57 @@ export class LadestellenAustriaCard extends LitElement {
               <div class="detail-label">
                 ${localize("card.address_heading")}
               </div>
-              <div class="detail-address">${address}</div>
+              <div class="detail-text">${address}</div>
             </div>`
           : nothing}
-        <div class="detail-actions">
+        <div class="actions">
           <a
-            class="action-btn primary"
+            class="btn-primary"
             href=${mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             @click=${(ev: Event) => ev.stopPropagation()}
           >
-            <ha-icon icon="mdi:map-marker-radius-outline"></ha-icon>
+            <ha-icon
+              icon="mdi:map-marker-radius-outline"
+              aria-hidden="true"
+            ></ha-icon>
             <span>${localize("card.open_in_maps")}</span>
           </a>
           ${station.website
             ? html`<a
-                class="action-btn"
+                class="btn-secondary"
                 href=${station.website}
                 target="_blank"
                 rel="noopener noreferrer"
                 @click=${(ev: Event) => ev.stopPropagation()}
               >
-                <ha-icon icon="mdi:web"></ha-icon>
+                <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
                 <span>${localize("card.website")}</span>
               </a>`
             : nothing}
           ${station.phoneNumber
             ? html`<a
-                class="action-btn"
+                class="btn-secondary"
                 href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
                 @click=${(ev: Event) => ev.stopPropagation()}
               >
-                <ha-icon icon="mdi:phone-outline"></ha-icon>
+                <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
                 <span>${localize("card.call")}</span>
               </a>`
             : nothing}
           ${station.priceUrl
             ? html`<a
-                class="action-btn"
+                class="btn-secondary"
                 href=${station.priceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 @click=${(ev: Event) => ev.stopPropagation()}
               >
-                <ha-icon icon="mdi:cash-multiple"></ha-icon>
+                <ha-icon
+                  icon="mdi:cash-multiple"
+                  aria-hidden="true"
+                ></ha-icon>
                 <span>${localize("card.tariff")}</span>
               </a>`
             : nothing}
@@ -939,7 +988,7 @@ export class LadestellenAustriaCard extends LitElement {
         data-status=${statusCat}
         title=${tooltip}
       >
-        <span class="rack-dot status-${statusCat}"></span>
+        <span class="rack-dot" data-status=${statusCat}></span>
         ${badge}
         <span class="rack-kw">
           <span class="rack-kw-num">${kwText}</span
@@ -998,13 +1047,19 @@ export class LadestellenAustriaCard extends LitElement {
     if (!hours || hours.length === 0) return nothing;
     const lines = this._formatOpeningHours(hours);
     if (lines.length === 0) return nothing;
-    const chipClass =
+    const flagClass =
       isOpenNow === true
-        ? "status-ok"
+        ? "flag ok"
         : isOpenNow === false
-          ? "status-inactive"
+          ? "flag warn"
           : null;
-    const chipText =
+    const flagIcon =
+      isOpenNow === true
+        ? "mdi:clock-check-outline"
+        : isOpenNow === false
+          ? "mdi:clock-alert-outline"
+          : null;
+    const flagText =
       isOpenNow === true
         ? localize("card.open_now")
         : isOpenNow === false
@@ -1024,10 +1079,10 @@ export class LadestellenAustriaCard extends LitElement {
               </div>`,
             )}
           </dl>
-          ${chipText
-            ? html`<span class=${`hours-chip ${chipClass ?? ""}`}>
-                <span class=${`status-dot ${chipClass ?? ""}`}></span>
-                ${chipText}
+          ${flagText && flagClass && flagIcon
+            ? html`<span class=${flagClass}>
+                <ha-icon icon=${flagIcon} aria-hidden="true"></ha-icon>
+                <span>${flagText}</span>
               </span>`
             : nothing}
         </div>
