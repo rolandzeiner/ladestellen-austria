@@ -77,3 +77,24 @@ async def _async_reload_entry(hass: HomeAssistant, entry: LadestellenAustriaConf
 async def async_unload_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(
+    hass: HomeAssistant, entry: LadestellenAustriaConfigEntry
+) -> None:
+    """Drop the Lovelace resource when the last config entry is removed.
+
+    The card registration is component-level (one resource per HA install,
+    not per entry), so this only runs when no other entries of this
+    integration remain. Reload goes through async_unload_entry, not here,
+    so the card stays registered across reloads.
+    """
+    remaining = [
+        e
+        for e in hass.config_entries.async_entries(DOMAIN)
+        if e.entry_id != entry.entry_id
+    ]
+    if remaining:
+        return
+    registration = JSModuleRegistration(hass)
+    await registration.async_unregister()
