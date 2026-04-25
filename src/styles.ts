@@ -1,602 +1,478 @@
 import { css } from "lit";
 
 // ---------------------------------------------------------------------------
-// Card styles — Lit shadow-DOM scoped. Designed from UX-first principles:
-//   - One primary stat (hero distance), everything else reads as support.
-//   - Dense station list, always-visible name + address, optional expand.
-//   - Semantic status traffic-light dot per row (ok/partial/busy/inactive).
-//   - Typography carries hierarchy; color reserved for meaning (accents,
-//     semantic tokens: success, warning, error, unavailable).
-//   - All colors via HA theme tokens + color-mix() so light/dark are free.
+// Card styles — Lit shadow-DOM scoped. Modern HA "tile-card" visual language:
+//   - Single-source-of-truth tokens on :host (radii, padding, slot/tile size).
+//   - Per-row accent piped via `style="--nb-accent:<colour>;"` so the icon-tile,
+//     row tint, rack surface, and CTA all read from one prop.
+//   - Chips (formerly "pills") for compact metric tags.
+//   - Filled .btn-primary CTA + circular .icon-action right-side actions.
+//   - Container queries against the card's own width (lscard), not the viewport.
 // ---------------------------------------------------------------------------
 
 export const cardStyles = css`
   :host {
     display: block;
-    --l-fs-hero: clamp(2.25rem, 4vw + 1rem, 3rem);
-    --l-fs-xl: var(--ha-font-size-xl, 1.5rem);
-    --l-fs-l: var(--ha-font-size-l, 1rem);
-    --l-fs-m: var(--ha-font-size-m, 0.9375rem);
-    --l-fs-s: var(--ha-font-size-s, 0.8125rem);
-    --l-fs-xs: var(--ha-font-size-xs, 0.75rem);
-    --l-fs-2xs: 11px;
-    --l-fw-reg: var(--ha-font-weight-normal, 400);
-    --l-fw-med: var(--ha-font-weight-medium, 500);
-    --l-fw-bld: var(--ha-font-weight-bold, 700);
-    --l-space-1: 4px;
-    --l-space-2: 8px;
-    --l-space-3: 12px;
-    --l-space-4: 16px;
-    --l-space-5: 20px;
-    --l-space-6: 24px;
-    --l-ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --l-dot-ok: var(--success-color, #22c55e);
-    --l-dot-partial: var(--warning-color, #f59e0b);
-    --l-dot-busy: var(--error-color, #ef4444);
-    --l-dot-inactive: var(--state-unavailable-color, #9ca3af);
+    container-type: inline-size;
+    container-name: lscard;
+    --nb-accent: var(--primary-color);
+    --nb-radius-sm: 6px;
+    --nb-radius-md: 10px;
+    --nb-radius-lg: var(--ha-card-border-radius, 12px);
+    --nb-pad-x: 16px;
+    --nb-pad-y: 14px;
+    --nb-row-gap: 12px;
+    --nb-tile-size: 40px;
+    --nb-slot-size: 80px;
+    --nb-slot-height: 64px;
+    --nb-slot-radius: 10px;
+    --nb-slot-gap: 8px;
   }
   ha-card {
     overflow: hidden;
-    border-radius: var(--ha-card-border-radius, 14px);
-    /* Container query scope — every @container rule below resolves against
-       the actual card width, not the viewport. HA dashboards place cards
-       in columns of widely varying widths (250-700px+), so sizing against
-       the card itself is the correct 2026 pattern. */
-    container-type: inline-size;
-    container-name: lscard;
+    border-radius: var(--nb-radius-lg);
   }
-
-  /* Card-content wrapper — follows HA's slotted-child convention so ha-card's
-     shadow-DOM selectors apply cleanly, but we reset the default 16px padding
-     because every block inside supplies its own spacing tuned to the 2-column
-     compact layout. Keeping the wrapper is purely semantic hygiene. */
+  /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
+     region inside .wrap supplies its own spacing tuned to the new tile
+     vocabulary. */
   .card-content {
     padding: 0;
   }
-
-  /* ----- Brand (used in the footer: §3c logo-link + §3d attribution) --- */
-  .brand-link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    transition: opacity 160ms var(--l-ease);
-  }
-  .brand-link:hover {
-    opacity: 0.7;
-  }
-  /* Official E-Control logo (vector SVG — previously a 2274x598 PNG,
-     now resolution-independent so the brightness(0)/invert(1) adaptive
-     filter renders crisp at any DPI). Width auto-scales to preserve
-     aspect ratio. 20px tall in the footer reads as a credit-line
-     mark, not a hero — subtle but still legible. */
-  .brand-logo {
-    display: block;
-    height: 20px;
-    width: auto;
-    max-width: 140px;
-    object-fit: contain;
-    transition: filter 160ms var(--l-ease);
-  }
-  /* Optional theme-adaptive rendering. brightness(0) collapses all
-     channels to black while keeping alpha; invert(1) flips to white for
-     dark mode. Enabled by the card's logo_adapt_to_theme config. */
-  .brand-logo.adaptive.adaptive-light {
-    filter: brightness(0);
-  }
-  .brand-logo.adaptive.adaptive-dark {
-    filter: brightness(0) invert(1);
+  .wrap {
+    padding: var(--nb-pad-y) var(--nb-pad-x);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nb-row-gap);
   }
 
-  /* Dynamic-mode indicator — a small pill under the hero reminding
-     the user the list is tracking a device_tracker, not the fixed
-     config location. Only rendered when the sensor reports
-     dynamic_mode: true. */
-  .dynamic-indicator {
+  /* ── Card header ─────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .icon-tile {
+    /* Modern HA "tile-card" vocabulary: rounded square, accent-tinted
+       background, accent-coloured icon. Replaces the old thin coloured
+       accent bar / status dot. */
+    width: var(--nb-tile-size);
+    height: var(--nb-tile-size);
+    border-radius: var(--nb-radius-md);
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin: var(--l-space-3) var(--l-space-4);
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 12%,
-      transparent
-    );
+    justify-content: center;
+    background: color-mix(in srgb, var(--nb-accent) 18%, transparent);
+    color: var(--nb-accent);
+    --mdc-icon-size: 22px;
+  }
+  /* "Inactive" / "unknown" tile variants — hollow ring (no fill) so the
+     state reads at any zoom, in grayscale, in forced-colors mode. */
+  .icon-tile.is-hollow {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px
+      color-mix(in srgb, var(--nb-accent) 55%, transparent);
+    color: var(--nb-accent);
+  }
+  .header-text {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .title {
+    /* <h2>/<h3> override. */
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
     color: var(--primary-text-color);
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.01em;
-    font-variant-numeric: tabular-nums;
-    max-width: calc(100% - 2 * var(--l-space-4));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .dynamic-indicator ha-icon {
-    --mdc-icon-size: 14px;
-    color: var(--primary-color);
-    flex-shrink: 0;
-  }
-
-  /* Optional user-set card title. Only rendered when config.name differs
-     from the default "Ladestellen Austria". */
-  .custom-title {
-    /* <h3> override: nuke UA heading margins so the layout is identical
-       to the previous <div>. Semantics only. */
+  .subtitle {
+    /* <p> override. */
     margin: 0;
-    padding: var(--l-space-3) var(--l-space-4) 0;
-    font-size: var(--l-fs-l);
-    font-weight: var(--l-fw-med);
-    color: var(--primary-text-color);
-    letter-spacing: 0;
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    font-weight: 400;
+    letter-spacing: 0.1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .icon-action {
+    /* Circular HA-style icon button — 40×40 touch target, hover/focus
+       tint matching native ha-icon-button. */
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--secondary-text-color);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease;
+    --mdc-icon-size: 20px;
+  }
+  .icon-action:hover,
+  .icon-action:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+    outline: none;
   }
 
-  /* ----- Hero — single big stat + context ---------------------------- */
+  /* ── Hero metric ─────────────────────────────────────────────────── */
   .hero {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: var(--l-space-4);
-    padding: var(--l-space-3) var(--l-space-4) var(--l-space-4);
+    gap: 12px;
+    flex-wrap: wrap;
   }
   .hero--empty {
-    padding: var(--l-space-5) var(--l-space-4);
     justify-content: center;
-  }
-  .hero-value {
-    display: inline-flex;
-    align-items: baseline;
-    color: var(--primary-text-color);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-  }
-  .hero-number {
-    font-size: var(--l-fs-hero);
-    font-weight: var(--l-fw-bld);
-    line-height: 1;
-    letter-spacing: -0.04em;
-  }
-  .hero-unit {
-    font-size: var(--l-fs-m);
-    font-weight: var(--l-fw-reg);
     color: var(--secondary-text-color);
-    margin-left: 6px;
-    letter-spacing: 0;
+    font-size: 0.8125rem;
+    padding: 8px 0;
   }
-  .hero-context {
+  .metric {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     gap: 2px;
     min-width: 0;
-    text-align: right;
   }
-  .hero-context-1 {
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
+  .metric-value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1;
+  }
+  .metric-num {
+    font-size: 2.25rem;
+    font-weight: 700;
     color: var(--primary-text-color);
-    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+  .metric-of {
+    font-size: 1rem;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-label {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
   }
-  .hero-context-2 {
-    font-size: var(--l-fs-xs);
-    color: var(--secondary-text-color);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
+
+  /* ── Chips ───────────────────────────────────────────────────────── */
+  .chip-row {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
   }
-  .hero-label {
-    font-size: var(--l-fs-s);
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+    color: var(--primary-color);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .chip ha-icon {
+    --mdc-icon-size: 14px;
+  }
+  .chip.muted {
+    background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
     color: var(--secondary-text-color);
+  }
+  /* Free-of-charge price chip — green domain accent. */
+  .chip.free {
+    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
+    color: var(--success-color, #22c55e);
+  }
+  /* DC fast-charge chip — amber/warning accent at 28% mix. */
+  .chip.dc {
+    background: color-mix(in srgb, var(--warning-color, #f57c00) 28%, transparent);
+    color: var(--primary-text-color);
+  }
+  .chip.dc ha-icon {
+    color: var(--warning-color, #f57c00);
+  }
+  .chip.pin {
+    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+    color: var(--primary-color);
   }
 
-  /* ----- Station list ------------------------------------------------ */
+  /* ── Status flags (pill badges, NOT inline text) ──────────────────── */
+  .flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
+    color: var(--secondary-text-color);
+    font-variant-numeric: tabular-nums;
+  }
+  .flag ha-icon {
+    --mdc-icon-size: 14px;
+    flex-shrink: 0;
+  }
+  .flag.ok {
+    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
+    color: var(--success-color, #22c55e);
+  }
+  .flag.warn {
+    background: color-mix(in srgb, var(--warning-color, #f59e0b) 16%, transparent);
+    color: var(--warning-color, #f59e0b);
+  }
+  .flag.err {
+    background: color-mix(in srgb, var(--error-color, #ef4444) 16%, transparent);
+    color: var(--error-color, #ef4444);
+  }
+
+  /* ── Station list ────────────────────────────────────────────────── */
+  /* Negative horizontal margin so the list breaks out of .wrap's padding;
+     each row supplies its own --nb-pad-x so hover/pinned tints span
+     edge-to-edge of the card. */
   .stations {
     list-style: none;
-    margin: 0;
+    margin: 0 calc(var(--nb-pad-x) * -1);
     padding: 0;
   }
   .station {
     display: flex;
     flex-direction: column;
-    padding: 0;
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
-    transition: background-color 200ms var(--l-ease);
+    transition: background-color 0.18s ease;
   }
   .station:last-child {
     border-bottom: none;
   }
   .station:hover,
   .station:focus-visible {
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 5%,
-      var(--ha-card-background, var(--card-background-color))
-    );
+    background: color-mix(in srgb, var(--primary-color) 5%, transparent);
     outline: none;
   }
-  .station.expanded {
-    background: color-mix(
-      in srgb,
-      var(--primary-color) 3%,
-      var(--ha-card-background, var(--card-background-color))
-    );
+  .station.is-pinned {
+    background: color-mix(in srgb, var(--primary-color) 4%, transparent);
+  }
+  .station.is-pinned:hover,
+  .station.is-pinned:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+  }
+  .station.is-inactive .station-body {
+    opacity: 0.65;
   }
 
-  /* Station is not actionable right now — under maintenance (all known
-     points in warn states), closed-now, or API says stationStatus is not
-     ACTIVE. The whole collapsed row dims and the kW loses its DC amber
-     so the row reads as neutral-muted instead of a dimmed fast-charge
-     accent. The expanded detail area stays full-clarity — it carries the
-     context (opening hours, rack, wrenches) that explains why the row is
-     muted. */
-  .station.inactive .station-body {
-    opacity: 0.6;
-  }
-  .station.inactive .metric-kw,
-  .station.inactive .metric-kw--dc,
-  .station.inactive .metric-kw .kw-num,
-  .station.inactive .metric-kw .kw-unit,
-  .station.inactive .metric-kw--dc .kw-num,
-  .station.inactive .metric-kw--dc .kw-unit {
-    color: var(--secondary-text-color);
-  }
-
-  /* Body: status dot + text column. Two lines always (name+metrics / address). */
   .station-body {
     display: flex;
-    gap: var(--l-space-3);
-    padding: var(--l-space-3) var(--l-space-4);
-    align-items: flex-start;
+    align-items: center;
+    gap: 12px;
+    padding: 12px var(--nb-pad-x);
+  }
+  .station-main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .station-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .chevron {
+    --mdc-icon-size: 22px;
+    color: var(--secondary-text-color);
+    transition: transform 0.18s ease;
+  }
+  .station.expanded .chevron {
+    transform: rotate(180deg);
   }
 
-  /* Status dot — 9px circle that communicates live availability at a glance.
-     Aligned to the baseline of the first text line for tidy vertical rhythm.
-     WCAG 1.4.1 (use of color) — each state ships THREE independent cues:
-     colour, halo geometry, AND fill-vs-hollow shape. The dot fill itself
-     stays at full saturation in every active state so colour reads loud;
-     the shape cue lives in the halo layers around the dot, never inside. */
+  /* Row line 1 — primary numeric reading: big bold kW + price, then DC /
+     connector / pin chips. Tabular nums so digits stay column-aligned
+     across rows. */
+  .row-primary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Row line 2 — subordinate identity: station name + city / distance,
+     same size + colour as the card-header subtitle. */
+  .row-secondary {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    line-height: 1.3;
+  }
+  .station-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--secondary-text-color);
+  }
+  .station-loc {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Big kW — primary-text bold number, muted unit. DC swaps both to
+     warning amber (still high-contrast against the card surface). */
+  .metric-kw {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    color: var(--primary-text-color);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .metric-kw .kw-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .metric-kw .kw-unit {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--secondary-text-color);
+  }
+  .metric-kw.dc {
+    color: var(--warning-color, #f57c00);
+  }
+  .metric-kw.dc .kw-unit {
+    color: var(--warning-color, #f57c00);
+  }
+
+  /* Price — bold companion to kW. Free renders in success green. */
+  .metric-price {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary-text-color);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .metric-price.free {
+    color: var(--success-color, #22c55e);
+    font-weight: 700;
+  }
+
+  /* ── Status dot (halo three-cue treatment) ────────────────────────── */
+  /* Each level ships THREE independent cues: hue, halo geometry, and
+     fill-vs-hollow shape. Survives any single-channel deficit (low
+     vision, protanopia, grayscale, forced-colors). */
   .status-dot {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
-    margin-top: 7px; /* aligns with the baseline of .station-name */
     background: currentColor;
     box-sizing: border-box;
   }
   .status-dot.status-ok {
-    /* Shape: solid disc + single soft halo. Baseline "healthy" state. */
-    color: var(--l-dot-ok);
+    color: var(--success-color, #22c55e);
     box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--l-dot-ok) 18%, transparent);
+      color-mix(in srgb, var(--success-color, #22c55e) 18%, transparent);
   }
   .status-dot.status-partial {
-    /* Shape: solid disc + DOUBLE halo (tighter bright ring + soft outer).
-       Distinct from ok's single halo at any zoom or in grayscale. */
-    color: var(--l-dot-partial);
+    color: var(--warning-color, #f59e0b);
     box-shadow:
       0 0 0 2px
-        color-mix(in srgb, var(--l-dot-partial) 45%, transparent),
+        color-mix(in srgb, var(--warning-color, #f59e0b) 45%, transparent),
       0 0 0 4px
-        color-mix(in srgb, var(--l-dot-partial) 18%, transparent);
+        color-mix(in srgb, var(--warning-color, #f59e0b) 18%, transparent);
   }
   .status-dot.status-busy {
-    /* Shape: solid disc + solid saturated ring + soft outer halo.
-       The solid ring adds visual "weight" so saturation reads heavier
-       even at full grayscale, distinguishing busy from partial. */
-    color: var(--l-dot-busy);
+    color: var(--error-color, #ef4444);
     box-shadow:
-      0 0 0 1.5px var(--l-dot-busy),
-      0 0 0 4px color-mix(in srgb, var(--l-dot-busy) 20%, transparent);
+      0 0 0 1.5px var(--error-color, #ef4444),
+      0 0 0 4px
+        color-mix(in srgb, var(--error-color, #ef4444) 20%, transparent);
   }
   .status-dot.status-inactive {
-    /* Shape: hollow ring (no fill) — clearly "off" regardless of colour. */
     color: transparent;
     background: transparent;
-    border: 1.5px solid var(--l-dot-inactive);
+    border: 1.5px solid var(--state-unavailable-color, #9ca3af);
     opacity: 0.7;
   }
   .status-dot.status-unknown {
-    /* Shape: hollow dashed ring (distinct from inactive's solid ring). */
     color: transparent;
     background: transparent;
     border: 1.5px dashed var(--secondary-text-color);
     opacity: 0.6;
   }
 
-  /* 2-row grid for the station row. Distance sits on line 1, price on
-     line 2. Both live in the same grid column (width = wider-of-the-two,
-     usually the distance pill), and both use justify-self: center so
-     their geometric midpoints line up vertically — harmonic column
-     centred under the distance. Chevron spans both rows and remains
-     vertically centred against the full cluster. */
-  .station-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      "metrics distance chevron"
-      "name    price    chevron";
-    column-gap: var(--l-space-3);
-    row-gap: 4px;
-    align-items: center;
-    min-width: 0;
-  }
-  .station-metrics {
-    grid-area: metrics;
-    justify-self: start;
-    align-self: center;
-  }
-  .station-distance {
-    grid-area: distance;
-    justify-self: center;
-  }
-  .metric-price,
-  .metric-price-placeholder {
-    grid-area: price;
-    justify-self: center;
-    align-self: center;
-  }
-  .chevron {
-    grid-area: chevron;
-    align-self: center;
-  }
-  .station-name {
-    grid-area: name;
-  }
-  /* Name sits on line 2 as a secondary identifier. Kept legible but
-     visually subordinate to the metrics line above. */
-  .station-name {
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-reg);
-    color: var(--secondary-text-color);
-    line-height: 1.4;
-    letter-spacing: 0.005em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .station-metrics {
-    display: inline-flex;
-    /* center alignment keeps pill padding from descending past the row
-       baseline — baseline alignment put chip-bottoms below the kW
-       numeral, visually bleeding into line 2 */
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 2px 6px;
-    font-size: var(--l-fs-m);
-    color: var(--primary-text-color);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  /* Pin indicator on pinned stations — small accent icon at the start
-     of the metrics row. */
-  .pin-indicator {
-    --mdc-icon-size: 14px;
-    color: var(--primary-color);
-    flex-shrink: 0;
-  }
-  .station.pinned {
-    background: color-mix(in srgb, var(--primary-color) 4%, transparent);
-  }
-  .station.pinned:hover,
-  .station.pinned:focus-visible {
-    background: color-mix(in srgb, var(--primary-color) 8%, transparent);
-  }
-
-  /* Orphan-pin placeholder row — for pinned IDs whose stations aren't in
-     the current /search response (out of range / decommissioned). Click
-     the ✕ to unpin. */
-  .orphan-pin {
+  /* ── Orphan-pin row ──────────────────────────────────────────────── */
+  .station.is-orphan {
     cursor: default;
+    opacity: 0.85;
   }
-  .orphan-pin:hover {
+  .station.is-orphan:hover {
     background: transparent;
-  }
-  .orphan-body {
-    display: flex;
-    align-items: center;
-    gap: var(--l-space-3);
-    padding: 10px var(--l-space-4);
-    opacity: 0.75;
   }
   .orphan-icon {
-    --mdc-icon-size: 18px;
+    --mdc-icon-size: 20px;
     color: var(--secondary-text-color);
     flex-shrink: 0;
-  }
-  .orphan-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .orphan-title {
-    font-size: var(--l-fs-s);
-    color: var(--primary-text-color);
-    font-weight: var(--l-fw-med);
   }
   .orphan-id {
-    font-size: var(--l-fs-xs);
-    color: var(--secondary-text-color);
     font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.6875rem;
+    color: var(--secondary-text-color);
     letter-spacing: 0;
-  }
-  .orphan-remove {
-    appearance: none;
-    border: none;
-    background: transparent;
-    padding: 10px;
-    min-width: 44px;
-    min-height: 44px;
-    border-radius: 999px;
-    cursor: pointer;
-    color: var(--secondary-text-color);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 160ms var(--l-ease);
-  }
-  .orphan-remove:hover,
-  .orphan-remove:focus-visible {
-    background: color-mix(in srgb, var(--error-color, #c62828) 14%, transparent);
-    color: var(--error-color, #c62828);
-    outline: none;
-  }
-  .orphan-remove ha-icon {
-    --mdc-icon-size: 16px;
-  }
-  /* kW — pure typographic treatment inspired by nextbike-austria's
-     "bikes available" number. Big bold primary-text number with a
-     small muted unit alongside; no pill, no background. DC distinction
-     rides on the unit colour only so the overall style stays clean. */
-  .metric-kw {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 3px;
-    color: var(--primary-text-color);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    white-space: nowrap;
-  }
-  .kw-num {
-    font-size: 1.45em;
-    font-weight: var(--l-fw-bld);
-    line-height: 1;
-    letter-spacing: -0.02em;
-  }
-  .kw-unit {
-    font-size: 0.85em;
-    font-weight: var(--l-fw-med);
-    color: var(--secondary-text-color);
-    letter-spacing: 0.01em;
-  }
-  /* DC fast-charge: both the number and the unit take the warning
-     accent so the full "80 kW" reads as one amber token. */
-  .metric-kw--dc {
-    color: var(--warning-color, #f57c00);
-  }
-  .metric-kw--dc .kw-unit {
-    color: var(--warning-color, #f57c00);
-  }
-  /* Price sits above distance in the right-stack — right-aligned so
-     digits line up column-wise for easy comparison across rows. */
-  .metric-price {
-    color: var(--primary-text-color);
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.005em;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-  .metric-free {
-    color: var(--success-color, #2e7d32);
-    font-weight: var(--l-fw-bld);
+    overflow-wrap: anywhere;
   }
 
-  /* Connector chips — neutral tint, tight vertical footprint so they
-     never overshoot the kW's numeric box when sat next to it. */
-  .pill.plug {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px 8px;
-    border-radius: 999px;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 12%,
-      transparent
-    );
-    color: var(--primary-text-color);
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.015em;
-    line-height: 1.3;
-    white-space: nowrap;
-  }
-  .pill.plug.plug-more {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 6%,
-      transparent
-    );
-    color: var(--secondary-text-color);
-  }
-
-  /* Distance-pill — map link. Vertical padding + line-height matched to
-     .pill.plug so everything in line 1 (kW numeral, connector chips,
-     distance pill) sits at a shared visual height. */
-  .station-distance {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 1px 10px;
-    border-radius: 999px;
-    text-decoration: none;
-    color: var(--primary-text-color);
-    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
-    line-height: 1.3;
-    transition:
-      background-color 160ms var(--l-ease),
-      transform 160ms var(--l-ease);
-    flex-shrink: 0;
-  }
-  .station-distance:hover,
-  .station-distance:focus-visible {
-    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
-    outline: none;
-  }
-  .station-distance:active {
-    transform: scale(0.96);
-  }
-  .station-distance ha-icon {
-    --mdc-icon-size: 14px;
-    color: var(--primary-color);
-  }
-  .distance-value {
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.005em;
-  }
-  .distance-value .unit {
-    font-size: var(--l-fs-xs);
-    color: var(--secondary-text-color);
-    font-weight: var(--l-fw-reg);
-    margin-left: 2px;
-    letter-spacing: 0;
-  }
-  .chevron {
-    --mdc-icon-size: 18px;
-    color: var(--secondary-text-color);
-    flex-shrink: 0;
-    transition: transform 200ms var(--l-ease);
-  }
-
-  /* (Line 2 is now .station-name — address moved to .detail-address in
-     the expanded panel.) */
-  .detail-address {
-    font-size: var(--l-fs-s);
-    color: var(--primary-text-color);
-    line-height: 1.4;
-    letter-spacing: 0.003em;
-  }
-
-  /* ----- Expanded detail -------------------------------------------- */
+  /* ── Expanded detail ─────────────────────────────────────────────── */
   .detail {
     display: flex;
     flex-direction: column;
-    gap: var(--l-space-3);
-    padding: 0 var(--l-space-4) var(--l-space-4) calc(var(--l-space-4) + 9px + var(--l-space-3));
-    animation: l-reveal 220ms var(--l-ease);
+    gap: 12px;
+    padding: 0 var(--nb-pad-x) 12px;
+    animation: l-reveal 0.22s ease;
   }
   @keyframes l-reveal {
     from {
@@ -611,277 +487,119 @@ export const cardStyles = css`
   .detail-section {
     display: flex;
     flex-direction: column;
-    gap: var(--l-space-1);
+    gap: 6px;
   }
   .detail-label {
-    font-size: var(--l-fs-2xs);
-    font-weight: var(--l-fw-med);
+    font-size: 0.6875rem;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--secondary-text-color);
-    opacity: 0.7;
+    opacity: 0.85;
   }
-
-  /* Status row (in expanded detail) */
-  .status-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.005em;
-    font-variant-numeric: tabular-nums;
-    align-self: flex-start;
-  }
-  .status-row .status-dot {
-    margin-top: 0;
-  }
-  .status-row.status-ok {
-    color: var(--l-dot-ok);
-  }
-  .status-row.status-partial {
-    color: var(--l-dot-partial);
-  }
-  .status-row.status-busy {
-    color: var(--l-dot-busy);
-  }
-  .status-row.status-inactive,
-  .status-row.status-unknown {
-    color: var(--secondary-text-color);
-  }
-
-  /* Amenities — compact wrap of icon+label pairs. */
-  .amenities {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-  }
-  .amenity {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    letter-spacing: 0.005em;
-  }
-  .amenity ha-icon {
-    --mdc-icon-size: 15px;
-    color: var(--secondary-text-color);
-    flex-shrink: 0;
-  }
-
-  /* Action row — clear, tappable, colored primary for Maps. */
-  .detail-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--l-space-2);
-    padding-top: var(--l-space-1);
-  }
-  .action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.005em;
-    text-decoration: none;
+  .detail-text {
+    font-size: 0.8125rem;
     color: var(--primary-text-color);
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 10%,
-      transparent
-    );
-    transition:
-      background-color 160ms var(--l-ease),
-      transform 160ms var(--l-ease);
+    line-height: 1.4;
   }
-  .action-btn:hover,
-  .action-btn:focus-visible {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 18%,
-      transparent
-    );
-    outline: none;
-  }
-  .action-btn:active {
-    transform: scale(0.97);
-  }
-  .action-btn ha-icon {
-    --mdc-icon-size: 16px;
-  }
-  .action-btn.primary {
-    background: color-mix(in srgb, var(--primary-color) 15%, transparent);
-    color: color-mix(
-      in srgb,
-      var(--primary-color) 85%,
-      var(--primary-text-color)
-    );
-  }
-  .action-btn.primary:hover,
-  .action-btn.primary:focus-visible {
-    background: color-mix(in srgb, var(--primary-color) 22%, transparent);
-  }
-  .action-btn.primary ha-icon {
-    color: var(--primary-color);
-  }
-
-  /* Footer — §3c logo-link on the left, §3d attribution on the right.
-     Both compliance items collapse into a single credit-line row. */
-  .footer {
+  .station-note {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--l-space-3);
-    padding: 10px var(--l-space-4);
-    border-top: 1px solid var(--divider-color);
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    background: color-mix(in srgb, var(--nb-accent) 8%, transparent);
+    border-left: 3px solid
+      color-mix(in srgb, var(--nb-accent) 55%, transparent);
+    border-radius: var(--nb-radius-sm);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--primary-text-color);
   }
-  .attribution-text {
-    font-size: var(--l-fs-xs);
-    color: var(--secondary-text-color);
-    letter-spacing: 0.03em;
-    opacity: 0.8;
+  .station-note ha-icon {
+    --mdc-icon-size: 16px;
+    color: var(--nb-accent);
+    flex-shrink: 0;
+    margin-top: 1px;
   }
-
-  /* Empty states */
-  .empty-state {
-    padding: var(--l-space-5);
-    text-align: center;
-    color: var(--secondary-text-color);
-    font-size: var(--l-fs-s);
-  }
-
-  /* ----- Operator byline (top of expanded detail) ------------------ */
   .operator-line {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
     min-width: 0;
   }
   .operator-name {
-    font-size: var(--l-fs-s);
+    font-size: 0.8125rem;
+    font-weight: 500;
     color: var(--primary-text-color);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.01em;
-    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
   }
 
-  /* ----- Station note (operator-supplied access info) --------------
-     Surfaces station.description — free-text notes from the operator
-     like "Zufahrt nur Anrainern gestattet 7-14 Uhr". Only rendered
-     when non-null, so it never adds visual noise for stations that
-     have nothing to say. */
-  .station-note {
+  /* ── Rack ────────────────────────────────────────────────────────── */
+  .rack-block {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
     gap: 8px;
-    padding: 8px 10px;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 7%,
-      transparent
-    );
-    border-left: 3px solid
-      color-mix(in srgb, var(--primary-color) 55%, transparent);
-    border-radius: 6px;
-    font-size: var(--l-fs-xs);
-    line-height: 1.4;
-    color: var(--primary-text-color);
   }
-  .station-note ha-icon {
-    --mdc-icon-size: 16px;
-    color: var(--primary-color);
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  /* ----- Rack (per-point availability grid, nextbike-style) ---------
-     Centred cluster — small point counts (1-4 typical) sit in the middle
-     of the container rather than left-hugging, which kept looking like a
-     half-empty row. */
   .rack {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px;
+    gap: var(--nb-slot-gap);
     padding: 10px;
-    border-radius: 10px;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 4%,
-      transparent
-    );
+    border-radius: var(--nb-radius-md);
+    background: color-mix(in srgb, var(--nb-accent) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--nb-accent) 10%, transparent);
   }
   .rack-slot {
-    /* Layout model:
-       - Positioned container. Only the status dot is an absolute
-         overlay (top-left decoration). Everything else — power badge,
-         kW, connector / wrench — participates in the flex column so
-         the entire content cluster is centred by a single
-         justify-content rule.
-       - Symmetric 8px padding + gap: 3px between flex children; when
-         content underfills the min-height floor the free space splits
-         evenly above/below.
-       - min-height keeps mixed warn/regular rows height-consistent. */
     position: relative;
-    flex: 0 0 80px;
-    width: 80px;
-    min-height: 64px;
+    flex: 0 0 var(--nb-slot-size);
+    width: var(--nb-slot-size);
+    min-height: var(--nb-slot-height);
     box-sizing: border-box;
-    border-radius: 10px;
+    border-radius: var(--nb-slot-radius);
     padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 3px;
-    border: 1px solid transparent;
-    transition: background-color 160ms var(--l-ease),
-      border-color 160ms var(--l-ease);
+    transition: background-color 0.18s ease;
     cursor: default;
   }
+  /* Status-coloured rack slots — tinted surface + inset bottom shadow for
+     depth (per spec). State variants prefer box-shadow insets over outline
+     so they don't clip inside flex. */
   .rack-slot[data-status="ok"] {
-    background: color-mix(in srgb, var(--success-color, #22c55e) 14%, transparent);
-    border-color: color-mix(in srgb, var(--success-color, #22c55e) 40%, transparent);
+    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--success-color, #22c55e) 32%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot[data-status="busy"] {
-    background: color-mix(in srgb, var(--error-color, #ef4444) 12%, transparent);
-    border-color: color-mix(in srgb, var(--error-color, #ef4444) 35%, transparent);
+    background: color-mix(in srgb, var(--error-color, #ef4444) 14%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--error-color, #ef4444) 30%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot[data-status="warn"] {
-    background: color-mix(in srgb, var(--warning-color, #f59e0b) 12%, transparent);
-    border-color: color-mix(in srgb, var(--warning-color, #f59e0b) 35%, transparent);
+    background: color-mix(in srgb, var(--warning-color, #f59e0b) 14%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--warning-color, #f59e0b) 30%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
-  /* UNKNOWN — live status not reported by the operator. Solid muted grey
-     tile so kW + connector stay legible; no dashed border (that's
-     reserved for "empty" = PLANNED/REMOVED slot placeholders). */
   .rack-slot[data-status="unknown"] {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 6%,
-      transparent
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--secondary-text-color) 20%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--secondary-text-color) 6%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--secondary-text-color) 24%, transparent);
   }
   .rack-slot[data-status="empty"] {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 8%,
-      transparent
-    );
-    border: 1px dashed
-      color-mix(in srgb, var(--secondary-text-color) 35%, transparent);
+    background: color-mix(in srgb, var(--secondary-text-color) 6%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--secondary-text-color) 28%, transparent);
   }
   .rack-kw {
     display: inline-flex;
@@ -892,24 +610,20 @@ export const cardStyles = css`
     line-height: 1;
     white-space: nowrap;
   }
-  /* Number + unit share the same primary-text colour on every slot —
-     status tint lives on the slot background + status dot, not on the
-     kW label. DC is carried by the top-left bolt icon. */
   .rack-kw-num {
     font-size: 1.15rem;
-    font-weight: var(--l-fw-bld);
+    font-weight: 700;
     letter-spacing: -0.02em;
   }
   .rack-kw-unit {
     font-size: 0.72rem;
-    font-weight: var(--l-fw-med);
+    font-weight: 500;
     letter-spacing: 0.01em;
   }
   .rack-connector {
     max-width: 100%;
-    font-size: var(--l-fs-xs);
+    font-size: 0.7rem;
     color: var(--secondary-text-color);
-    letter-spacing: 0.005em;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -919,9 +633,6 @@ export const cardStyles = css`
     --mdc-icon-size: 28px;
     color: var(--warning-color, #f57c00);
   }
-  /* Status dot — top-left corner, mirroring the power-badge at top-
-     centre for a balanced header band. Absolute keeps it stable across
-     varying connector label widths below. */
   .rack-dot {
     position: absolute;
     top: 6px;
@@ -929,36 +640,24 @@ export const cardStyles = css`
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    flex-shrink: 0;
   }
-  .rack-dot.status-ok {
-    background: var(--l-dot-ok);
+  .rack-dot[data-status="ok"] {
+    background: var(--success-color, #22c55e);
   }
-  .rack-dot.status-busy {
-    background: var(--l-dot-busy);
+  .rack-dot[data-status="busy"] {
+    background: var(--error-color, #ef4444);
   }
-  .rack-dot.status-warn {
-    background: var(--l-dot-partial);
+  .rack-dot[data-status="warn"] {
+    background: var(--warning-color, #f59e0b);
   }
-  .rack-dot.status-unknown {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 55%,
-      transparent
-    );
-  }
-  .rack-dot.status-empty {
+  .rack-dot[data-status="unknown"] {
     background: transparent;
-    border: 1px solid
+    box-shadow: inset 0 0 0 1.5px
       color-mix(in srgb, var(--secondary-text-color) 60%, transparent);
   }
-  /* AC/DC badge — first flex child (above kW). Participates in the
-     flex flow so it centres with the rest of the content. DC takes
-     the warning accent (fast-charge signal); AC stays secondary so
-     it recedes on the common case. */
   .power-badge {
-    font-size: 0.5625rem; /* 9px @ 16px root — WCAG 1.4.4 resize-text */
-    font-weight: var(--l-fw-bld);
+    font-size: 0.5625rem;
+    font-weight: 700;
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -970,191 +669,173 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
     opacity: 0.75;
   }
-
-  /* Fees line under the rack — quiet secondary text. */
   .fees-line {
-    font-size: var(--l-fs-xs);
+    font-size: 0.75rem;
     color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.005em;
     line-height: 1.4;
-    padding-top: 4px;
   }
 
-  /* ----- Opening hours --------------------------------------------- */
+  /* ── Opening hours ───────────────────────────────────────────────── */
   .hours-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--l-space-3);
+    gap: 12px;
     flex-wrap: wrap;
-    font-size: var(--l-fs-s);
-    color: var(--primary-text-color);
-    line-height: 1.4;
   }
   .hours-lines {
-    /* <dl> override: nuke UA margins so the list sits flush inside the
-       detail section. */
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
     margin: 0;
     padding: 0;
+    font-size: 0.8125rem;
+    color: var(--primary-text-color);
+    line-height: 1.4;
   }
   .hours-line {
     display: flex;
     gap: 8px;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.005em;
   }
   .hours-day,
   .hours-time {
-    /* <dt> / <dd> overrides: strip UA margins so the day/time pair sits
-       on a single line matching the previous <div> rendering. */
     margin: 0;
   }
   .hours-day {
     font-weight: 500;
     flex-shrink: 0;
   }
-  .hours-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.01em;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 10%,
-      transparent
-    );
-    color: var(--secondary-text-color);
-    white-space: nowrap;
-  }
-  .hours-chip.status-ok {
-    background: color-mix(
-      in srgb,
-      var(--success-color, #22c55e) 14%,
-      transparent
-    );
-    color: var(--success-color, #22c55e);
-  }
-  .hours-chip.status-inactive {
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 12%,
-      transparent
-    );
-    color: var(--secondary-text-color);
-  }
-  .hours-chip .status-dot {
-    margin-top: 0;
-    width: 7px;
-    height: 7px;
-    box-shadow: none;
-  }
 
-  /* ----- Payment chips --------------------------------------------- */
-  .payment-row {
+  /* ── Detail action footer ────────────────────────────────────────── */
+  .actions {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
+    padding-top: 2px;
   }
-  .payment-chip {
+  .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
-    padding: 3px 10px;
+    padding: 0 14px;
+    height: 32px;
     border-radius: 999px;
-    background: color-mix(
-      in srgb,
-      var(--secondary-text-color) 10%,
-      transparent
-    );
+    background: var(--nb-accent);
+    color: var(--text-primary-color, #fff);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 1px 2px color-mix(in srgb, #000 12%, transparent);
+    transition: filter 0.18s ease, transform 0.18s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.08);
+  }
+  .btn-primary:active {
+    transform: translateY(1px);
+  }
+  .btn-primary ha-icon {
+    --mdc-icon-size: 16px;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 12px;
+    height: 32px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--secondary-text-color) 10%, transparent);
     color: var(--primary-text-color);
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
-    letter-spacing: 0.005em;
-    line-height: 1.3;
-    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.18s ease;
   }
-  .payment-chip ha-icon {
-    --mdc-icon-size: 14px;
+  .btn-secondary:hover {
+    background: color-mix(in srgb, var(--secondary-text-color) 18%, transparent);
+  }
+  .btn-secondary ha-icon {
+    --mdc-icon-size: 16px;
     color: var(--secondary-text-color);
-    flex-shrink: 0;
+  }
+  .timestamp {
+    font-size: 0.7rem;
+    color: var(--secondary-text-color);
+    margin-left: auto;
   }
 
-  /* ==========================================================
-     RESPONSIVE: container queries against the card's own width
-     ========================================================== */
-
-  /* Compact — below ~440px (most phone dashboards). Line 1 stays as
-     metrics + distance + chevron; line 2 stays as the station name.
-     Only typography and padding tighten. */
-  @container lscard (max-width: 439px) {
-    .station-body {
-      padding: 10px var(--l-space-3);
-      gap: var(--l-space-2);
-    }
-    .station-metrics {
-      font-size: var(--l-fs-s);
-    }
-    .station-name {
-      font-size: var(--l-fs-xs);
-    }
-
-    /* Hero stacks vertically so the big number and context each get
-       their own line. */
-    .hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--l-space-2);
-      padding: var(--l-space-3) var(--l-space-3) var(--l-space-4);
-    }
-    .hero-context {
-      align-items: flex-start;
-      text-align: left;
-    }
-
-    .custom-title {
-      padding: var(--l-space-2) var(--l-space-3) 0;
-    }
-
-    .detail {
-      padding: 0 var(--l-space-3) var(--l-space-3)
-        calc(var(--l-space-3) + 9px + var(--l-space-2));
-    }
-    .amenities {
-      gap: 4px 10px;
-    }
-    .action-btn {
-      font-size: var(--l-fs-xs);
-      padding: 5px 10px;
-    }
-    .footer {
-      padding: 8px var(--l-space-3);
-      gap: var(--l-space-2);
-    }
-    .brand-logo {
-      height: 18px;
-    }
+  /* ── Brand footer (§3c logo-link + §3d attribution) ───────────────── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px var(--nb-pad-x);
+    border-top: 1px solid var(--divider-color);
+  }
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: opacity 0.16s ease;
+  }
+  .brand-link:hover {
+    opacity: 0.7;
+  }
+  .brand-logo {
+    display: block;
+    height: 20px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    transition: filter 0.16s ease;
+  }
+  .brand-logo.adaptive.adaptive-light {
+    filter: brightness(0);
+  }
+  .brand-logo.adaptive.adaptive-dark {
+    filter: brightness(0) invert(1);
+  }
+  .attribution-text {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    letter-spacing: 0.03em;
+    opacity: 0.85;
   }
 
-  /* Narrow rack — slots shrink from 80×72 to 60×56 so even 4-point DC
-     hubs wrap to two rows at worst on phone-width dashboards. */
-  @container lscard (max-width: 359px) {
-    .rack {
-      gap: 6px;
-      padding: 8px;
+  /* ── Empty state ─────────────────────────────────────────────────── */
+  .empty-state {
+    padding: 24px 0;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-size: 0.875rem;
+  }
+
+  /* ── Responsive density tiers (container queries) ─────────────────── */
+  @container lscard (inline-size < 360px) {
+    :host {
+      --nb-pad-x: 14px;
+      --nb-pad-y: 12px;
+      --nb-tile-size: 36px;
+      --nb-slot-size: 60px;
+      --nb-slot-height: 52px;
+      --nb-slot-gap: 6px;
+    }
+    .metric-num {
+      font-size: 2rem;
+    }
+    .icon-tile {
+      --mdc-icon-size: 20px;
     }
     .rack-slot {
-      flex: 0 0 60px;
-      width: 60px;
-      min-height: 52px;
       padding: 6px 4px;
       gap: 2px;
     }
@@ -1165,67 +846,75 @@ export const cardStyles = css`
       font-size: 0.65rem;
     }
     .rack-connector {
-      font-size: 0.625rem; /* 10px @ 16px root — WCAG 1.4.4 */
+      font-size: 0.625rem;
     }
     .rack-warn-icon {
       --mdc-icon-size: 22px;
     }
-    .rack-dot {
-      top: 4px;
-      left: 5px;
-      width: 7px;
-      height: 7px;
-    }
     .power-badge {
-      font-size: 0.5rem; /* 8px @ 16px root — WCAG 1.4.4 */
+      font-size: 0.5rem;
       letter-spacing: 0.06em;
     }
-  }
-
-  /* Ultra-compact — below 320px. Drop more ornamentation; let overflow
-     wrap instead of ellipsis-truncate. */
-  @container lscard (max-width: 319px) {
     .station-body {
-      padding: 8px var(--l-space-3);
+      padding: 10px;
+      gap: 10px;
     }
-    .station-metrics {
-      font-size: var(--l-fs-xs);
+    .footer {
+      padding: 8px 14px;
     }
-    .distance-value {
-      font-size: var(--l-fs-s);
+    .brand-logo {
+      height: 18px;
     }
-    .distance-value .unit {
-      font-size: 0.625rem; /* 10px @ 16px root — WCAG 1.4.4 */
+  }
+  @container lscard (inline-size > 480px) {
+    :host {
+      --nb-pad-x: 20px;
+      --nb-pad-y: 16px;
+      --nb-tile-size: 44px;
+      --nb-slot-size: 92px;
+      --nb-slot-height: 72px;
+      --nb-slot-gap: 10px;
     }
-    .station-distance {
-      padding: 2px 8px;
+    .metric-num {
+      font-size: 2.5rem;
     }
-    .station-distance ha-icon {
-      --mdc-icon-size: 14px;
-    }
-    .chevron {
-      --mdc-icon-size: 16px;
-    }
-    .hero {
-      padding: var(--l-space-2) var(--l-space-3) var(--l-space-3);
-    }
-    .hero-context-1,
-    .hero-context-2 {
-      white-space: normal;
+    .icon-tile {
+      --mdc-icon-size: 24px;
     }
   }
 
-  /* Accessibility: visible focus ring for keyboard users. */
+  /* ── Accessibility primitives ────────────────────────────────────── */
+  /* Focus ring (WCAG 2.4.7 AA; the 2px/3:1 ring also meets 2.4.13 AAA). */
   .station:focus-visible,
-  .orphan-remove:focus-visible,
+  .icon-action:focus-visible,
   a:focus-visible,
   button:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
     border-radius: 6px;
   }
+  .btn-primary:focus-visible {
+    outline-offset: 3px;
+  }
 
-  /* Accessibility: honour user motion preference. */
+  /* Forced-colors fallback (Windows High Contrast). */
+  @media (forced-colors: active) {
+    .station:focus-visible,
+    .icon-action:focus-visible,
+    a:focus-visible,
+    button:focus-visible {
+      outline-color: CanvasText;
+    }
+    .icon-tile,
+    .chip,
+    .flag,
+    .btn-primary,
+    .btn-secondary {
+      forced-color-adjust: none;
+    }
+  }
+
+  /* Honour user motion preference (catch-all). */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -1239,7 +928,7 @@ export const cardStyles = css`
 `;
 
 // ---------------------------------------------------------------------------
-// Editor styles — unchanged, HA form widgets carry their own theming.
+// Editor styles — unchanged. HA form widgets carry their own theming.
 // ---------------------------------------------------------------------------
 
 export const editorStyles = css`
@@ -1305,8 +994,6 @@ export const editorStyles = css`
     border-color: var(--primary-color);
     font-weight: 600;
   }
-  /* Amenity / payment chips include an icon next to the label.
-     Slightly tighter padding so a dense chip-row wraps cleanly. */
   .filter-chip.icon-chip {
     display: inline-flex;
     align-items: center;
@@ -1321,7 +1008,6 @@ export const editorStyles = css`
     color: var(--text-primary-color, #fff);
   }
 
-  /* Pin list — editor section for toggling which stations are pinned. */
   .pin-list {
     display: flex;
     flex-direction: column;
@@ -1380,118 +1066,246 @@ export const editorStyles = css`
   .editor-hint--muted {
     opacity: 0.7;
   }
+
+  /* Palette-swatch chip — used by the parking card's "Eigene Farbe"
+     picker. Pill-shaped chip tinted in the chosen colour, with a
+     palette-swatch-variant icon in full saturation + the hex value as
+     a tabular label. The native <input type="color"> covers the chip
+     at opacity 0 so the OS picker opens on click and the hex value
+     flows back through @input/@change. */
+  .color-swatch {
+    --swatch-color: var(--primary-color);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--swatch-color) 18%, transparent);
+    color: var(--primary-text-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.16s ease, transform 0.16s ease;
+  }
+  .color-swatch:hover {
+    background: color-mix(in srgb, var(--swatch-color) 26%, transparent);
+  }
+  .color-swatch:active {
+    transform: translateY(1px);
+  }
+  .color-swatch ha-icon {
+    --mdc-icon-size: 22px;
+    color: var(--swatch-color);
+    flex-shrink: 0;
+  }
+  .color-swatch-hex {
+    font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .color-swatch-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    /* Some browsers render the native swatch at a fixed size that
+       leaks past inset:0; clip just in case. */
+    overflow: hidden;
+  }
 `;
 
 // ---------------------------------------------------------------------------
 // Parking-slot card styles — single station, points as parking-lot slots
-// viewed from above. Painted-lane separators + dark asphalt surface; AVAILABLE
-// slots pop with a success-tint glow, everything else is desaturated + muted.
-// Container-queried against the card's own width (plcard), not the viewport,
-// so it scales correctly inside HA's column layouts.
+// viewed from above. Same tile-language tokens as cardStyles. Asphalt
+// metaphor preserved (dashed lane separators, tinted surface), but
+// container, slot radii, and CTA primitives flow from --nb-* tokens.
+// Container-queried against the card's own width (plcard).
 // ---------------------------------------------------------------------------
 
 export const parkingLotStyles = css`
   :host {
     display: block;
-    --l-fs-l: var(--ha-font-size-l, 1rem);
-    --l-fs-m: var(--ha-font-size-m, 0.9375rem);
-    --l-fs-s: var(--ha-font-size-s, 0.8125rem);
-    --l-fs-xs: var(--ha-font-size-xs, 0.75rem);
-    --l-fw-reg: var(--ha-font-weight-normal, 400);
-    --l-fw-med: var(--ha-font-weight-medium, 500);
-    --l-fw-bld: var(--ha-font-weight-bold, 700);
-    --l-ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --l-ok: var(--success-color, #22c55e);
-    --l-busy: var(--error-color, #ef4444);
-    --l-warn: var(--warning-color, #f59e0b);
+    container-type: inline-size;
+    container-name: plcard;
+    --nb-accent: var(--primary-color);
+    --nb-radius-sm: 6px;
+    --nb-radius-md: 10px;
+    --nb-radius-lg: var(--ha-card-border-radius, 12px);
+    --nb-pad-x: 16px;
+    --nb-pad-y: 14px;
+    --nb-row-gap: 12px;
+    --nb-tile-size: 40px;
+    --nb-slot-size: 96px;
+    --nb-slot-height: 120px;
+    --nb-slot-radius: 8px;
+    --nb-slot-gap: 8px;
   }
   ha-card {
     overflow: hidden;
-    border-radius: var(--ha-card-border-radius, 14px);
-    container-type: inline-size;
-    container-name: plcard;
+    border-radius: var(--nb-radius-lg);
+  }
+  .card-content {
+    padding: 0;
+  }
+  .wrap {
+    padding: var(--nb-pad-y) var(--nb-pad-x);
+    display: flex;
+    flex-direction: column;
+    gap: var(--nb-row-gap);
   }
 
-  .parking-header {
+  /* ── Card header (icon-tile + title group) ────────────────────────── */
+  .header {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    align-items: center;
     gap: 12px;
-    padding: 12px 16px 8px;
-    flex-wrap: wrap;
   }
-  .parking-title-group {
+  .icon-tile {
+    width: var(--nb-tile-size);
+    height: var(--nb-tile-size);
+    border-radius: var(--nb-radius-md);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--nb-accent) 18%, transparent);
+    color: var(--nb-accent);
+    --mdc-icon-size: 22px;
+  }
+  .header-text {
+    min-width: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0;
-    flex: 1;
   }
-  .parking-title {
-    /* <h3> override: nuke UA heading margins so the header row layout
-       is identical to the previous <div>. */
+  .title {
     margin: 0;
-    font-size: var(--l-fs-l);
-    font-weight: var(--l-fw-med);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
     color: var(--primary-text-color);
-    letter-spacing: 0;
-  }
-  .parking-station-label {
-    font-size: var(--l-fs-s);
-    color: var(--secondary-text-color);
-    letter-spacing: 0.005em;
-    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .parking-count {
-    font-size: var(--l-fs-s);
-    font-weight: var(--l-fw-med);
+  .subtitle {
+    margin: 0;
+    font-size: 0.75rem;
     color: var(--secondary-text-color);
-    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .parking-count--ok {
-    color: var(--l-ok);
+
+  /* ── Header count (avail / total free, right-aligned) ─────────────── */
+  /* Sits in the header row alongside the icon-tile + title. Compact
+     stack: big tabular number + " / total" suffix on top, UPPERCASE
+     "free" label below. Pinned right via margin-left:auto. Number
+     turns success-green when at least one slot is free so the
+     glance-read is instant. */
+  .header-count {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .header-count-value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    line-height: 1;
+  }
+  .header-count-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-text-color);
+    letter-spacing: -0.5px;
+  }
+  .header-count.has-free .header-count-num {
+    color: var(--success-color, #22c55e);
+  }
+  .header-count-of {
+    font-size: 0.85rem;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+  }
+  .header-count-label {
+    font-size: 0.7rem;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
   }
 
-  /* The lot — dark asphalt tint under the slots. Slots sit on this
-     background so the painted lane lines read as paint on asphalt. */
+  /* ── Lot ─────────────────────────────────────────────────────────── */
+  .rack-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .parking-lot {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-    gap: 8px;
-    padding: 6px 16px 16px;
+    grid-template-columns: repeat(auto-fit, minmax(var(--nb-slot-size), 1fr));
+    /* Slots butt up edge-to-edge so adjacent painted lane-lines collapse
+       into a single 3px stripe (instead of two parallel ones). The
+       border-radius + overflow:hidden clips corner slots to the asphalt
+       rounded outline. */
+    gap: 0;
+    padding: 0;
+    border-radius: var(--nb-radius-md);
+    overflow: hidden;
     background: color-mix(
       in srgb,
       var(--primary-text-color) 8%,
-      var(--ha-card-background, var(--card-background-color))
+      transparent
     );
   }
 
-  /* A single parking slot. Dashed vertical borders serve as the painted
-     lane-markers; subtle inner background keeps the slot distinguishable
-     from the asphalt base. */
+  /* ── Slot ────────────────────────────────────────────────────────── */
+  /* Each slot is a real parking-spot rectangle: sharp corners, solid
+     white painted lane-lines on the long sides, asphalt-tinted body
+     between them. Buttons are reset to look like plain divs but stay
+     focusable + clickable for the car-toggle interaction. */
   .parking-slot {
     position: relative;
-    min-height: 120px;
-    padding: 12px 8px;
+    min-height: var(--nb-slot-height);
+    padding: 12px 6px;
     display: flex;
     align-items: stretch;
     justify-content: center;
     box-sizing: border-box;
-    cursor: default;
-    transition: opacity 160ms var(--l-ease), filter 160ms var(--l-ease);
-    border-left: 2px dashed
-      color-mix(in srgb, var(--primary-text-color) 30%, transparent);
-    border-right: 2px dashed
-      color-mix(in srgb, var(--primary-text-color) 30%, transparent);
+    border-radius: 0;
+    border: none;
+    /* Single painted lane-line on the driver's-side edge of every slot.
+       Adjacent slots share that line; each row's leftmost slot draws
+       the row-opening line. No right border so the last slot in a row
+       lets the asphalt bleed to the lot's rounded corner. */
+    border-left: 3px solid rgba(255, 255, 255, 0.92);
     background: color-mix(
       in srgb,
-      var(--primary-text-color) 4%,
+      var(--primary-text-color) 6%,
       transparent
     );
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    cursor: default;
+    transition: background-color 0.16s ease;
+  }
+  .parking-slot.has-car {
+    cursor: pointer;
   }
   .slot-inner {
     display: flex;
@@ -1500,11 +1314,12 @@ export const parkingLotStyles = css`
     justify-content: center;
     gap: 4px;
     width: 100%;
+    transition: opacity 0.22s ease;
   }
 
   .slot-power-badge {
-    font-size: 0.5625rem; /* 9px @ 16px root — WCAG 1.4.4 */
-    font-weight: var(--l-fw-bld);
+    font-size: 0.5625rem;
+    font-weight: 700;
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -1516,7 +1331,6 @@ export const parkingLotStyles = css`
     color: var(--secondary-text-color);
     opacity: 0.75;
   }
-
   .slot-kw {
     display: inline-flex;
     align-items: baseline;
@@ -1528,125 +1342,192 @@ export const parkingLotStyles = css`
   }
   .slot-kw-num {
     font-size: 1.4rem;
-    font-weight: var(--l-fw-bld);
+    font-weight: 700;
     letter-spacing: -0.02em;
   }
   .slot-kw-unit {
     font-size: 0.78rem;
-    font-weight: var(--l-fw-med);
+    font-weight: 500;
   }
-
   .slot-connector {
-    font-size: var(--l-fs-xs);
+    font-size: 0.7rem;
     color: var(--secondary-text-color);
-    letter-spacing: 0.005em;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
   .slot-status-word {
-    font-size: var(--l-fs-xs);
-    font-weight: var(--l-fw-med);
+    font-size: 0.7rem;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     line-height: 1;
     margin-top: 4px;
   }
   .slot-status-free {
-    color: var(--l-ok);
+    color: var(--success-color, #22c55e);
   }
   .slot-status-busy {
-    color: var(--l-busy);
+    color: var(--error-color, #ef4444);
   }
   .slot-status-warn {
-    color: var(--l-warn);
+    color: var(--warning-color, #f59e0b);
   }
   .slot-status-unknown {
     color: var(--secondary-text-color);
   }
 
-  /* AVAILABLE slots pop — success-tinted fill + brighter painted-lane
-     markers so the eye lands on the free spots immediately. */
+  /* AVAILABLE slots — empty parking spot, success-tint fill + inset
+     bottom shadow for depth so the eye lands on free spots. */
   .parking-slot.is-available {
     background: color-mix(
       in srgb,
-      var(--l-ok) 14%,
-      color-mix(
-        in srgb,
-        var(--primary-text-color) 4%,
-        transparent
-      )
+      var(--success-color, #22c55e) 22%,
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent)
     );
-    border-left-color: color-mix(
-      in srgb,
-      var(--l-ok) 50%,
-      var(--primary-text-color)
-    );
-    border-right-color: color-mix(
-      in srgb,
-      var(--l-ok) 50%,
-      var(--primary-text-color)
-    );
+    box-shadow: inset 0 -2px 0
+      color-mix(in srgb, #000 18%, transparent);
   }
 
-  /* Non-AVAILABLE slots: desaturated + reduced opacity so the AVAILABLE
-     ones dominate the glance-read. Muting applies to CHARGING / BLOCKED
-     / OUTOFORDER / UNKNOWN uniformly. */
-  .parking-slot.is-muted {
-    opacity: 0.5;
-    filter: grayscale(50%);
+  /* ── Car overlay (occupied slots) ─────────────────────────────────
+     A top-down vector car fills the spot. On hover / focus / when the
+     slot is in the revealed set, the car fades + shrinks and the
+     slot-inner info appears in its place. Playful + glanceable. */
+  .slot-car {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.24s ease, transform 0.24s ease;
+  }
+  .slot-car svg {
+    width: 78%;
+    height: auto;
+    max-height: 92%;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+  .parking-slot.has-car .slot-inner {
+    opacity: 0;
+  }
+  .parking-slot.has-car:hover .slot-car,
+  .parking-slot.has-car:focus-visible .slot-car,
+  .parking-slot.has-car.is-revealed .slot-car {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  .parking-slot.has-car:hover .slot-inner,
+  .parking-slot.has-car:focus-visible .slot-inner,
+  .parking-slot.has-car.is-revealed .slot-inner {
+    opacity: 1;
+  }
+  .parking-slot.is-warn,
+  .parking-slot.is-unknown {
+    opacity: 0.85;
   }
 
-  /* Empty state inside ha-card (no station selected, out of range). */
+  /* ── Empty state ─────────────────────────────────────────────────── */
   .empty-state {
-    padding: 20px 16px;
+    padding: 24px 0;
     text-align: center;
     color: var(--secondary-text-color);
-    font-size: var(--l-fs-s);
+    font-size: 0.875rem;
   }
 
-  /* Tablet split-view tier: cards between ~320 px and ~439 px (between
-     the default auto-fit minmax(96px) and the narrow 319 px fallback)
-     get a modest density bump so an iPad or split-view column still
-     reads cleanly. */
-  @container plcard (min-width: 320px) and (max-width: 439px) {
-    .parking-lot {
-      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-      gap: 8px;
-      padding: 8px 14px 14px;
-    }
-    .parking-slot {
-      min-height: 110px;
-      padding: 12px 6px;
-    }
-    .parking-header {
-      padding: 12px 14px 6px;
-    }
+  /* ── Brand footer (§3c logo-link + §3d attribution) ───────────────── */
+  /* Required by ladestellen.at ToU §3c (E-Control link) + §3d (verbatim
+     "Datenquelle: E-Control" next to the data). Mirrors the list card's
+     footer byte-for-byte — non-negotiable, do not restyle the logo path
+     or attribution string. */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px var(--nb-pad-x);
+    border-top: 1px solid var(--divider-color);
+  }
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: opacity 0.16s ease;
+  }
+  .brand-link:hover {
+    opacity: 0.7;
+  }
+  .brand-logo {
+    display: block;
+    height: 20px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    transition: filter 0.16s ease;
+  }
+  /* Optional theme-adaptive rendering. brightness(0) collapses all
+     channels to black while keeping alpha; invert(1) flips to white for
+     dark mode. Enabled by the card's logo_adapt_to_theme config. */
+  .brand-logo.adaptive.adaptive-light {
+    filter: brightness(0);
+  }
+  .brand-logo.adaptive.adaptive-dark {
+    filter: brightness(0) invert(1);
+  }
+  .attribution-text {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    letter-spacing: 0.03em;
+    opacity: 0.85;
   }
 
-  /* Narrow card fallback — rely on the container query so small dashboard
-     columns still render readable slots. */
-  @container plcard (max-width: 319px) {
-    .parking-lot {
-      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-      gap: 6px;
-      padding: 6px 12px 12px;
+  /* ── Responsive density tiers (container queries) ─────────────────── */
+  @container plcard (inline-size < 360px) {
+    :host {
+      --nb-pad-x: 14px;
+      --nb-pad-y: 12px;
+      --nb-tile-size: 36px;
+      --nb-slot-size: 84px;
+      --nb-slot-height: 100px;
     }
-    .parking-slot {
-      min-height: 100px;
-      padding: 10px 6px;
+    .metric-num {
+      font-size: 2rem;
     }
-    .parking-header {
-      padding: 10px 12px 6px;
+    .icon-tile {
+      --mdc-icon-size: 20px;
     }
     .slot-kw-num {
       font-size: 1.2rem;
     }
+    .parking-slot {
+      padding: 10px 6px;
+    }
+    .footer {
+      padding: 8px 14px;
+      gap: 8px;
+    }
+    .brand-logo {
+      height: 18px;
+    }
+  }
+  @container plcard (inline-size > 480px) {
+    :host {
+      --nb-pad-x: 20px;
+      --nb-pad-y: 16px;
+      --nb-tile-size: 44px;
+      --nb-slot-size: 110px;
+      --nb-slot-height: 132px;
+    }
+    .metric-num {
+      font-size: 2.5rem;
+    }
+    .icon-tile {
+      --mdc-icon-size: 24px;
+    }
   }
 
-  /* Accessibility: visible focus ring. */
+  /* ── Accessibility primitives ────────────────────────────────────── */
   .parking-slot:focus-visible,
   a:focus-visible,
   button:focus-visible {
@@ -1654,8 +1535,18 @@ export const parkingLotStyles = css`
     outline-offset: 2px;
     border-radius: 6px;
   }
-
-  /* Accessibility: honour user motion preference. */
+  @media (forced-colors: active) {
+    .parking-slot:focus-visible,
+    a:focus-visible,
+    button:focus-visible {
+      outline-color: CanvasText;
+    }
+    .icon-tile,
+    .slot-power-badge,
+    .slot-status-word {
+      forced-color-adjust: none;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

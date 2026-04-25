@@ -51,6 +51,20 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   entity?: string;
   station_id?: string;
   name?: string;
+  // Whether the X / Y free counter renders in the header. Defaults to
+  // true; users who only want the lot visualization can hide it.
+  show_free_count?: boolean;
+  // Same toggle the list card carries — the E-Control logo follows
+  // the active theme's dark/light mode (silhouette via brightness/invert
+  // filter). Defaults to false (keeps the brand-coloured logo).
+  logo_adapt_to_theme?: boolean;
+  // Source of the per-occupied-slot car colour:
+  //   "random" — deterministic 10-hue palette by EVSE id (default)
+  //   "theme"  — every car uses --primary-color
+  //   "fixed"  — every car uses car_color_fixed (hex string)
+  car_color_mode?: "random" | "theme" | "fixed";
+  // Hex colour used when car_color_mode === "fixed". Plain "#rrggbb".
+  car_color_fixed?: string;
 }
 
 // Short-label tokens used in the connector filter. These are the UI
