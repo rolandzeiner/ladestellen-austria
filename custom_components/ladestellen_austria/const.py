@@ -9,12 +9,20 @@ DOMAIN: Final = "ladestellen_austria"
 
 INTEGRATION_VERSION: Final = "0.2.2"
 
-# Must match src/const.ts CARD_VERSION byte-for-byte. Bump both in the same
-# commit. manifest.json "version" stays on the clean release (no -beta); this
-# constant plus src/const.ts carry the -beta-N suffix during development. The
-# WS version check that the bundled card runs on first hass assignment uses
-# this string as the source of truth — any mismatch triggers the reload banner
-# loop described in the workflow skill's CARD_VERSION section.
+# Must match src/const.ts CARD_VERSION byte-for-byte; tests/test_card_version.py
+# enforces the invariant in CI. Bump both in the same commit. manifest.json
+# "version" stays on the clean release (no -beta); this constant plus
+# src/const.ts can carry a -beta-N suffix during development.
+#
+# Used here only as the cache-buster query string appended to the Lovelace
+# resource URL by card_registration.py (`/ladestellen_austria/<file>?v=<ver>`).
+# When the version bumps, browsers see a new URL and re-fetch the bundle
+# instead of using the cached copy.
+#
+# This integration does NOT register a WebSocket card-version probe — there
+# is no live mismatch banner. Users on a tab that was open across an upgrade
+# will keep running the cached card until they hard-refresh; the cache-buster
+# guarantees the next page load picks up the new bundle.
 CARD_VERSION: Final = "0.2.2"
 
 USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
