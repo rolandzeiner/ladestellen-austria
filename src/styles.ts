@@ -1304,7 +1304,7 @@ export const parkingLotStyles = css`
     cursor: default;
     transition: background-color 0.16s ease;
   }
-  .parking-slot.has-car {
+  .parking-slot.has-overlay {
     cursor: pointer;
   }
   .slot-inner {
@@ -1390,11 +1390,13 @@ export const parkingLotStyles = css`
       color-mix(in srgb, #000 18%, transparent);
   }
 
-  /* ── Car overlay (occupied slots) ─────────────────────────────────
-     A top-down vector car fills the spot. On hover / focus / when the
-     slot is in the revealed set, the car fades + shrinks and the
-     slot-inner info appears in its place. Playful + glanceable. */
-  .slot-car {
+  /* ── Slot overlays (car on busy, wrench on out-of-order) ──────────
+     Both overlays use the same .has-overlay reveal mechanism: on
+     hover / focus / when the slot is in the revealed set, the
+     overlay fades + shrinks and the slot-inner info appears in its
+     place. */
+  .slot-car,
+  .slot-wrench {
     position: absolute;
     inset: 8px;
     display: flex;
@@ -1409,21 +1411,39 @@ export const parkingLotStyles = css`
     max-height: 92%;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
   }
-  .parking-slot.has-car .slot-inner {
+  .slot-wrench {
+    color: var(--warning-color, #f57c00);
+    --mdc-icon-size: 44px;
+  }
+  .slot-wrench ha-icon {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+  .parking-slot.has-overlay .slot-inner {
     opacity: 0;
   }
-  .parking-slot.has-car:hover .slot-car,
-  .parking-slot.has-car:focus-visible .slot-car,
-  .parking-slot.has-car.is-revealed .slot-car {
+  .parking-slot.has-overlay:hover .slot-car,
+  .parking-slot.has-overlay:hover .slot-wrench,
+  .parking-slot.has-overlay:focus-visible .slot-car,
+  .parking-slot.has-overlay:focus-visible .slot-wrench,
+  .parking-slot.has-overlay.is-revealed .slot-car,
+  .parking-slot.has-overlay.is-revealed .slot-wrench {
     opacity: 0;
     transform: scale(0.85);
   }
-  .parking-slot.has-car:hover .slot-inner,
-  .parking-slot.has-car:focus-visible .slot-inner,
-  .parking-slot.has-car.is-revealed .slot-inner {
+  .parking-slot.has-overlay:hover .slot-inner,
+  .parking-slot.has-overlay:focus-visible .slot-inner,
+  .parking-slot.has-overlay.is-revealed .slot-inner {
     opacity: 1;
   }
-  .parking-slot.is-warn,
+  /* Out-of-order slot: tinted warning background under the wrench so
+     the slot reads as "down" even before hover. */
+  .parking-slot.is-warn {
+    background: color-mix(
+      in srgb,
+      var(--warning-color, #f59e0b) 18%,
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent)
+    );
+  }
   .parking-slot.is-unknown {
     opacity: 0.85;
   }
