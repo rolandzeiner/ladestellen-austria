@@ -1255,6 +1255,7 @@ export const parkingLotStyles = css`
     gap: 8px;
   }
   .parking-lot {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(var(--nb-slot-size), 1fr));
     /* Slots butt up edge-to-edge so adjacent painted lane-lines collapse
@@ -1270,6 +1271,24 @@ export const parkingLotStyles = css`
       var(--primary-text-color) 8%,
       transparent
     );
+  }
+  /* Opening painted lane-line on the lot's left edge. A flat 3 px
+     pseudo-element rectangle — gets hard-clipped by the lot's
+     overflow:hidden + border-radius so the straight middle section
+     shows and the rounded corners cut it off cleanly. (An inset
+     box-shadow would FOLLOW the rounded corners and bleed into them,
+     which is what this rule replaces.) Closing / inter-slot lines are
+     drawn by each slot's own border-right. */
+  .parking-lot::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 3px;
+    background: rgba(255, 255, 255, 0.92);
+    pointer-events: none;
+    z-index: 1;
   }
 
   /* ── Slot ────────────────────────────────────────────────────────── */
@@ -1287,11 +1306,14 @@ export const parkingLotStyles = css`
     box-sizing: border-box;
     border-radius: 0;
     border: none;
-    /* Single painted lane-line on the driver's-side edge of every slot.
-       Adjacent slots share that line; each row's leftmost slot draws
-       the row-opening line. No right border so the last slot in a row
-       lets the asphalt bleed to the lot's rounded corner. */
-    border-left: 3px solid rgba(255, 255, 255, 0.92);
+    /* Painted lane-line: every slot draws a solid white line on its
+       passenger-side (right) edge. Adjacent slots share that line —
+       slot N's border-right doubles as the line between N and N+1.
+       The row's closing line happens naturally on the row-last slot's
+       border-right with NO special-case logic, regardless of whether
+       the row is full or partial. The lot's inset-left shadow handles
+       the row-opening line. */
+    border-right: 3px solid rgba(255, 255, 255, 0.92);
     background: color-mix(
       in srgb,
       var(--primary-text-color) 6%,
