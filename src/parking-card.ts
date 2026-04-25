@@ -194,7 +194,26 @@ export class LadestellenAustriaParkingCard extends LitElement {
       </ha-card>`;
     }
 
-    const points = station.points ?? [];
+    // Slot order: sort by the trailing segment of the EVSE-ID — the
+    // per-station point index the operator issued (e.g. *VIE*E5055*1
+    // before *VIE*E5055*2). This follows the operator's own signal
+    // rather than overriding it (ToU §3i — display data as it's
+    // transmitted), and gives users a stable reading direction in
+    // place of arbitrary array-position order. Falls back to lexical
+    // compare on the full EVSE-ID when the trailing segment isn't
+    // numeric.
+    const points = (station.points ?? []).slice().sort((a, b) => {
+      const ai = parseInt(
+        (a.evseId ?? "").split("*").pop() ?? "",
+        10,
+      );
+      const bi = parseInt(
+        (b.evseId ?? "").split("*").pop() ?? "",
+        10,
+      );
+      if (Number.isFinite(ai) && Number.isFinite(bi)) return ai - bi;
+      return (a.evseId ?? "").localeCompare(b.evseId ?? "");
+    });
     const availCount = points.filter(
       (p) => rackSlotStatus(p.status) === "ok",
     ).length;
