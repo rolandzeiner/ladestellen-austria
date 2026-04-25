@@ -273,16 +273,20 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const statusBucket = this._slotStatusBucket(statusCat);
     const isAvailable = statusCat === "ok";
     const isBusy = statusCat === "busy";
-    // Cars only on truly occupied spots. Warn (out-of-order) and unknown
-    // slots stay info-only — a car parked on a broken charger would
-    // mislead. Free spots are visibly empty, no car needed.
+    const isWarn = statusCat === "warn";
+    // Cars only on truly occupied spots; wrench on out-of-order slots.
+    // Free spots are visibly empty (no overlay) and unknown stays as
+    // muted info (the operator isn't reporting live state, so a wrench
+    // would over-claim).
     const showCar = isBusy;
-    const isRevealed = showCar && this._revealedSlots.has(point.evseId);
+    const showWrench = isWarn;
+    const hasOverlay = showCar || showWrench;
+    const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const slotClass = isAvailable
       ? "is-available"
       : isBusy
         ? "is-busy"
-        : statusCat === "warn"
+        : isWarn
           ? "is-warn"
           : "is-unknown";
     const aria = [
@@ -297,7 +301,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const cls = [
       "parking-slot",
       slotClass,
+      hasOverlay ? "has-overlay" : "",
       showCar ? "has-car" : "",
+      showWrench ? "has-wrench" : "",
       isRevealed ? "is-revealed" : "",
     ]
       .filter(Boolean)
@@ -308,18 +314,23 @@ export class LadestellenAustriaParkingCard extends LitElement {
         class=${cls}
         data-status=${statusCat}
         role="listitem"
-        tabindex=${showCar ? "0" : "-1"}
+        tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
-        aria-pressed=${showCar ? (isRevealed ? "true" : "false") : nothing}
+        aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
         title=${`${point.evseId ?? ""} · ${statusLabel}`.trim()}
         @click=${(ev: Event) => {
           ev.preventDefault();
-          if (showCar) this._toggleSlot(point.evseId);
+          if (hasOverlay) this._toggleSlot(point.evseId);
         }}
       >
         ${showCar && carColor
           ? html`<span class="slot-car" aria-hidden="true">
               ${this._renderCarSvg(carColor)}
+            </span>`
+          : nothing}
+        ${showWrench
+          ? html`<span class="slot-wrench" aria-hidden="true">
+              <ha-icon icon="mdi:wrench"></ha-icon>
             </span>`
           : nothing}
         <span class="slot-inner">
