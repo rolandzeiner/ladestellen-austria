@@ -13,9 +13,9 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - Distance-to-nearest-station sensor + full nearby list (label, address, connectors, power, live status, operator, pricing) as state attributes.
 - Bilingual config flow (EN/DE), with reauth and reconfigure flows.
 - **Dynamic location mode** — point the entry at a `device_tracker` and the search origin follows live GPS, with rate-limit guards (see [Dynamic location mode](#dynamic-location-mode)).
-- **Two Lovelace cards** — a list view (kW-led tile rows, expandable per-station detail) and a parking-lot view (top-down vector cars on occupied spots, wrench overlay on out-of-order, hover or tap reveals the slot's spec). Both auto-register as Lovelace resources on HA start.
+- **Two Lovelace cards** — a list view (kW-led tile rows, expandable per-station detail) and a parking-lot view (top-down vector cars on occupied spots, wrench overlay on out-of-order, hover or tap reveals the slot's spec).
 - WCAG 2.2 A+AA accessibility across both cards and editors.
-- Strict-typed, async-only, single outbound `/search` call per refresh.
+- Strict-typed, async-only.
 
 ## Requirements
 
@@ -109,7 +109,7 @@ template:
 
 ## Data update
 
-`GET /search?latitude=…&longitude=…` runs every **10 minutes** by default (configurable 5–720). Station metadata rarely changes; `stationStatus` and per-point `status` flip during outages. Dynamic-tracker mode triggers refreshes by movement (rate-limited; see [Dynamic location mode](#dynamic-location-mode)) instead of the scan interval.
+`GET /search?latitude=…&longitude=…` runs every **10 minutes** by default (configurable 5–720). Station metadata rarely changes; `stationStatus` and per-point `status` flip during outages. In [Dynamic location mode](#dynamic-location-mode) refreshes are triggered by tracker movement (rate-limited) instead of by the scan interval.
 
 ## Known limitations
 
@@ -145,7 +145,7 @@ python3 -m pytest tests/ -v
 
 ## Attribution
 
-Data is served by the official [Ladestellenverzeichnis](https://api.e-control.at) operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK](https://www.bmk.gv.at/). Catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api). Every sensor carries the verbatim *"Datenquelle: E-Control"* attribution required by §3d.
+Data is served by the official [Ladestellenverzeichnis](https://api.e-control.at) operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK](https://www.bmk.gv.at/). Catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api).
 
 Upstream issues: `support@ladestellen.at` (API) / `office@e-control.at` (general). Bugs in *this* integration: open a GitHub issue.
 
@@ -158,7 +158,7 @@ What this integration handles automatically:
 - **§3c — E-Control logo + §3d — Attribution:** both cards render the E-Control logo as a clickable link to `https://www.e-control.at/` and the verbatim *Datenquelle: E-Control* footer; sensors carry the same attribution. Frozen, can't be hidden.
 - **§3i — No data mutation:** values flow through unchanged; precision and ordering preserved as received.
 - **§3j — API-key confidentiality:** stored as a password field, never logged, redacted in diagnostics.
-- **§4 — Rate limits (2,500 req/hour per user):** the 10-min default polls leave headroom even with multiple entries; minimum interval is 5 min. Dynamic-tracker mode adds its own movement + cooldown guards (see [Dynamic location mode](#dynamic-location-mode)).
+- **§4 — Rate limits (2,500 req/hour per user):** one outbound `/search` per refresh, 10-min default (5-min minimum). [Dynamic location mode](#dynamic-location-mode) replaces interval polling with movement-triggered refreshes under their own cooldown guards.
 - **§7 — No bulk redistribution:** no export feature, no re-served API.
 
 ## License
