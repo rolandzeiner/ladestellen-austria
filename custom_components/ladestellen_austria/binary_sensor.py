@@ -21,7 +21,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import ATTRIBUTION, DOMAIN
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
 
 PARALLEL_UPDATES = 0
@@ -44,10 +44,7 @@ class HasFreeSlotBinarySensor(
 
     _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.PRESENCE
-    # §3d of the ladestellen.at Nutzungsbedingungen — same string the
-    # main sensor carries; binary_sensor needs it on its own attribution
-    # since downstream consumers may scrape this entity in isolation.
-    _attr_attribution = "Datenquelle: E-Control"
+    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,

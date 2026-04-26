@@ -15,6 +15,16 @@ TO_REDACT: set[str] = {
     CONF_DOMAIN,
     CONF_LATITUDE,
     CONF_LONGITUDE,
+    # Defensive future-proofing — diagnostics dumps end up in public GitHub
+    # issues, so over-redacting is essentially free. "Referer" matches the
+    # outbound header the coordinator builds from CONF_DOMAIN if it ever
+    # surfaces in a future request-history field; "password" / "token" are
+    # generic auth-field names that would otherwise need a contributor to
+    # remember to update this set when adding them. Removing any of these
+    # is a regression — extend the set, never shrink it.
+    "Referer",
+    "password",
+    "token",
 }
 
 

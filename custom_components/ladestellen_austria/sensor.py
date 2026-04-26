@@ -14,7 +14,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import ATTRIBUTION, DOMAIN
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,12 +47,7 @@ class NearestStationSensor(
     # "Maßeinheit hat sich geändert" warning when the unit records drifted
     # between null (unknown) and km. Dropping state_class stops new stats
     # collection — existing orphan stats cleared via HA's Statistics UI.
-    # Required verbatim by §3d of the ladestellen.at Nutzungsbedingungen:
-    # "Der Nutzer muss die Datenquelle unmittelbar bei den von der E-Control
-    # angezeigten Daten durch folgenden Verweis anführen: 'Datenquelle:
-    # E-Control'." Do not rewrite this string — it's part of the contract
-    # the end user accepted at registration. See workflow skill Rule #1.
-    _attr_attribution = "Datenquelle: E-Control"
+    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,

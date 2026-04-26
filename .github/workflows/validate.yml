@@ -12,6 +12,21 @@ permissions:
   packages: read
 
 jobs:
+  no-dev-fixture:
+    # _dev_fixture.py is a gitignored, dev-only hook in the coordinator
+    # (see contextlib.suppress(ImportError) site). It must never enter
+    # the repo — gitignore covers accidental staging, this guards against
+    # `git add -f` or the rule being deleted. Loud, fast, first job.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify _dev_fixture.py is not committed
+        run: |
+          if [ -f custom_components/ladestellen_austria/_dev_fixture.py ]; then
+            echo "::error::custom_components/ladestellen_austria/_dev_fixture.py must never be committed (dev-only hook)."
+            exit 1
+          fi
+
   validate-hacs:
     runs-on: ubuntu-latest
     steps:
