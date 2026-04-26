@@ -75,6 +75,15 @@ REQUEST_TIMEOUT_SEC: Final = 30
 # bundle-version bumps.
 REGISTRATION_URL: Final = "https://admin.ladestellen.at/#/api/registrieren"
 
+# Required verbatim by §3d of the ladestellen.at Nutzungsbedingungen:
+# "Der Nutzer muss die Datenquelle unmittelbar bei den von der E-Control
+# angezeigten Daten durch folgenden Verweis anführen: 'Datenquelle:
+# E-Control'." Do NOT rewrite this string — it's part of the contract the
+# end user accepted at registration. Single source of truth: every entity
+# imports this; the cards' attribution footer carries it independently
+# (frontend can't read Python constants).
+ATTRIBUTION: Final = "Datenquelle: E-Control"
+
 # HA bus event fired when a single EVSE's status changes between two
 # successful coordinator refreshes. Listened to by user-authored
 # automations (e.g. "ping me when my favourite charger frees up").
