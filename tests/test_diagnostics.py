@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from syrupy.assertion import SnapshotAssertion
 
 from custom_components.ladestellen_austria.const import (
     CONF_API_KEY,
@@ -62,6 +63,36 @@ async def test_diagnostics_redacts_credentials(hass: HomeAssistant) -> None:
     blob = json.dumps(diag, default=str)
     assert SECRET_API_KEY not in blob
     assert SECRET_DOMAIN not in blob
+
+
+async def test_diagnostics_snapshot(
+    hass: HomeAssistant, snapshot: SnapshotAssertion
+) -> None:
+    """Pin the full redacted diagnostics shape so silent format changes surface.
+
+    A failing diff usually means: a field was added to the entry/coordinator
+    payload, or the redaction set changed. Update the snapshot
+    (`pytest --snapshot-update`) only after confirming the change is intentional.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=DATA_WITH_SECRETS,
+        options={},
+        title="Test",
+        unique_id="test-stable-id",
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.ladestellen_austria.coordinator.LadestellenAustriaCoordinator._async_update_data",
+        new_callable=AsyncMock,
+        return_value=EXAMPLE_COORDINATOR_DATA,
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+    assert diag == snapshot
 
 
 async def test_diagnostics_handles_no_coordinator_data(
