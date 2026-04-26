@@ -4,15 +4,11 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
 from homeassistant.const import UnitOfLength
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.ladestellen_austria.const import (
-    CONF_DYNAMIC_ENTITY,
-    DOMAIN,
-)
+from custom_components.ladestellen_austria.const import DOMAIN
 from custom_components.ladestellen_austria.sensor import NearestStationSensor
 
 from .conftest import BASE_ENTRY_DATA, EXAMPLE_COORDINATOR_DATA, EXAMPLE_STATIONS
