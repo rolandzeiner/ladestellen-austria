@@ -25,6 +25,30 @@ npm run build           # produces custom_components/ladestellen_austria/www/lad
 
 `README.md` badge + `manifest.json` stay at the clean (non-beta) version; `const.py` + the TS constant can carry a `-beta-N` suffix during development.
 
+## Tooling & config
+
+- `pyproject.toml` — source of truth for ruff (target-version, line-length), mypy (strict, ignore_missing_imports, files), and coverage config. Change rules here, not in CI flags.
+- `pytest.ini` — pytest config (asyncio mode + path).
+- `ATTRIBUTION` — canonical data-source statement and licence terms; matches the `attribution` attribute every sensor emits. Update when the upstream API or licence wording changes (and keep `const.ATTRIBUTION` in sync).
+
+View per-file coverage locally:
+
+```bash
+pytest tests/ --cov --cov-report=term-missing
+```
+
+The `_dev_fixture.py` hook in `custom_components/ladestellen_austria/` is **gitignored** and a CI job (`no-dev-fixture`) hard-fails if it ever lands. Use it to inject synthetic 13-status stations during local card development; never commit it.
+
+## Snapshot tests
+
+Diagnostics output is pinned via `syrupy`. Snapshots live under `tests/snapshots/`. After an intentional change to the diagnostics shape (new field, redaction-set drift), regenerate:
+
+```bash
+pytest tests/test_diagnostics.py --snapshot-update
+```
+
+Commit the updated `.ambr` file alongside the code change so the diff is reviewable.
+
 ## Verification gate (must pass before pushing)
 
 ```bash
@@ -34,7 +58,7 @@ ruff check .
 npm run build
 ```
 
-CI runs the same checks plus hassfest + HACS validation. Failing locally wastes a push.
+CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard. Failing locally wastes a push.
 
 ## Reporting issues
 
