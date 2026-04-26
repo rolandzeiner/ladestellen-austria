@@ -1,0 +1,23 @@
+# serializer version: 1
+# name: test_diagnostics_snapshot
+  dict({
+    'coordinator': dict({
+      'last_update_success': True,
+      'station_count': 1,
+      'update_interval': '0:30:00',
+    }),
+    'entry': dict({
+      'data': dict({
+        'api_key': '**REDACTED**',
+        'domain': '**REDACTED**',
+        'latitude': '**REDACTED**',
+        'longitude': '**REDACTED**',
+        'scan_interval': 30,
+      }),
+      'options': dict({
+      }),
+      'title': 'Test',
+      'version': 1,
+    }),
+  })
+# ---

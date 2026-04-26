@@ -1,0 +1,35 @@
+Datenquelle: E-Control
+
+Data source
+-----------
+E-Control Ladestellenverzeichnis API (e-charging.e-control.at)
+
+Required attribution string
+---------------------------
+This integration emits the following attribution on every sensor and
+binary_sensor (via the `attribution` state attribute) and in every
+diagnostics download:
+
+    Datenquelle: E-Control
+
+If you build a Lovelace card or any other user-facing UI on top of this
+integration, please keep this attribution visible. The contractual
+attribution string is defined as a single source of truth in
+`custom_components/ladestellen_austria/const.py` (`ATTRIBUTION`) and
+imported by `sensor.py` and `binary_sensor.py`.
+
+Disclaimer
+----------
+This integration is not affiliated with or endorsed by E-Control Austria.
+All charging-station and EVSE-availability data is provided by the
+E-Control Ladestellenverzeichnis API and is subject to E-Control's terms
+of use. The developer assumes no liability for the accuracy, completeness,
+or timeliness of the displayed data — including station availability, EVSE
+operational status, connector types, or pricing information.
+Use at your own risk.
+
+Diese Integration steht in keiner Verbindung zur E-Control Austria und
+wird von dieser nicht unterstützt. Alle Ladestellen- und EVSE-Daten
+stammen aus dem E-Control Ladestellenverzeichnis und unterliegen deren
+Nutzungsbedingungen. Für Richtigkeit, Vollständigkeit und Aktualität
+wird keine Haftung übernommen. Nutzung auf eigene Verantwortung.
