@@ -67,6 +67,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "has_free_slot": {
+        "name": "Freier Ladepunkt verfügbar"
+      }
+    },
     "sensor": {
       "nearest_station": {
         "name": "Nächste Ladestelle"

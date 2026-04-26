@@ -1423,13 +1423,16 @@ export const parkingLotStyles = css`
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
   }
 
-  /* ── Slot overlays (car on busy, wrench on out-of-order) ──────────
-     Both overlays use the same .has-overlay reveal mechanism: on
-     hover / focus / when the slot is in the revealed set, the
-     overlay fades + shrinks and the slot-inner info appears in its
-     place. */
+  /* ── Slot overlays (car on busy, MDI icon on every other special
+     state — wrench / battery-off / cancel / progress-wrench / etc.) ──
+     Both overlay types use the same .has-overlay reveal mechanism: on
+     hover / focus / when the slot is in the revealed set, the overlay
+     fades + shrinks and the slot-inner info appears in its place.
+     Per-state icons (.slot-overlay-icon) get a tone class that picks
+     the icon colour — keeps the icon-vs-tone mapping in TS (utils
+     slotOverlayIcon) and the visual treatment here. */
   .slot-car,
-  .slot-wrench {
+  .slot-overlay-icon {
     position: absolute;
     inset: 8px;
     display: flex;
@@ -1444,22 +1447,34 @@ export const parkingLotStyles = css`
     max-height: 92%;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
   }
-  .slot-wrench {
-    color: var(--warning-color, #f57c00);
+  .slot-overlay-icon {
     --mdc-icon-size: 44px;
   }
-  .slot-wrench ha-icon {
+  .slot-overlay-icon ha-icon {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+  .slot-overlay-icon.tone-warning {
+    color: var(--warning-color, #f57c00);
+  }
+  .slot-overlay-icon.tone-error {
+    color: var(--error-color, #db4437);
+  }
+  .slot-overlay-icon.tone-info {
+    color: var(--info-color, #039be5);
+  }
+  .slot-overlay-icon.tone-muted {
+    color: var(--secondary-text-color);
+    opacity: 0.7;
   }
   .parking-slot.has-overlay .slot-inner {
     opacity: 0;
   }
   .parking-slot.has-overlay:hover .slot-car,
-  .parking-slot.has-overlay:hover .slot-wrench,
+  .parking-slot.has-overlay:hover .slot-overlay-icon,
   .parking-slot.has-overlay:focus-visible .slot-car,
-  .parking-slot.has-overlay:focus-visible .slot-wrench,
+  .parking-slot.has-overlay:focus-visible .slot-overlay-icon,
   .parking-slot.has-overlay.is-revealed .slot-car,
-  .parking-slot.has-overlay.is-revealed .slot-wrench {
+  .parking-slot.has-overlay.is-revealed .slot-overlay-icon {
     opacity: 0;
     transform: scale(0.85);
   }
@@ -1468,14 +1483,68 @@ export const parkingLotStyles = css`
   .parking-slot.has-overlay.is-revealed .slot-inner {
     opacity: 1;
   }
-  /* Out-of-order slot: tinted warning background under the wrench so
-     the slot reads as "down" even before hover. */
-  .parking-slot.is-warn {
-    background: color-mix(
-      in srgb,
-      var(--warning-color, #f59e0b) 18%,
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent)
-    );
+  /* Tinted slot states (out-of-order family + OUT_OF_STOCK / PLANNED /
+     REMOVED) reuse the same radial-glow recipe as is-available so the
+     visual weight matches across all backgrounded states — only the
+     accent colour differs. Top sheen + radial glow + asphalt base +
+     inset shadow, identical layout to is-available. */
+  .parking-slot.is-warn,
+  .parking-slot.slot-tint-warning {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #fff 9%, transparent) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        ellipse 78% 72% at 50% 44%,
+        color-mix(in srgb, var(--warning-color, #f59e0b) 52%, transparent) 0%,
+        color-mix(in srgb, var(--warning-color, #f59e0b) 24%, transparent) 50%,
+        color-mix(in srgb, var(--warning-color, #f59e0b) 7%, transparent) 85%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
+  }
+  .parking-slot.slot-tint-info {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #fff 9%, transparent) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        ellipse 78% 72% at 50% 44%,
+        color-mix(in srgb, var(--info-color, #039be5) 52%, transparent) 0%,
+        color-mix(in srgb, var(--info-color, #039be5) 24%, transparent) 50%,
+        color-mix(in srgb, var(--info-color, #039be5) 7%, transparent) 85%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
+  }
+  .parking-slot.slot-tint-error {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #fff 9%, transparent) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        ellipse 78% 72% at 50% 44%,
+        color-mix(in srgb, var(--error-color, #db4437) 52%, transparent) 0%,
+        color-mix(in srgb, var(--error-color, #db4437) 24%, transparent) 50%,
+        color-mix(in srgb, var(--error-color, #db4437) 7%, transparent) 85%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
   }
   .parking-slot.is-unknown {
     opacity: 0.85;

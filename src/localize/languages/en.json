@@ -37,11 +37,14 @@
     "point_status_occupied": "Occupied",
     "point_status_reserved": "Reserved",
     "point_status_blocked": "Blocked",
-    "point_status_fault": "Out of order",
+    "point_status_out_of_order": "Out of order",
+    "point_status_faulted": "Faulted",
+    "point_status_inoperative": "Inoperative",
     "point_status_unavailable": "Unavailable",
-    "point_status_unknown": "Unknown",
+    "point_status_out_of_stock": "Empty",
     "point_status_planned": "Planned",
     "point_status_removed": "Removed",
+    "point_status_unknown": "Unknown",
     "tariff": "Tariff",
     "dynamic_follows_entity": "Tracking: {entity}"
   },
@@ -56,7 +59,15 @@
     "slot_status_free": "free",
     "slot_status_busy": "in use",
     "slot_status_warn": "out of order",
-    "slot_status_unknown": "unknown"
+    "slot_status_unknown": "unknown",
+    "slot_status_reserved": "reserved",
+    "slot_status_blocked": "blocked",
+    "slot_status_out_of_stock": "empty",
+    "slot_status_faulted": "faulted",
+    "slot_status_inoperative": "offline",
+    "slot_status_unavailable": "n/a",
+    "slot_status_planned": "planned",
+    "slot_status_removed": "removed"
   },
   "amenities": {
     "green_energy": "Green energy",

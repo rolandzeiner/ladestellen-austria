@@ -35,6 +35,8 @@ import {
   pointPowerType,
   pointStatusLabel,
   rackSlotStatus,
+  slotOverlayIcon,
+  slotStatusShortKey,
   type RackStatus,
 } from "./utils";
 
@@ -289,17 +291,26 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const connector = pointConnectorLabel(point);
     const kwText = formatKw(point.capacityKw);
     const statusLabel = pointStatusLabel(point.status);
-    const statusBucket = this._slotStatusBucket(statusCat);
+    // colorBucket: drives the slot-status-{free|busy|warn|unknown}
+    // text colour class — kept bucket-coarse so RESERVED / BLOCKED
+    // still read red, OUT_OF_ORDER family still reads orange, etc.
+    const colorBucket = this._slotStatusBucket(statusCat);
+    // shortKey: drives the displayed word per-status (parking.slot_
+    // status_reserved / _out_of_stock / _planned / …) so users see
+    // "reserviert" instead of the bucket "belegt".
+    const shortKey = slotStatusShortKey(point.status);
     const isAvailable = statusCat === "ok";
     const isBusy = statusCat === "busy";
     const isWarn = statusCat === "warn";
-    // Cars only on truly occupied spots; wrench on out-of-order slots.
-    // Free spots are visibly empty (no overlay) and unknown stays as
-    // muted info (the operator isn't reporting live state, so a wrench
-    // would over-claim).
-    const showCar = isBusy;
-    const showWrench = isWarn;
-    const hasOverlay = showCar || showWrench;
+    // Per-status icon overlay (RESERVED / BLOCKED / OUT_OF_ORDER family /
+    // OUT_OF_STOCK / PLANNED / REMOVED / UNKNOWN). When set, the icon
+    // overrides the car: RESERVED/BLOCKED still tint the slot busy but
+    // get their own icon since they aren't physically occupied. CHARGING
+    // and OCCUPIED return null here so the SVG car keeps rendering.
+    const overlay = slotOverlayIcon(point.status);
+    const showCar = isBusy && !overlay;
+    const showOverlayIcon = overlay !== null;
+    const hasOverlay = showCar || showOverlayIcon;
     const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const slotClass = isAvailable
       ? "is-available"
@@ -322,7 +333,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
       slotClass,
       hasOverlay ? "has-overlay" : "",
       showCar ? "has-car" : "",
-      showWrench ? "has-wrench" : "",
+      showOverlayIcon ? "has-icon" : "",
+      overlay?.bgTint ? `slot-tint-${overlay.bgTint}` : "",
       isRevealed ? "is-revealed" : "",
     ]
       .filter(Boolean)
@@ -347,9 +359,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
               ${this._renderCarSvg(carColor)}
             </span>`
           : nothing}
-        ${showWrench
-          ? html`<span class="slot-wrench" aria-hidden="true">
-              <ha-icon icon="mdi:wrench"></ha-icon>
+        ${overlay
+          ? html`<span
+              class="slot-overlay-icon tone-${overlay.tone}"
+              aria-hidden="true"
+            >
+              <ha-icon icon=${overlay.icon}></ha-icon>
             </span>`
           : nothing}
         <span class="slot-inner">
@@ -365,8 +380,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
             ><span class="slot-kw-unit">kW</span>
           </span>
           <span class="slot-connector">${connector}</span>
-          <span class="slot-status-word slot-status-${statusBucket}"
-            >${this._slotStatusWord(statusBucket, statusLabel)}</span
+          <span class="slot-status-word slot-status-${colorBucket}"
+            >${this._slotStatusWord(shortKey, statusLabel)}</span
           >
         </span>
       </button>

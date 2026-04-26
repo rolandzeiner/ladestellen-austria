@@ -37,11 +37,14 @@
     "point_status_occupied": "Belegt",
     "point_status_reserved": "Reserviert",
     "point_status_blocked": "Blockiert",
-    "point_status_fault": "Außer Betrieb",
+    "point_status_out_of_order": "Außer Betrieb",
+    "point_status_faulted": "Defekt",
+    "point_status_inoperative": "Außer Betrieb",
     "point_status_unavailable": "Nicht verfügbar",
-    "point_status_unknown": "Unbekannt",
+    "point_status_out_of_stock": "Leer",
     "point_status_planned": "Geplant",
     "point_status_removed": "Entfernt",
+    "point_status_unknown": "Unbekannt",
     "tariff": "Tarif",
     "dynamic_follows_entity": "Folgt: {entity}"
   },
@@ -56,7 +59,15 @@
     "slot_status_free": "frei",
     "slot_status_busy": "belegt",
     "slot_status_warn": "außer Betrieb",
-    "slot_status_unknown": "unbekannt"
+    "slot_status_unknown": "unbekannt",
+    "slot_status_reserved": "reserviert",
+    "slot_status_blocked": "gesperrt",
+    "slot_status_out_of_stock": "leer",
+    "slot_status_faulted": "defekt",
+    "slot_status_inoperative": "offline",
+    "slot_status_unavailable": "n. v.",
+    "slot_status_planned": "geplant",
+    "slot_status_removed": "entfernt"
   },
   "amenities": {
     "green_energy": "Ökostrom",

@@ -117,6 +117,12 @@ node_modules/
 # ---------------------------------------------------------------------------
 scripts/
 
+# Local-only dev fixture: when present, prepends a synthetic 13-status
+# station to /search results so the cards can be eyeballed against every
+# RefillPointStatusEnum value. Picked up by a contextlib.suppress(ImportError)
+# hook in coordinator.py — absent file = no-op in production.
+custom_components/ladestellen_austria/_dev_fixture.py
+
 # ---------------------------------------------------------------------------
 # Logs / pip
 # ---------------------------------------------------------------------------
