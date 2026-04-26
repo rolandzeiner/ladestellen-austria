@@ -1373,16 +1373,27 @@ function e(e,t,i,n){var a,o=arguments.length,r=o<3?t:null===n?n=Object.getOwnPro
     color: var(--secondary-text-color);
   }
 
-  /* AVAILABLE slots — empty parking spot, success-tint fill + inset
-     bottom shadow for depth so the eye lands on free spots. */
+  /* AVAILABLE slots — empty parking spot. Radial green-glow from the
+     centre fading to the asphalt base, plus inset bottom shadow for
+     depth so the eye lands on free spots. */
   .parking-slot.is-available {
-    background: color-mix(
-      in srgb,
-      var(--success-color, #22c55e) 22%,
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent)
-    );
-    box-shadow: inset 0 -2px 0
-      color-mix(in srgb, #000 18%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #fff 9%, transparent) 0%,
+        transparent 45%
+      ),
+      radial-gradient(
+        ellipse 78% 72% at 50% 44%,
+        color-mix(in srgb, var(--success-color, #22c55e) 52%, transparent) 0%,
+        color-mix(in srgb, var(--success-color, #22c55e) 24%, transparent) 50%,
+        color-mix(in srgb, var(--success-color, #22c55e) 7%, transparent) 85%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
   }
 
   /* ── Slot overlays (car on busy, wrench on out-of-order) ──────────
