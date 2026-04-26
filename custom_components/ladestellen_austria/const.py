@@ -74,3 +74,9 @@ REQUEST_TIMEOUT_SEC: Final = 30
 # hash-based routing is client-side and hash values don't change on
 # bundle-version bumps.
 REGISTRATION_URL: Final = "https://admin.ladestellen.at/#/api/registrieren"
+
+# HA bus event fired when a single EVSE's status changes between two
+# successful coordinator refreshes. Listened to by user-authored
+# automations (e.g. "ping me when my favourite charger frees up").
+# Payload schema: see coordinator._diff_and_fire_status_events.
+EVENT_SLOT_STATUS_CHANGED: Final = f"{DOMAIN}_slot_status_changed"

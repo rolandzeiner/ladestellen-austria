@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+import os
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
@@ -44,6 +46,7 @@ from .const import (
     DYNAMIC_DISTANCE_THRESHOLD_M,
     DYNAMIC_DOMAIN_COOLDOWN_MINUTES,
     DYNAMIC_SAFETY_INTERVAL_HOURS,
+    EVENT_SLOT_STATUS_CHANGED,
     REFERER_HEADER,
     REQUEST_TIMEOUT_SEC,
     SEARCH_PATH,
@@ -420,6 +423,16 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lng = self._longitude
 
         stations = await self._fetch_search(lat, lng)
+        # Local-only dev hook: when _dev_fixture.py is present AND we're
+        # not running under pytest (PYTEST_CURRENT_TEST is set by pytest
+        # for the duration of every test), prepend a synthetic station
+        # that exercises every RefillPointStatusEnum value so card
+        # rendering can be eyeballed end-to-end. The file is gitignored
+        # — ImportError is the production path and is silent.
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            with contextlib.suppress(ImportError):
+                from . import _dev_fixture
+                stations = [_dev_fixture.STATION, *stations]
         stations.sort(key=lambda s: s.get("distance") or float("inf"))
         truncated = stations[:DEFAULT_MAX_RESULTS]
 
@@ -429,9 +442,89 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 len(truncated),
             )
 
+        # Diff per-EVSE status between previous and current refresh; fire
+        # one bus event per transition. Skipped on the first successful
+        # refresh because `self.data` is None — there's nothing to diff.
+        self._fire_status_transition_events(truncated)
+
         return {
             "stations": truncated,
             "count": len(truncated),
             "nearest": truncated[0] if truncated else None,
             "live_status_available": True,
         }
+
+    def _fire_status_transition_events(
+        self, current_stations: list[dict[str, Any]]
+    ) -> None:
+        """Compare `self.data` to the new station list and fire one
+        ``ladestellen_austria_slot_status_changed`` event per EVSE whose
+        status differs from the previous refresh.
+
+        Skips the first successful refresh (no prior data to diff). Only
+        fires when both old and new statuses are present and not equal —
+        a point appearing for the first time, disappearing, or having a
+        null status on either side does not fire (no signal to act on).
+
+        Event data is documented for users in README; the schema is
+        considered stable. Bumping it requires either a new event name
+        or a versioned `version` field in the payload.
+        """
+        if not isinstance(self.data, dict):
+            return
+        prev = self._index_points(self.data.get("stations") or [])
+        if not prev:
+            return
+        curr = self._index_points(current_stations)
+        for key, new_point in curr.items():
+            old_point = prev.get(key)
+            if old_point is None:
+                continue
+            old_status = (old_point.get("status") or "").upper().replace("_", "")
+            new_status = (new_point.get("status") or "").upper().replace("_", "")
+            if not old_status or not new_status or old_status == new_status:
+                continue
+            station_id, evse_id = key
+            self.hass.bus.async_fire(
+                EVENT_SLOT_STATUS_CHANGED,
+                {
+                    "entry_id": self._entry.entry_id,
+                    "station_id": station_id,
+                    "station_label": new_point.get("_station_label"),
+                    "station_distance": new_point.get("_station_distance"),
+                    "evse_id": evse_id,
+                    "old_status": old_point.get("status"),
+                    "new_status": new_point.get("status"),
+                },
+            )
+
+    @staticmethod
+    def _index_points(
+        stations: list[dict[str, Any]],
+    ) -> dict[tuple[str, str], dict[str, Any]]:
+        """Index every point by (stationId, evseId) for fast diffing.
+
+        Carries the station's label and distance forward on each point
+        under `_station_*` keys so the event payload can include them
+        without a second lookup. Skips points with no evseId — without
+        a stable identity we can't diff them across refreshes.
+        """
+        index: dict[tuple[str, str], dict[str, Any]] = {}
+        for station in stations:
+            if not isinstance(station, dict):
+                continue
+            station_id = station.get("stationId") or ""
+            station_label = station.get("label")
+            station_distance = station.get("distance")
+            for point in station.get("points") or []:
+                if not isinstance(point, dict):
+                    continue
+                evse_id = point.get("evseId") or ""
+                if not evse_id:
+                    continue
+                index[(station_id, evse_id)] = {
+                    **point,
+                    "_station_label": station_label,
+                    "_station_distance": station_distance,
+                }
+        return index

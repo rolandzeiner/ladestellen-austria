@@ -79,19 +79,105 @@ export function pointStatusLabel(status: string): string {
     OCCUPIED: "occupied",
     RESERVED: "reserved",
     BLOCKED: "blocked",
-    OUTOFORDER: "fault",
-    FAULTED: "fault",
-    INOPERATIVE: "fault",
+    OUTOFORDER: "out_of_order",
+    FAULTED: "faulted",
+    INOPERATIVE: "inoperative",
     UNAVAILABLE: "unavailable",
-    UNKNOWN: "unknown",
+    OUTOFSTOCK: "out_of_stock",
     PLANNED: "planned",
     REMOVED: "removed",
+    UNKNOWN: "unknown",
   };
   const bucket = buckets[s];
   if (!bucket) return status;
   const key = `card.point_status_${bucket}`;
   const resolved = localize(key);
   return resolved === key ? status : resolved;
+}
+
+/**
+ * Short localize key for the parking-card slot's bottom status word.
+ * Maps each RefillPointStatus to a key under `parking.slot_status_*`.
+ * AVAILABLE → "free", CHARGING / OCCUPIED → "busy" (the SVG car
+ * conveys the difference visually), every other status → its own
+ * short word so users can tell RESERVED apart from BLOCKED apart
+ * from OUT_OF_STOCK at slot size. Unrecognised → "unknown".
+ */
+export function slotStatusShortKey(status: string): string {
+  const map: Record<string, string> = {
+    AVAILABLE: "free",
+    CHARGING: "busy",
+    OCCUPIED: "busy",
+    RESERVED: "reserved",
+    BLOCKED: "blocked",
+    OUTOFORDER: "out_of_order",
+    FAULTED: "faulted",
+    INOPERATIVE: "inoperative",
+    UNAVAILABLE: "unavailable",
+    OUTOFSTOCK: "out_of_stock",
+    PLANNED: "planned",
+    REMOVED: "removed",
+    UNKNOWN: "unknown",
+  };
+  return map[normStatus(status)] ?? "unknown";
+}
+
+/**
+ * Per-status MDI icon overlay for the parking card. Mirrors the wrench
+ * pattern: states that aren't simply "free" or "in use by a car" get a
+ * dedicated icon overlay so the slot reads at a glance, with the same
+ * fade-on-hover/focus reveal of the spec underneath.
+ *
+ * Returns null for AVAILABLE / CHARGING / OCCUPIED — those states are
+ * handled either by leaving the slot blank (free) or by the SVG car
+ * overlay rendered separately. RESERVED + BLOCKED were previously
+ * lumped with the car; they now get their own icons since "held" and
+ * "admin-disabled" are semantically different from "physically in use".
+ *
+ * Tone keys map to CSS classes (.tone-warning / .tone-error / .tone-info
+ * / .tone-muted) on the overlay span — see parkingLotStyles.
+ */
+export type SlotOverlayTone = "warning" | "error" | "info" | "muted";
+export type SlotBgTint = "warning" | "info" | "error";
+export interface SlotOverlay {
+  icon: string;
+  tone: SlotOverlayTone;
+  // Optional background tint drawn behind the whole slot, like is-warn
+  // does for OUT_OF_ORDER. Used for states that should read as "off" /
+  // "future" / "gone" even before hover. RESERVED + BLOCKED stay null
+  // here — they fall through to the SVG car overlay (busy bucket).
+  bgTint?: SlotBgTint;
+}
+export function slotOverlayIcon(status: string): SlotOverlay | null {
+  switch (normStatus(status)) {
+    case "OUTOFORDER":
+    case "FAULTED":
+    case "INOPERATIVE":
+    case "UNAVAILABLE":
+      return { icon: "mdi:wrench", tone: "warning" };
+    case "OUTOFSTOCK":
+      return {
+        icon: "mdi:battery-off-outline",
+        tone: "warning",
+        bgTint: "warning",
+      };
+    case "PLANNED":
+      return {
+        icon: "mdi:progress-wrench",
+        tone: "info",
+        bgTint: "info",
+      };
+    case "REMOVED":
+      return {
+        icon: "mdi:close-circle-outline",
+        tone: "error",
+        bgTint: "error",
+      };
+    case "UNKNOWN":
+      return { icon: "mdi:help-circle-outline", tone: "muted" };
+    default:
+      return null;
+  }
 }
 
 /**

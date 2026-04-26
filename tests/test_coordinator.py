@@ -541,3 +541,153 @@ async def test_tracker_update_event_blocked_by_cooldown_no_refresh(
 
     refresh_mock.assert_not_awaited()
     coordinator.async_teardown()
+
+
+# ---------------------------------------------------------------------------
+# Slot-status transition events — fired on per-EVSE status changes between
+# successful refreshes; no event on first refresh, on identical status, or
+# on a missing/null status on either side.
+# ---------------------------------------------------------------------------
+
+
+from custom_components.ladestellen_austria.const import (  # noqa: E402
+    EVENT_SLOT_STATUS_CHANGED,
+)
+
+
+def _stations(*pairs: tuple[str, str]) -> list[dict[str, object]]:
+    """Build a one-station payload from (evseId, status) tuples."""
+    return [
+        {
+            "stationId": "S1",
+            "label": "Test Station",
+            "distance": 1.0,
+            "points": [{"evseId": e, "status": s} for e, s in pairs],
+        }
+    ]
+
+
+async def test_status_events_skip_first_refresh(hass: HomeAssistant) -> None:
+    """No prior data → no diffing → no events on the very first refresh."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(coordinator, _json_resp(_stations(("E1", "AVAILABLE"))))
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+    assert events == []
+
+
+async def test_status_events_fire_on_transition(hass: HomeAssistant) -> None:
+    """A status change between refreshes fires one event with old + new."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(coordinator, _json_resp(_stations(("E1", "AVAILABLE"))))
+    coordinator.data = await coordinator._async_update_data()
+    _attach_session(coordinator, _json_resp(_stations(("E1", "CHARGING"))))
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    ev = events[0]
+    assert ev["station_id"] == "S1"
+    assert ev["station_label"] == "Test Station"
+    assert ev["evse_id"] == "E1"
+    assert ev["old_status"] == "AVAILABLE"
+    assert ev["new_status"] == "CHARGING"
+    assert ev["entry_id"] == entry.entry_id
+
+
+async def test_status_events_silent_on_no_change(hass: HomeAssistant) -> None:
+    """Same status across refreshes → no event."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(coordinator, _json_resp(_stations(("E1", "AVAILABLE"))))
+    coordinator.data = await coordinator._async_update_data()
+    _attach_session(coordinator, _json_resp(_stations(("E1", "AVAILABLE"))))
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+    assert events == []
+
+
+async def test_status_events_normalize_underscored_equality(
+    hass: HomeAssistant,
+) -> None:
+    """OUT_OF_ORDER (refresh 1) vs OUTOFORDER (refresh 2) should NOT fire —
+    the underscore is a representation difference, not a state change."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(coordinator, _json_resp(_stations(("E1", "OUT_OF_ORDER"))))
+    coordinator.data = await coordinator._async_update_data()
+    _attach_session(coordinator, _json_resp(_stations(("E1", "OUTOFORDER"))))
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+    assert events == []
+
+
+async def test_status_events_skip_when_evse_disappears(hass: HomeAssistant) -> None:
+    """A point present in refresh 1 but missing from refresh 2 fires no
+    event — disappearance is not a status change. Same for new arrivals."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(
+        coordinator, _json_resp(_stations(("E1", "AVAILABLE"), ("E2", "AVAILABLE")))
+    )
+    coordinator.data = await coordinator._async_update_data()
+    _attach_session(coordinator, _json_resp(_stations(("E1", "AVAILABLE"))))
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+    assert events == []
+
+
+async def test_status_events_fire_per_evse(hass: HomeAssistant) -> None:
+    """Multiple transitions in a single refresh fire one event each."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    events: list[dict[str, object]] = []
+    hass.bus.async_listen(EVENT_SLOT_STATUS_CHANGED, lambda e: events.append(e.data))
+
+    _attach_session(
+        coordinator,
+        _json_resp(_stations(("E1", "AVAILABLE"), ("E2", "CHARGING"))),
+    )
+    coordinator.data = await coordinator._async_update_data()
+    _attach_session(
+        coordinator,
+        _json_resp(_stations(("E1", "OCCUPIED"), ("E2", "AVAILABLE"))),
+    )
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    assert len(events) == 2
+    transitions = {(e["evse_id"], e["old_status"], e["new_status"]) for e in events}
+    assert transitions == {
+        ("E1", "AVAILABLE", "OCCUPIED"),
+        ("E2", "CHARGING", "AVAILABLE"),
+    }

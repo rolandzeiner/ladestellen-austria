@@ -67,6 +67,11 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "has_free_slot": {
+        "name": "Free slot available"
+      }
+    },
     "sensor": {
       "nearest_station": {
         "name": "Nearest station"
