@@ -290,6 +290,8 @@ async def _test_api_connection(
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Ladestellen Austria."""
 
+    # Bump + add async_migrate_entry when entry.data shape changes.
+    # Tracks the config-entry schema, NOT the integration release version.
     VERSION = 1
 
     @staticmethod
