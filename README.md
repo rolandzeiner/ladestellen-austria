@@ -59,7 +59,7 @@ Header icon-tile + a distance-to-nearest hero, then an expandable list of nearby
 
 ### Parking card — `ladestellen-austria-parking-card`
 
-Single-station, top-down view: dark asphalt, sharp-cornered slots separated by solid white painted lane-lines, a free / total counter pinned to the header. Free spots stand out with a success-tinted fill; occupied spots show a top-down vector car (deterministic per-EVSE colour by default, or theme accent / single picked colour); out-of-order spots show an `mdi:wrench` in the warning colour. Hover or tap fades the overlay to reveal the slot's spec underneath. Slots render in the operator-issued EVSE-ID order. Editor exposes a free-count toggle, a car-colour mode picker, and the same logo-adapt-to-theme switch the main card has.
+Single-station, top-down view: dark asphalt, sharp-cornered slots separated by solid white painted lane-lines, a free / total counter pinned to the header. Free spots glow green; charging / occupied / reserved / blocked spots show a top-down vector car (deterministic per-EVSE colour by default, or theme accent / single picked colour); out-of-order / empty / planned / removed / unknown spots show a tone-tinted MDI overlay (wrench, battery-off, progress-wrench, close-circle, help-circle) keyed to the upstream status, with a state-coloured radial-glow background — orange for faults / empty, blue for planned, red for removed. Hover or tap fades the overlay to reveal the slot's spec. Slots render in the operator-issued EVSE-ID order. Editor exposes a free-count toggle, a car-colour mode picker, and the same logo-adapt-to-theme switch the main card has.
 
 Both cards always show the E-Control logo-link and *Datenquelle: E-Control* attribution footer (§3c/§3d) — these cannot be hidden.
 
@@ -68,8 +68,22 @@ Both cards always show the E-Control logo-link and *Datenquelle: E-Control* attr
 | Entity | State | Attributes |
 |---|---|---|
 | `sensor.<entry_name>_nearest_station` | Distance to the nearest station (km) | `station_count`, `stations[]` (id, label, address, distance, status, points, connectors, pricing), `live_status_available`, `dynamic_mode`, `dynamic_entity` |
+| `binary_sensor.<entry_name>_has_free_slot` | `on` if any EVSE in range reports `AVAILABLE` | `free_slot_count`, `total_slot_count`, `stations_with_free` |
 
-Icon: `mdi:ev-station`. Device-class: `distance`. State-class: `measurement`.
+Icons: `mdi:ev-station` / `mdi:ev-plug-type2`. Sensor device-class: `distance` (state-class: `measurement`). Binary-sensor device-class: `presence`.
+
+## Events
+
+The integration fires `ladestellen_austria_slot_status_changed` on the HA bus whenever a single EVSE's status changes between two successful refreshes — skipped on first refresh, on no-change, and on slots that appear or disappear from the result list. Payload: `entry_id`, `station_id`, `station_label`, `station_distance`, `evse_id`, `old_status`, `new_status`.
+
+```yaml
+# Notify when any nearby slot transitions to AVAILABLE
+trigger:
+  - platform: event
+    event_type: ladestellen_austria_slot_status_changed
+    event_data:
+      new_status: AVAILABLE
+```
 
 ## Configuration parameters
 
