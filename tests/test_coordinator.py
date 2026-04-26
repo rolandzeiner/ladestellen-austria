@@ -1,20 +1,22 @@
 """Tests for the Ladestellen Austria coordinator."""
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ladestellen_austria.const import (
-    CONF_API_KEY,
-    CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
+    DEFAULT_MAX_RESULTS,
     DOMAIN,
     DOMAIN_LAST_API_CALL_KEY,
 )
@@ -22,20 +24,21 @@ from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
 
-from .conftest import EXAMPLE_COORDINATOR_DATA
-
-BASE_ENTRY_DATA: dict[str, object] = {
-    CONF_API_KEY: "REDACTED_API_KEY",
-    CONF_DOMAIN: "www.meineseite.at",
-    CONF_LATITUDE: 48.21,
-    CONF_LONGITUDE: 16.37,
-    CONF_SCAN_INTERVAL: 30,
-}
+from .conftest import BASE_ENTRY_DATA, EXAMPLE_COORDINATOR_DATA
 
 
 def _make_entry(data: dict[str, object] | None = None) -> MockConfigEntry:
     entry_data = {**BASE_ENTRY_DATA, **(data or {})}
     return MockConfigEntry(domain=DOMAIN, data=entry_data, options={})
+
+
+def _json_resp(body: object, status: int = 200) -> MagicMock:
+    """Build a minimal mock aiohttp response."""
+    resp = MagicMock()
+    resp.status = status
+    resp.raise_for_status = MagicMock()
+    resp.json = AsyncMock(return_value=body)
+    return resp
 
 
 async def test_fetch_success(hass: HomeAssistant, mock_fetch: AsyncMock) -> None:
@@ -49,20 +52,191 @@ async def test_fetch_success(hass: HomeAssistant, mock_fetch: AsyncMock) -> None
     assert coordinator.data["nearest"]["label"] == "Test Station"
 
 
-async def test_api_failure_raises_update_failed(hass: HomeAssistant) -> None:
-    """Upstream failure bubbles as UpdateFailed from the coordinator."""
+# ---------------------------------------------------------------------------
+# _fetch_search — error-branch translation contract
+# ---------------------------------------------------------------------------
+
+
+def _attach_session(coordinator: LadestellenAustriaCoordinator, response_or_exc):
+    """Wire a fake aiohttp session onto the coordinator.
+
+    `response_or_exc` is either a mock response (returned from session.get)
+    or an exception instance to raise from session.get.
+    """
+    session = MagicMock()
+    if isinstance(response_or_exc, BaseException):
+        session.get = AsyncMock(side_effect=response_or_exc)
+    else:
+        session.get = AsyncMock(return_value=response_or_exc)
+    coordinator._session = session
+    return session
+
+
+@pytest.mark.parametrize("status", [401, 403])
+async def test_fetch_auth_error_raises_reauth(
+    hass: HomeAssistant, status: int
+) -> None:
+    """401/403 from /search must raise ConfigEntryAuthFailed so HA triggers reauth."""
     entry = _make_entry()
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 
-    with (
-        patch(
-            "custom_components.ladestellen_austria.coordinator.LadestellenAustriaCoordinator._async_update_data",
-            side_effect=UpdateFailed("boom"),
-        ),
-        pytest.raises(UpdateFailed),
-    ):
-        await coordinator._async_update_data()
+    resp = _json_resp([], status=status)
+    resp.raise_for_status = MagicMock(
+        side_effect=aiohttp.ClientResponseError(
+            request_info=MagicMock(),
+            history=(),
+            status=status,
+            message="auth",
+        )
+    )
+    _attach_session(coordinator, resp)
+
+    with pytest.raises(ConfigEntryAuthFailed):
+        await coordinator._fetch_search(48.21, 16.37)
+
+
+async def test_fetch_server_error_raises_update_failed(
+    hass: HomeAssistant,
+) -> None:
+    """5xx maps to UpdateFailed (recoverable)."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    resp = _json_resp([], status=500)
+    resp.raise_for_status = MagicMock(
+        side_effect=aiohttp.ClientResponseError(
+            request_info=MagicMock(),
+            history=(),
+            status=500,
+            message="server",
+        )
+    )
+    _attach_session(coordinator, resp)
+
+    with pytest.raises(UpdateFailed):
+        await coordinator._fetch_search(48.21, 16.37)
+
+
+async def test_fetch_timeout_raises_update_failed(hass: HomeAssistant) -> None:
+    """asyncio.TimeoutError maps to UpdateFailed (api_timeout key)."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    _attach_session(coordinator, asyncio.TimeoutError())
+    with pytest.raises(UpdateFailed) as exc:
+        await coordinator._fetch_search(48.21, 16.37)
+    assert exc.value.translation_key == "api_timeout"
+
+
+async def test_fetch_client_error_raises_update_failed(
+    hass: HomeAssistant,
+) -> None:
+    """Generic aiohttp.ClientError (DNS, connreset, etc.) maps to UpdateFailed."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    _attach_session(coordinator, aiohttp.ClientConnectionError("boom"))
+    with pytest.raises(UpdateFailed) as exc:
+        await coordinator._fetch_search(48.21, 16.37)
+    assert exc.value.translation_key == "api_connection_error"
+
+
+async def test_fetch_non_list_payload_raises_update_failed(
+    hass: HomeAssistant,
+) -> None:
+    """A JSON object instead of a list is rejected with api_invalid_response."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    _attach_session(coordinator, _json_resp({"unexpected": "object"}))
+    with pytest.raises(UpdateFailed) as exc:
+        await coordinator._fetch_search(48.21, 16.37)
+    assert exc.value.translation_key == "api_invalid_response"
+
+
+async def test_fetch_invalid_json_raises_update_failed(
+    hass: HomeAssistant,
+) -> None:
+    """Non-JSON body (ContentTypeError) maps to api_invalid_response."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    resp = _json_resp(None)
+    resp.json = AsyncMock(
+        side_effect=aiohttp.ContentTypeError(
+            request_info=MagicMock(), history=()
+        )
+    )
+    _attach_session(coordinator, resp)
+    with pytest.raises(UpdateFailed) as exc:
+        await coordinator._fetch_search(48.21, 16.37)
+    assert exc.value.translation_key == "api_invalid_response"
+
+
+async def test_fetch_filters_non_dict_entries(hass: HomeAssistant) -> None:
+    """Stray non-dict items in the array are silently dropped."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    payload = [
+        {"label": "ok", "distance": 1.0},
+        "garbage-string",
+        42,
+        {"label": "also-ok", "distance": 2.0},
+    ]
+    _attach_session(coordinator, _json_resp(payload))
+    result = await coordinator._fetch_search(48.21, 16.37)
+    assert len(result) == 2
+    assert all(isinstance(s, dict) for s in result)
+
+
+# ---------------------------------------------------------------------------
+# _async_update_data — sort + truncation contract
+# ---------------------------------------------------------------------------
+
+
+async def test_update_sorts_and_truncates_to_max_results(
+    hass: HomeAssistant,
+) -> None:
+    """Results are sorted by distance and capped at DEFAULT_MAX_RESULTS."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    # 15 stations in reverse distance order — verifies sort, truncation,
+    # and that nearest reflects the post-sort head.
+    payload = [
+        {"label": f"s{i}", "distance": float(20 - i)} for i in range(15)
+    ]
+    _attach_session(coordinator, _json_resp(payload))
+    data = await coordinator._async_update_data()
+
+    assert data["count"] == DEFAULT_MAX_RESULTS
+    assert len(data["stations"]) == DEFAULT_MAX_RESULTS
+    distances = [s["distance"] for s in data["stations"]]
+    assert distances == sorted(distances)
+    assert data["nearest"]["distance"] == min(s["distance"] for s in payload)
+    assert data["live_status_available"] is True
+
+
+async def test_update_handles_empty_payload(hass: HomeAssistant) -> None:
+    """Empty result list yields nearest=None without raising."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    _attach_session(coordinator, _json_resp([]))
+    data = await coordinator._async_update_data()
+    assert data["count"] == 0
+    assert data["stations"] == []
+    assert data["nearest"] is None
 
 
 async def test_config_entry_not_ready_on_first_refresh_failure(
@@ -163,13 +337,16 @@ async def test_should_update_first_call_passes(hass: HomeAssistant) -> None:
 async def test_should_update_blocks_on_distance_threshold(
     hass: HomeAssistant,
 ) -> None:
-    """A move below DYNAMIC_DISTANCE_THRESHOLD_M (1500 m) is ignored."""
+    """A move below DYNAMIC_DISTANCE_THRESHOLD_M (1500 m) is ignored.
+
+    Leaving _last_fetch_time as None deliberately skips the entry-cooldown
+    guard so this test isolates the distance branch.
+    """
     entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
     coordinator._last_fetch_lat = 48.21
     coordinator._last_fetch_lng = 16.37
-    coordinator._last_fetch_time = dt_util.utcnow() - timedelta(hours=1)
     # Roughly 10 m away — below the 1500 m threshold.
     assert coordinator._should_update(48.2101, 16.3701) is False
 
@@ -308,3 +485,59 @@ async def test_tracker_restored_clears_repair_issue(
         is None
     )
     assert coordinator._tracker_issue_raised is False
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — _handle_tracker_update end-to-end (event → guard → refresh)
+# ---------------------------------------------------------------------------
+
+
+async def test_tracker_update_event_refreshes_when_moved(
+    hass: HomeAssistant,
+) -> None:
+    """A state-change event for a fresh location triggers a refresh and
+    stamps the domain-wide cooldown timestamp."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    await coordinator._async_setup()
+
+    refresh_mock = AsyncMock()
+    with patch.object(coordinator, "async_refresh", refresh_mock):
+        hass.states.async_set(
+            "device_tracker.phone",
+            "not_home",
+            {"latitude": 49.0, "longitude": 17.0},
+        )
+        await hass.async_block_till_done()
+
+    refresh_mock.assert_awaited()
+    assert (
+        hass.data[DOMAIN].get(DOMAIN_LAST_API_CALL_KEY) is not None
+    ), "domain cooldown timestamp must be stamped on refresh dispatch"
+    coordinator.async_teardown()
+
+
+async def test_tracker_update_event_blocked_by_cooldown_no_refresh(
+    hass: HomeAssistant,
+) -> None:
+    """When the domain cooldown is active, the listener must NOT refresh."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    await coordinator._async_setup()
+
+    # Pre-stamp domain cooldown so _should_update returns False.
+    hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = dt_util.utcnow()
+
+    refresh_mock = AsyncMock()
+    with patch.object(coordinator, "async_refresh", refresh_mock):
+        hass.states.async_set(
+            "device_tracker.phone",
+            "not_home",
+            {"latitude": 49.0, "longitude": 17.0},
+        )
+        await hass.async_block_till_done()
+
+    refresh_mock.assert_not_awaited()
+    coordinator.async_teardown()

@@ -8,15 +8,12 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ladestellen_austria.config_flow import _test_api_connection
 from custom_components.ladestellen_austria.const import (
     API_KEY_HEADER,
-    CONF_API_KEY,
-    CONF_DOMAIN,
     DOMAIN,
     REFERER_HEADER,
     USER_AGENT,
@@ -25,13 +22,7 @@ from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
 
-ENTRY_DATA: dict[str, object] = {
-    CONF_API_KEY: "REDACTED_API_KEY",
-    CONF_DOMAIN: "www.meineseite.at",
-    CONF_LATITUDE: 48.21,
-    CONF_LONGITUDE: 16.37,
-    CONF_SCAN_INTERVAL: 30,
-}
+from .conftest import BASE_ENTRY_DATA
 
 
 def _json_resp(body: object, status: int = 200) -> MagicMock:
@@ -44,7 +35,7 @@ def _json_resp(body: object, status: int = 200) -> MagicMock:
 
 async def test_coordinator_sends_canonical_user_agent(hass: HomeAssistant) -> None:
     """Coordinator adds User-Agent, Apikey, and Referer on every GET."""
-    entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA, options={})
+    entry = MockConfigEntry(domain=DOMAIN, data=BASE_ENTRY_DATA, options={})
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 

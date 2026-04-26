@@ -5,8 +5,11 @@ from collections.abc import Generator
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy.assertion import SnapshotAssertion
+
+from custom_components.ladestellen_austria.const import CONF_API_KEY, CONF_DOMAIN
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -30,6 +33,15 @@ EXAMPLE_COORDINATOR_DATA = {
     "stations": EXAMPLE_STATIONS,
     "count": len(EXAMPLE_STATIONS),
     "nearest": EXAMPLE_STATIONS[0],
+    "live_status_available": True,
+}
+
+BASE_ENTRY_DATA: dict[str, object] = {
+    CONF_API_KEY: "REDACTED_API_KEY",
+    CONF_DOMAIN: "www.meineseite.at",
+    CONF_LATITUDE: 48.21,
+    CONF_LONGITUDE: 16.37,
+    CONF_SCAN_INTERVAL: 30,
 }
 
 

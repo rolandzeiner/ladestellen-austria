@@ -15,9 +15,6 @@ TO_REDACT: set[str] = {
     CONF_DOMAIN,
     CONF_LATITUDE,
     CONF_LONGITUDE,
-    "Referer",
-    "password",
-    "token",
 }
 
 
