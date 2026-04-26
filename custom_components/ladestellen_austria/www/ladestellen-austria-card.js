@@ -1357,8 +1357,9 @@ function e(e,t,i,n){var a,o=arguments.length,r=o<3?t:null===n?n=Object.getOwnPro
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    line-height: 1;
+    line-height: 1.1;
     margin-top: 4px;
+    text-align: center;
   }
   .slot-status-free {
     color: var(--success-color, #22c55e);

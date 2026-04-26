@@ -431,7 +431,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # — ImportError is the production path and is silent.
         if not os.environ.get("PYTEST_CURRENT_TEST"):
             with contextlib.suppress(ImportError):
-                from . import _dev_fixture
+                from . import _dev_fixture  # type: ignore[attr-defined]
                 stations = [_dev_fixture.STATION, *stations]
         stations.sort(key=lambda s: s.get("distance") or float("inf"))
         truncated = stations[:DEFAULT_MAX_RESULTS]

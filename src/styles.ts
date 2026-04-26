@@ -1384,8 +1384,9 @@ export const parkingLotStyles = css`
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    line-height: 1;
+    line-height: 1.1;
     margin-top: 4px;
+    text-align: center;
   }
   .slot-status-free {
     color: var(--success-color, #22c55e);
