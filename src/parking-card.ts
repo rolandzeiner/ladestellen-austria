@@ -173,7 +173,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
       return html`<ha-card>
         <div class="card-content">
           <div class="wrap">
-            ${customTitle
+            ${customTitle && !this.config.hide_header
               ? html`<header class="header">
                   <div class="icon-tile" aria-hidden="true">
                     <ha-icon icon="mdi:ev-station"></ha-icon>
@@ -234,35 +234,37 @@ export class LadestellenAustriaParkingCard extends LitElement {
             class="wrap"
             style="--lade-accent: var(--primary-color);"
           >
-            <header class="header">
-              <div class="icon-tile" aria-hidden="true">
-                <ha-icon icon="mdi:ev-station"></ha-icon>
-              </div>
-              <div class="header-text">
-                <h3 class="title">${headerTitle}</h3>
-                ${headerSubtitle
-                  ? html`<p class="subtitle">${headerSubtitle}</p>`
-                  : nothing}
-              </div>
-              ${this.config.show_free_count !== false
-                ? html`<div
-                    class=${availCount > 0
-                      ? "header-count has-free"
-                      : "header-count"}
-                    role="status"
-                    aria-live="polite"
-                    aria-label=${countText}
-                  >
-                    <div class="header-count-value">
-                      <span class="header-count-num">${availCount}</span>
-                      <span class="header-count-of">/ ${totalCount}</span>
-                    </div>
-                    <div class="header-count-label">
-                      ${localize("parking.slot_status_free")}
-                    </div>
-                  </div>`
-                : nothing}
-            </header>
+            ${this.config.hide_header
+              ? nothing
+              : html`<header class="header">
+                  <div class="icon-tile" aria-hidden="true">
+                    <ha-icon icon="mdi:ev-station"></ha-icon>
+                  </div>
+                  <div class="header-text">
+                    <h3 class="title">${headerTitle}</h3>
+                    ${headerSubtitle
+                      ? html`<p class="subtitle">${headerSubtitle}</p>`
+                      : nothing}
+                  </div>
+                  ${this.config.show_free_count !== false
+                    ? html`<div
+                        class=${availCount > 0
+                          ? "header-count has-free"
+                          : "header-count"}
+                        role="status"
+                        aria-live="polite"
+                        aria-label=${countText}
+                      >
+                        <div class="header-count-value">
+                          <span class="header-count-num">${availCount}</span>
+                          <span class="header-count-of">/ ${totalCount}</span>
+                        </div>
+                        <div class="header-count-label">
+                          ${localize("parking.slot_status_free")}
+                        </div>
+                      </div>`
+                    : nothing}
+                </header>`}
             ${points.length === 0
               ? html`<div class="empty-state">
                   ${localize("parking.no_points")}

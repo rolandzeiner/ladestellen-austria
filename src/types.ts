@@ -40,6 +40,9 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
   // count toward max_stations. A pinned ID that's not in the /search
   // response is rendered as an orphan placeholder with an unpin action.
   pinned_station_ids?: string[];
+  // Hide the card header (icon-tile + title + filter chip cluster).
+  // Defaults to false (header shown).
+  hide_header?: boolean;
 }
 
 // Second card type — single-station "parking lot from above" visualization.
@@ -65,6 +68,9 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   car_color_mode?: "random" | "theme" | "fixed";
   // Hex colour used when car_color_mode === "fixed". Plain "#rrggbb".
   car_color_fixed?: string;
+  // Hide the parking-card header (icon-tile + station title + free
+  // count). Defaults to false (header shown).
+  hide_header?: boolean;
 }
 
 // Short-label tokens used in the connector filter. These are the UI

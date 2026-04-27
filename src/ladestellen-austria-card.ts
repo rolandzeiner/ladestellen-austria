@@ -282,17 +282,19 @@ export class LadestellenAustriaCard extends LitElement {
       <ha-card>
         <div class="card-content">
           <div class="wrap">
-            <header class="header">
-              <div class="icon-tile" aria-hidden="true">
-                <ha-icon icon="mdi:ev-station"></ha-icon>
-              </div>
-              <div class="header-text">
-                <h2 class="title">${titleText}</h2>
-                ${headerSubtitle
-                  ? html`<p class="subtitle">${headerSubtitle}</p>`
-                  : nothing}
-              </div>
-            </header>
+            ${this.config.hide_header
+              ? nothing
+              : html`<header class="header">
+                  <div class="icon-tile" aria-hidden="true">
+                    <ha-icon icon="mdi:ev-station"></ha-icon>
+                  </div>
+                  <div class="header-text">
+                    <h2 class="title">${titleText}</h2>
+                    ${headerSubtitle
+                      ? html`<p class="subtitle">${headerSubtitle}</p>`
+                      : nothing}
+                  </div>
+                </header>`}
             ${showHero
               ? this._renderHero(
                   nearestByDistance,
