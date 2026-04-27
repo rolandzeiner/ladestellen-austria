@@ -144,6 +144,18 @@ export class LadestellenAustriaParkingCardEditor
           </div>
 
           <div class="toggle-row">
+            <label for="parking-toggle-hide-header"
+              >${localize("editor.hide_header")}</label
+            >
+            <ha-switch
+              id="parking-toggle-hide-header"
+              .checked=${this._config.hide_header ?? false}
+              .configValue=${"hide_header"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="toggle-row">
             <label for="parking-toggle-show-free"
               >${localize("editor.show_free_count")}</label
             >
@@ -163,18 +175,6 @@ export class LadestellenAustriaParkingCardEditor
               id="parking-toggle-logo-adapt"
               .checked=${this._config.logo_adapt_to_theme ?? false}
               .configValue=${"logo_adapt_to_theme"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="parking-toggle-hide-header"
-              >${localize("editor.hide_header")}</label
-            >
-            <ha-switch
-              id="parking-toggle-hide-header"
-              .checked=${this._config.hide_header ?? false}
-              .configValue=${"hide_header"}
               @change=${this._valueChanged}
             ></ha-switch>
           </div>

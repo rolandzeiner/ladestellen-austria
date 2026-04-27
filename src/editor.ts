@@ -116,6 +116,18 @@ export class LadestellenAustriaCardEditor
             : nothing}
 
           <div class="toggle-row">
+            <label for="toggle-hide-header"
+              >${localize("editor.hide_header")}</label
+            >
+            <ha-switch
+              id="toggle-hide-header"
+              .checked=${this._config.hide_header ?? false}
+              .configValue=${"hide_header"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
+
+          <div class="toggle-row">
             <label for="toggle-show-hero"
               >${localize("editor.show_hero")}</label
             >
@@ -171,18 +183,6 @@ export class LadestellenAustriaCardEditor
               id="toggle-logo-adapt"
               .checked=${this._config.logo_adapt_to_theme ?? false}
               .configValue=${"logo_adapt_to_theme"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-hide-header"
-              >${localize("editor.hide_header")}</label
-            >
-            <ha-switch
-              id="toggle-hide-header"
-              .checked=${this._config.hide_header ?? false}
-              .configValue=${"hide_header"}
               @change=${this._valueChanged}
             ></ha-switch>
           </div>

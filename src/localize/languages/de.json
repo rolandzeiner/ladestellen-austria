@@ -106,7 +106,7 @@
     "entity": "Sensor",
     "entity_missing": "Ausgewählter Sensor ist nicht verfügbar. Bitte einen anderen Ladestellen-Austria-Sensor wählen.",
     "max_stations": "Anzahl angezeigter Ladestellen",
-    "show_hero": "Überschrift anzeigen",
+    "show_hero": "Hauptbereich anzeigen",
     "show_pricing": "Preise anzeigen",
     "show_amenities": "Ausstattungs-Details anzeigen",
     "sort_by_power": "Nach Leistung sortieren (schnellste zuerst)",
