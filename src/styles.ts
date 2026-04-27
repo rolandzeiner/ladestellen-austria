@@ -1153,20 +1153,40 @@ export const editorStyles = css`
 
 export const parkingLotStyles = css`
   :host {
+    /* color-scheme enables light-dark() and steers forced-colors palette
+       selection (WCAG 1.4.11). HA's active theme drives the resolution. */
+    color-scheme: light dark;
     display: block;
     container-type: inline-size;
     container-name: plcard;
+
+    /* Brand accent — domain-specific, no HA equivalent. */
     --lade-accent: var(--primary-color);
-    --lade-radius-sm: 6px;
-    --lade-radius-md: 10px;
-    --lade-radius-lg: var(--ha-card-border-radius, 12px);
-    --lade-pad-x: 16px;
-    --lade-pad-y: 14px;
-    --lade-row-gap: 12px;
+
+    /* Semantic state tokens — REQUIRED here, not just in cardStyles.
+       parking-card.ts uses parkingLotStyles in its own shadow root, so
+       any token referenced inside this stylesheet must also be defined
+       on this :host. Without these, .slot-overlay-icon.tone-warning /
+       .tone-error fall through to currentColor (= white in dark themes)
+       and the state-colour cue is lost. Layered over HA's official
+       semantic palette with the same fallback hex values used in the
+       main cardStyles block. */
+    --lade-rt:      var(--ha-color-success, #22c55e);
+    --lade-warning: var(--ha-color-warning, #f57c00);
+    --lade-error:   var(--ha-color-error,   #ef4444);
+    --lade-info:    var(--ha-color-info,    #1565c0);
+
+    /* Spacing / radius / sizing — layered over the HA Design System. */
+    --lade-radius-sm: var(--ha-radius-sm, 6px);
+    --lade-radius-md: var(--ha-radius-md, 10px);
+    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-radius-lg, 12px));
+    --lade-pad-x:     var(--ha-spacing-4, 16px);
+    --lade-pad-y:     var(--ha-spacing-3, 14px);
+    --lade-row-gap:   var(--ha-spacing-3, 12px);
     --lade-tile-size: 40px;
     --lade-slot-size: 96px;
     --lade-slot-height: 120px;
-    --lade-slot-radius: 8px;
+    --lade-slot-radius: var(--ha-radius-sm, 8px);
     --lade-slot-gap: 8px;
   }
   ha-card {
@@ -1472,7 +1492,7 @@ export const parkingLotStyles = css`
     color: var(--lade-error);
   }
   .slot-overlay-icon.tone-info {
-    color: var(--info-color, #039be5);
+    color: var(--lade-info);
   }
   .slot-overlay-icon.tone-muted {
     color: var(--secondary-text-color);
