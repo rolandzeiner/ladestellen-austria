@@ -27,6 +27,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -108,6 +109,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
             name=DOMAIN,
             update_interval=interval,
+            # Absorb request storms (options-flow save, manual reload,
+            # dashboard edit-mode flip) so the /search endpoint isn't hit
+            # multiple times in quick succession during routine UI activity.
+            request_refresh_debouncer=Debouncer(
+                hass,
+                _LOGGER,
+                cooldown=15,
+                immediate=False,
+            ),
         )
 
     @property
