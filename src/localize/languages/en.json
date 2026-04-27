@@ -111,6 +111,7 @@
     "show_amenities": "Show amenity details",
     "sort_by_power": "Sort by power (fastest first)",
     "logo_adapt_to_theme": "Adapt logo to theme (black on light, white on dark)",
+    "hide_header": "Hide header",
     "section_appearance": "Appearance",
     "show_free_count": "Show free / total counter",
     "car_color_mode": "Car colour",

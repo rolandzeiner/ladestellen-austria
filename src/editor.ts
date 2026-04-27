@@ -174,6 +174,18 @@ export class LadestellenAustriaCardEditor
               @change=${this._valueChanged}
             ></ha-switch>
           </div>
+
+          <div class="toggle-row">
+            <label for="toggle-hide-header"
+              >${localize("editor.hide_header")}</label
+            >
+            <ha-switch
+              id="toggle-hide-header"
+              .checked=${this._config.hide_header ?? false}
+              .configValue=${"hide_header"}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </div>
         </div>
 
         <div class="editor-section">
