@@ -1424,24 +1424,12 @@ export const parkingLotStyles = css`
     color: var(--secondary-text-color);
   }
 
-  /* AVAILABLE slots — empty parking spot. Radial green-glow from the
-     centre fading to the asphalt base, plus inset bottom shadow for
-     depth so the eye lands on free spots. */
+  /* AVAILABLE slots — empty parking spot. Flat tinted fill (the
+     state-colour cue), inset bottom shadow kept for depth. Previously
+     stacked a top white-sheen linear-gradient and a centre-bias
+     radial-glow over an asphalt base; the flat fill reads cleaner. */
   .parking-slot.is-available {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, #fff 9%, transparent) 0%,
-        transparent 45%
-      ),
-      radial-gradient(
-        ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--lade-rt) 52%, transparent) 0%,
-        color-mix(in srgb, var(--lade-rt) 24%, transparent) 50%,
-        color-mix(in srgb, var(--lade-rt) 7%, transparent) 85%,
-        transparent 100%
-      ),
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    background: color-mix(in srgb, var(--lade-rt) 22%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
@@ -1508,64 +1496,24 @@ export const parkingLotStyles = css`
     opacity: 1;
   }
   /* Tinted slot states (out-of-order family + OUT_OF_STOCK / PLANNED /
-     REMOVED) reuse the same radial-glow recipe as is-available so the
+     REMOVED) reuse the same flat-fill recipe as is-available so the
      visual weight matches across all backgrounded states — only the
-     accent colour differs. Top sheen + radial glow + asphalt base +
-     inset shadow, identical layout to is-available. */
+     accent colour differs. */
   .parking-slot.is-warn,
   .parking-slot.slot-tint-warning {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, #fff 9%, transparent) 0%,
-        transparent 45%
-      ),
-      radial-gradient(
-        ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--lade-warning) 52%, transparent) 0%,
-        color-mix(in srgb, var(--lade-warning) 24%, transparent) 50%,
-        color-mix(in srgb, var(--lade-warning) 7%, transparent) 85%,
-        transparent 100%
-      ),
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    background: color-mix(in srgb, var(--lade-warning) 22%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
   }
   .parking-slot.slot-tint-info {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, #fff 9%, transparent) 0%,
-        transparent 45%
-      ),
-      radial-gradient(
-        ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--info-color, #039be5) 52%, transparent) 0%,
-        color-mix(in srgb, var(--info-color, #039be5) 24%, transparent) 50%,
-        color-mix(in srgb, var(--info-color, #039be5) 7%, transparent) 85%,
-        transparent 100%
-      ),
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    background: color-mix(in srgb, var(--lade-info) 22%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
   }
   .parking-slot.slot-tint-error {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, #fff 9%, transparent) 0%,
-        transparent 45%
-      ),
-      radial-gradient(
-        ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--lade-error) 52%, transparent) 0%,
-        color-mix(in srgb, var(--lade-error) 24%, transparent) 50%,
-        color-mix(in srgb, var(--lade-error) 7%, transparent) 85%,
-        transparent 100%
-      ),
-      color-mix(in srgb, var(--primary-text-color) 6%, transparent);
+    background: color-mix(in srgb, var(--lade-error) 22%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
