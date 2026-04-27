@@ -232,7 +232,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
         <div class="card-content">
           <div
             class="wrap"
-            style="--nb-accent: var(--primary-color);"
+            style="--lade-accent: var(--primary-color);"
           >
             <header class="header">
               <div class="icon-tile" aria-hidden="true">

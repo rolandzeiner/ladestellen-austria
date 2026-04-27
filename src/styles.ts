@@ -3,7 +3,7 @@ import { css } from "lit";
 // ---------------------------------------------------------------------------
 // Card styles — Lit shadow-DOM scoped. Modern HA "tile-card" visual language:
 //   - Single-source-of-truth tokens on :host (radii, padding, slot/tile size).
-//   - Per-row accent piped via `style="--nb-accent:<colour>;"` so the icon-tile,
+//   - Per-row accent piped via `style="--lade-accent:<colour>;"` so the icon-tile,
 //     row tint, rack surface, and CTA all read from one prop.
 //   - Chips (formerly "pills") for compact metric tags.
 //   - Filled .btn-primary CTA + circular .icon-action right-side actions.
@@ -12,25 +12,48 @@ import { css } from "lit";
 
 export const cardStyles = css`
   :host {
+    /* color-scheme enables light-dark() and steers forced-colors palette
+       selection (WCAG 1.4.11). HA's active theme drives the resolution. */
+    color-scheme: light dark;
     display: block;
     container-type: inline-size;
     container-name: lscard;
-    --nb-accent: var(--primary-color);
-    --nb-radius-sm: 6px;
-    --nb-radius-md: 10px;
-    --nb-radius-lg: var(--ha-card-border-radius, 12px);
-    --nb-pad-x: 16px;
-    --nb-pad-y: 14px;
-    --nb-row-gap: 12px;
-    --nb-tile-size: 40px;
-    --nb-slot-size: 80px;
-    --nb-slot-height: 64px;
-    --nb-slot-radius: 10px;
-    --nb-slot-gap: 8px;
+
+    /* Brand accent — domain-specific, no HA equivalent. */
+    --lade-accent: var(--primary-color);
+
+    /* Semantic state tokens layered over HA's official semantic palette
+       so theme authors can recolour the whole portfolio in one place;
+       hard-coded fallbacks (matching the values previously inlined as
+       --success-color / --warning-color throughout this stylesheet)
+       for older HA versions. */
+    --lade-rt:      var(--ha-color-success, #22c55e);
+    --lade-warning: var(--ha-color-warning, #f57c00);
+    /* #ef4444 chosen as the fallback because that's the hex this
+       stylesheet most-commonly used for outage/closed states; #db4437
+       (HA's traditional --error-color) appeared in only two places
+       and the 9-place hex now wins for visual continuity. */
+    --lade-error:   var(--ha-color-error,   #ef4444);
+    --lade-info:    var(--ha-color-info,    #1565c0);
+
+    /* Spacing / radius / sizing — layered over the HA Design System
+       so the card moves with HA when tokens evolve. Hard-coded values
+       are the fallback for older HA versions. */
+    --lade-radius-sm: var(--ha-radius-sm, 6px);
+    --lade-radius-md: var(--ha-radius-md, 10px);
+    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-radius-lg, 12px));
+    --lade-pad-x:     var(--ha-spacing-4, 16px);
+    --lade-pad-y:     var(--ha-spacing-3, 14px);
+    --lade-row-gap:   var(--ha-spacing-3, 12px);
+    --lade-tile-size: 40px;
+    --lade-slot-size: 80px;
+    --lade-slot-height: 64px;
+    --lade-slot-radius: var(--ha-radius-md, 10px);
+    --lade-slot-gap: 8px;
   }
   ha-card {
     overflow: hidden;
-    border-radius: var(--nb-radius-lg);
+    border-radius: var(--lade-radius-lg);
   }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
@@ -39,10 +62,10 @@ export const cardStyles = css`
     padding: 0;
   }
   .wrap {
-    padding: var(--nb-pad-y) var(--nb-pad-x);
+    padding: var(--lade-pad-y) var(--lade-pad-x);
     display: flex;
     flex-direction: column;
-    gap: var(--nb-row-gap);
+    gap: var(--lade-row-gap);
   }
 
   /* ── Card header ─────────────────────────────────────────────────── */
@@ -55,15 +78,15 @@ export const cardStyles = css`
     /* Modern HA "tile-card" vocabulary: rounded square, accent-tinted
        background, accent-coloured icon. Replaces the old thin coloured
        accent bar / status dot. */
-    width: var(--nb-tile-size);
-    height: var(--nb-tile-size);
-    border-radius: var(--nb-radius-md);
+    width: var(--lade-tile-size);
+    height: var(--lade-tile-size);
+    border-radius: var(--lade-radius-md);
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--nb-accent) 18%, transparent);
-    color: var(--nb-accent);
+    background: color-mix(in srgb, var(--lade-accent) 18%, transparent);
+    color: var(--lade-accent);
     --mdc-icon-size: 22px;
   }
   /* "Inactive" / "unknown" tile variants — hollow ring (no fill) so the
@@ -71,8 +94,8 @@ export const cardStyles = css`
   .icon-tile.is-hollow {
     background: transparent;
     box-shadow: inset 0 0 0 1.5px
-      color-mix(in srgb, var(--nb-accent) 55%, transparent);
-    color: var(--nb-accent);
+      color-mix(in srgb, var(--lade-accent) 55%, transparent);
+    color: var(--lade-accent);
   }
   .header-text {
     min-width: 0;
@@ -119,7 +142,7 @@ export const cardStyles = css`
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease), color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
     --mdc-icon-size: 20px;
   }
   .icon-action:hover,
@@ -157,7 +180,7 @@ export const cardStyles = css`
   }
   .metric-num {
     font-size: 2.25rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
@@ -210,16 +233,16 @@ export const cardStyles = css`
   }
   /* Free-of-charge price chip — green domain accent. */
   .chip.free {
-    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
-    color: var(--success-color, #22c55e);
+    background: color-mix(in srgb, var(--lade-rt) 16%, transparent);
+    color: var(--lade-rt);
   }
   /* DC fast-charge chip — amber/warning accent at 28% mix. */
   .chip.dc {
-    background: color-mix(in srgb, var(--warning-color, #f57c00) 28%, transparent);
+    background: color-mix(in srgb, var(--lade-warning) 28%, transparent);
     color: var(--primary-text-color);
   }
   .chip.dc ha-icon {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .chip.pin {
     background: color-mix(in srgb, var(--primary-color) 18%, transparent);
@@ -250,25 +273,25 @@ export const cardStyles = css`
     flex-shrink: 0;
   }
   .flag.ok {
-    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
-    color: var(--success-color, #22c55e);
+    background: color-mix(in srgb, var(--lade-rt) 16%, transparent);
+    color: var(--lade-rt);
   }
   .flag.warn {
-    background: color-mix(in srgb, var(--warning-color, #f59e0b) 16%, transparent);
-    color: var(--warning-color, #f59e0b);
+    background: color-mix(in srgb, var(--lade-warning) 16%, transparent);
+    color: var(--lade-warning);
   }
   .flag.err {
-    background: color-mix(in srgb, var(--error-color, #ef4444) 16%, transparent);
-    color: var(--error-color, #ef4444);
+    background: color-mix(in srgb, var(--lade-error) 16%, transparent);
+    color: var(--lade-error);
   }
 
   /* ── Station list ────────────────────────────────────────────────── */
   /* Negative horizontal margin so the list breaks out of .wrap's padding;
-     each row supplies its own --nb-pad-x so hover/pinned tints span
+     each row supplies its own --lade-pad-x so hover/pinned tints span
      edge-to-edge of the card. */
   .stations {
     list-style: none;
-    margin: 0 calc(var(--nb-pad-x) * -1);
+    margin: 0 calc(var(--lade-pad-x) * -1);
     padding: 0;
   }
   .station {
@@ -276,7 +299,7 @@ export const cardStyles = css`
     flex-direction: column;
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
-    transition: background-color 0.18s ease;
+    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
   }
   .station:last-child {
     border-bottom: none;
@@ -301,7 +324,7 @@ export const cardStyles = css`
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px var(--nb-pad-x);
+    padding: 12px var(--lade-pad-x);
   }
   .station-main {
     min-width: 0;
@@ -319,7 +342,7 @@ export const cardStyles = css`
   .chevron {
     --mdc-icon-size: 22px;
     color: var(--secondary-text-color);
-    transition: transform 0.18s ease;
+    transition: transform var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
   }
   .station.expanded .chevron {
     transform: rotate(180deg);
@@ -372,7 +395,7 @@ export const cardStyles = css`
   }
   .metric-kw .kw-num {
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     letter-spacing: -0.02em;
   }
   .metric-kw .kw-unit {
@@ -381,10 +404,10 @@ export const cardStyles = css`
     color: var(--secondary-text-color);
   }
   .metric-kw.dc {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .metric-kw.dc .kw-unit {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
 
   /* Price — bold companion to kW. Free renders in success green. */
@@ -396,8 +419,8 @@ export const cardStyles = css`
     white-space: nowrap;
   }
   .metric-price.free {
-    color: var(--success-color, #22c55e);
-    font-weight: 700;
+    color: var(--lade-rt);
+    font-weight: var(--ha-font-weight-bold, 600);
   }
 
   /* ── Status dot (halo three-cue treatment) ────────────────────────── */
@@ -413,24 +436,24 @@ export const cardStyles = css`
     box-sizing: border-box;
   }
   .status-dot.status-ok {
-    color: var(--success-color, #22c55e);
+    color: var(--lade-rt);
     box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--success-color, #22c55e) 18%, transparent);
+      color-mix(in srgb, var(--lade-rt) 18%, transparent);
   }
   .status-dot.status-partial {
-    color: var(--warning-color, #f59e0b);
+    color: var(--lade-warning);
     box-shadow:
       0 0 0 2px
-        color-mix(in srgb, var(--warning-color, #f59e0b) 45%, transparent),
+        color-mix(in srgb, var(--lade-warning) 45%, transparent),
       0 0 0 4px
-        color-mix(in srgb, var(--warning-color, #f59e0b) 18%, transparent);
+        color-mix(in srgb, var(--lade-warning) 18%, transparent);
   }
   .status-dot.status-busy {
-    color: var(--error-color, #ef4444);
+    color: var(--lade-error);
     box-shadow:
-      0 0 0 1.5px var(--error-color, #ef4444),
+      0 0 0 1.5px var(--lade-error),
       0 0 0 4px
-        color-mix(in srgb, var(--error-color, #ef4444) 20%, transparent);
+        color-mix(in srgb, var(--lade-error) 20%, transparent);
   }
   .status-dot.status-inactive {
     color: transparent;
@@ -471,7 +494,7 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 0 var(--nb-pad-x) 12px;
+    padding: 0 var(--lade-pad-x) 12px;
     animation: l-reveal 0.22s ease;
   }
   @keyframes l-reveal {
@@ -507,17 +530,17 @@ export const cardStyles = css`
     align-items: flex-start;
     gap: 8px;
     padding: 8px 10px;
-    background: color-mix(in srgb, var(--nb-accent) 8%, transparent);
+    background: color-mix(in srgb, var(--lade-accent) 8%, transparent);
     border-left: 3px solid
-      color-mix(in srgb, var(--nb-accent) 55%, transparent);
-    border-radius: var(--nb-radius-sm);
+      color-mix(in srgb, var(--lade-accent) 55%, transparent);
+    border-radius: var(--lade-radius-sm);
     font-size: 0.75rem;
     line-height: 1.4;
     color: var(--primary-text-color);
   }
   .station-note ha-icon {
     --mdc-icon-size: 16px;
-    color: var(--nb-accent);
+    color: var(--lade-accent);
     flex-shrink: 0;
     margin-top: 1px;
   }
@@ -548,47 +571,47 @@ export const cardStyles = css`
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: var(--nb-slot-gap);
+    gap: var(--lade-slot-gap);
     padding: 10px;
-    border-radius: var(--nb-radius-md);
-    background: color-mix(in srgb, var(--nb-accent) 5%, transparent);
-    border: 1px solid color-mix(in srgb, var(--nb-accent) 10%, transparent);
+    border-radius: var(--lade-radius-md);
+    background: color-mix(in srgb, var(--lade-accent) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--lade-accent) 10%, transparent);
   }
   .rack-slot {
     position: relative;
-    flex: 0 0 var(--nb-slot-size);
-    width: var(--nb-slot-size);
-    min-height: var(--nb-slot-height);
+    flex: 0 0 var(--lade-slot-size);
+    width: var(--lade-slot-size);
+    min-height: var(--lade-slot-height);
     box-sizing: border-box;
-    border-radius: var(--nb-slot-radius);
+    border-radius: var(--lade-slot-radius);
     padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 3px;
-    transition: background-color 0.18s ease;
+    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
     cursor: default;
   }
   /* Status-coloured rack slots — tinted surface + inset bottom shadow for
      depth (per spec). State variants prefer box-shadow insets over outline
      so they don't clip inside flex. */
   .rack-slot[data-status="ok"] {
-    background: color-mix(in srgb, var(--success-color, #22c55e) 16%, transparent);
+    background: color-mix(in srgb, var(--lade-rt) 16%, transparent);
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--success-color, #22c55e) 32%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--lade-rt) 32%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot[data-status="busy"] {
-    background: color-mix(in srgb, var(--error-color, #ef4444) 14%, transparent);
+    background: color-mix(in srgb, var(--lade-error) 14%, transparent);
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--error-color, #ef4444) 30%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--lade-error) 30%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot[data-status="warn"] {
-    background: color-mix(in srgb, var(--warning-color, #f59e0b) 14%, transparent);
+    background: color-mix(in srgb, var(--lade-warning) 14%, transparent);
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--warning-color, #f59e0b) 30%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--lade-warning) 30%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot[data-status="unknown"] {
@@ -612,7 +635,7 @@ export const cardStyles = css`
   }
   .rack-kw-num {
     font-size: 1.15rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     letter-spacing: -0.02em;
   }
   .rack-kw-unit {
@@ -631,7 +654,7 @@ export const cardStyles = css`
   }
   .rack-warn-icon {
     --mdc-icon-size: 28px;
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .rack-dot {
     position: absolute;
@@ -642,13 +665,13 @@ export const cardStyles = css`
     border-radius: 50%;
   }
   .rack-dot[data-status="ok"] {
-    background: var(--success-color, #22c55e);
+    background: var(--lade-rt);
   }
   .rack-dot[data-status="busy"] {
-    background: var(--error-color, #ef4444);
+    background: var(--lade-error);
   }
   .rack-dot[data-status="warn"] {
-    background: var(--warning-color, #f59e0b);
+    background: var(--lade-warning);
   }
   .rack-dot[data-status="unknown"] {
     background: transparent;
@@ -657,13 +680,13 @@ export const cardStyles = css`
   }
   .power-badge {
     font-size: 0.5625rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
   }
   .power-badge[data-type="dc"] {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .power-badge[data-type="ac"] {
     color: var(--secondary-text-color);
@@ -725,13 +748,13 @@ export const cardStyles = css`
     padding: 0 14px;
     height: 32px;
     border-radius: 999px;
-    background: var(--nb-accent);
+    background: var(--lade-accent);
     color: var(--text-primary-color, #fff);
     font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
     box-shadow: 0 1px 2px color-mix(in srgb, #000 12%, transparent);
-    transition: filter 0.18s ease, transform 0.18s ease;
+    transition: filter var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease), transform var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
   }
   .btn-primary:hover {
     filter: brightness(1.08);
@@ -757,7 +780,7 @@ export const cardStyles = css`
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: background-color 0.18s ease;
+    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
   }
   .btn-secondary:hover {
     background: color-mix(in srgb, var(--secondary-text-color) 18%, transparent);
@@ -778,7 +801,7 @@ export const cardStyles = css`
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px var(--nb-pad-x);
+    padding: 10px var(--lade-pad-x);
     border-top: 1px solid var(--divider-color);
   }
   .brand-link {
@@ -822,12 +845,12 @@ export const cardStyles = css`
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container lscard (inline-size < 360px) {
     :host {
-      --nb-pad-x: 14px;
-      --nb-pad-y: 12px;
-      --nb-tile-size: 36px;
-      --nb-slot-size: 60px;
-      --nb-slot-height: 52px;
-      --nb-slot-gap: 6px;
+      --lade-pad-x: 14px;
+      --lade-pad-y: 12px;
+      --lade-tile-size: 36px;
+      --lade-slot-size: 60px;
+      --lade-slot-height: 52px;
+      --lade-slot-gap: 6px;
     }
     .metric-num {
       font-size: 2rem;
@@ -868,12 +891,12 @@ export const cardStyles = css`
   }
   @container lscard (inline-size > 480px) {
     :host {
-      --nb-pad-x: 20px;
-      --nb-pad-y: 16px;
-      --nb-tile-size: 44px;
-      --nb-slot-size: 92px;
-      --nb-slot-height: 72px;
-      --nb-slot-gap: 10px;
+      --lade-pad-x: 20px;
+      --lade-pad-y: 16px;
+      --lade-tile-size: 44px;
+      --lade-slot-size: 92px;
+      --lade-slot-height: 72px;
+      --lade-slot-gap: 10px;
     }
     .metric-num {
       font-size: 2.5rem;
@@ -1124,7 +1147,7 @@ export const editorStyles = css`
 // Parking-slot card styles — single station, points as parking-lot slots
 // viewed from above. Same tile-language tokens as cardStyles. Asphalt
 // metaphor preserved (dashed lane separators, tinted surface), but
-// container, slot radii, and CTA primitives flow from --nb-* tokens.
+// container, slot radii, and CTA primitives flow from --lade-* tokens.
 // Container-queried against the card's own width (plcard).
 // ---------------------------------------------------------------------------
 
@@ -1133,31 +1156,31 @@ export const parkingLotStyles = css`
     display: block;
     container-type: inline-size;
     container-name: plcard;
-    --nb-accent: var(--primary-color);
-    --nb-radius-sm: 6px;
-    --nb-radius-md: 10px;
-    --nb-radius-lg: var(--ha-card-border-radius, 12px);
-    --nb-pad-x: 16px;
-    --nb-pad-y: 14px;
-    --nb-row-gap: 12px;
-    --nb-tile-size: 40px;
-    --nb-slot-size: 96px;
-    --nb-slot-height: 120px;
-    --nb-slot-radius: 8px;
-    --nb-slot-gap: 8px;
+    --lade-accent: var(--primary-color);
+    --lade-radius-sm: 6px;
+    --lade-radius-md: 10px;
+    --lade-radius-lg: var(--ha-card-border-radius, 12px);
+    --lade-pad-x: 16px;
+    --lade-pad-y: 14px;
+    --lade-row-gap: 12px;
+    --lade-tile-size: 40px;
+    --lade-slot-size: 96px;
+    --lade-slot-height: 120px;
+    --lade-slot-radius: 8px;
+    --lade-slot-gap: 8px;
   }
   ha-card {
     overflow: hidden;
-    border-radius: var(--nb-radius-lg);
+    border-radius: var(--lade-radius-lg);
   }
   .card-content {
     padding: 0;
   }
   .wrap {
-    padding: var(--nb-pad-y) var(--nb-pad-x);
+    padding: var(--lade-pad-y) var(--lade-pad-x);
     display: flex;
     flex-direction: column;
-    gap: var(--nb-row-gap);
+    gap: var(--lade-row-gap);
   }
 
   /* ── Card header (icon-tile + title group) ────────────────────────── */
@@ -1167,15 +1190,15 @@ export const parkingLotStyles = css`
     gap: 12px;
   }
   .icon-tile {
-    width: var(--nb-tile-size);
-    height: var(--nb-tile-size);
-    border-radius: var(--nb-radius-md);
+    width: var(--lade-tile-size);
+    height: var(--lade-tile-size);
+    border-radius: var(--lade-radius-md);
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--nb-accent) 18%, transparent);
-    color: var(--nb-accent);
+    background: color-mix(in srgb, var(--lade-accent) 18%, transparent);
+    color: var(--lade-accent);
     --mdc-icon-size: 22px;
   }
   .header-text {
@@ -1228,12 +1251,12 @@ export const parkingLotStyles = css`
   }
   .header-count-num {
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     color: var(--primary-text-color);
     letter-spacing: -0.5px;
   }
   .header-count.has-free .header-count-num {
-    color: var(--success-color, #22c55e);
+    color: var(--lade-rt);
   }
   .header-count-of {
     font-size: 0.85rem;
@@ -1257,14 +1280,14 @@ export const parkingLotStyles = css`
   .parking-lot {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(var(--nb-slot-size), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(var(--lade-slot-size), 1fr));
     /* Slots butt up edge-to-edge so adjacent painted lane-lines collapse
        into a single 3px stripe (instead of two parallel ones). The
        border-radius + overflow:hidden clips corner slots to the asphalt
        rounded outline. */
     gap: 0;
     padding: 0;
-    border-radius: var(--nb-radius-md);
+    border-radius: var(--lade-radius-md);
     overflow: hidden;
     background: color-mix(
       in srgb,
@@ -1298,7 +1321,7 @@ export const parkingLotStyles = css`
      focusable + clickable for the car-toggle interaction. */
   .parking-slot {
     position: relative;
-    min-height: var(--nb-slot-height);
+    min-height: var(--lade-slot-height);
     padding: 12px 6px;
     display: flex;
     align-items: stretch;
@@ -1341,13 +1364,13 @@ export const parkingLotStyles = css`
 
   .slot-power-badge {
     font-size: 0.5625rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
   }
   .slot-power-badge[data-type="dc"] {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .slot-power-badge[data-type="ac"] {
     color: var(--secondary-text-color);
@@ -1364,7 +1387,7 @@ export const parkingLotStyles = css`
   }
   .slot-kw-num {
     font-size: 1.4rem;
-    font-weight: 700;
+    font-weight: var(--ha-font-weight-bold, 600);
     letter-spacing: -0.02em;
   }
   .slot-kw-unit {
@@ -1389,13 +1412,13 @@ export const parkingLotStyles = css`
     text-align: center;
   }
   .slot-status-free {
-    color: var(--success-color, #22c55e);
+    color: var(--lade-rt);
   }
   .slot-status-busy {
-    color: var(--error-color, #ef4444);
+    color: var(--lade-error);
   }
   .slot-status-warn {
-    color: var(--warning-color, #f59e0b);
+    color: var(--lade-warning);
   }
   .slot-status-unknown {
     color: var(--secondary-text-color);
@@ -1413,9 +1436,9 @@ export const parkingLotStyles = css`
       ),
       radial-gradient(
         ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--success-color, #22c55e) 52%, transparent) 0%,
-        color-mix(in srgb, var(--success-color, #22c55e) 24%, transparent) 50%,
-        color-mix(in srgb, var(--success-color, #22c55e) 7%, transparent) 85%,
+        color-mix(in srgb, var(--lade-rt) 52%, transparent) 0%,
+        color-mix(in srgb, var(--lade-rt) 24%, transparent) 50%,
+        color-mix(in srgb, var(--lade-rt) 7%, transparent) 85%,
         transparent 100%
       ),
       color-mix(in srgb, var(--primary-text-color) 6%, transparent);
@@ -1455,10 +1478,10 @@ export const parkingLotStyles = css`
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
   }
   .slot-overlay-icon.tone-warning {
-    color: var(--warning-color, #f57c00);
+    color: var(--lade-warning);
   }
   .slot-overlay-icon.tone-error {
-    color: var(--error-color, #db4437);
+    color: var(--lade-error);
   }
   .slot-overlay-icon.tone-info {
     color: var(--info-color, #039be5);
@@ -1499,9 +1522,9 @@ export const parkingLotStyles = css`
       ),
       radial-gradient(
         ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--warning-color, #f59e0b) 52%, transparent) 0%,
-        color-mix(in srgb, var(--warning-color, #f59e0b) 24%, transparent) 50%,
-        color-mix(in srgb, var(--warning-color, #f59e0b) 7%, transparent) 85%,
+        color-mix(in srgb, var(--lade-warning) 52%, transparent) 0%,
+        color-mix(in srgb, var(--lade-warning) 24%, transparent) 50%,
+        color-mix(in srgb, var(--lade-warning) 7%, transparent) 85%,
         transparent 100%
       ),
       color-mix(in srgb, var(--primary-text-color) 6%, transparent);
@@ -1537,9 +1560,9 @@ export const parkingLotStyles = css`
       ),
       radial-gradient(
         ellipse 78% 72% at 50% 44%,
-        color-mix(in srgb, var(--error-color, #db4437) 52%, transparent) 0%,
-        color-mix(in srgb, var(--error-color, #db4437) 24%, transparent) 50%,
-        color-mix(in srgb, var(--error-color, #db4437) 7%, transparent) 85%,
+        color-mix(in srgb, var(--lade-error) 52%, transparent) 0%,
+        color-mix(in srgb, var(--lade-error) 24%, transparent) 50%,
+        color-mix(in srgb, var(--lade-error) 7%, transparent) 85%,
         transparent 100%
       ),
       color-mix(in srgb, var(--primary-text-color) 6%, transparent);
@@ -1569,7 +1592,7 @@ export const parkingLotStyles = css`
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px var(--nb-pad-x);
+    padding: 10px var(--lade-pad-x);
     border-top: 1px solid var(--divider-color);
   }
   .brand-link {
@@ -1608,11 +1631,11 @@ export const parkingLotStyles = css`
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container plcard (inline-size < 360px) {
     :host {
-      --nb-pad-x: 14px;
-      --nb-pad-y: 12px;
-      --nb-tile-size: 36px;
-      --nb-slot-size: 84px;
-      --nb-slot-height: 100px;
+      --lade-pad-x: 14px;
+      --lade-pad-y: 12px;
+      --lade-tile-size: 36px;
+      --lade-slot-size: 84px;
+      --lade-slot-height: 100px;
     }
     .metric-num {
       font-size: 2rem;
@@ -1636,11 +1659,11 @@ export const parkingLotStyles = css`
   }
   @container plcard (inline-size > 480px) {
     :host {
-      --nb-pad-x: 20px;
-      --nb-pad-y: 16px;
-      --nb-tile-size: 44px;
-      --nb-slot-size: 110px;
-      --nb-slot-height: 132px;
+      --lade-pad-x: 20px;
+      --lade-pad-y: 16px;
+      --lade-tile-size: 44px;
+      --lade-slot-size: 110px;
+      --lade-slot-height: 132px;
     }
     .metric-num {
       font-size: 2.5rem;

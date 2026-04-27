@@ -446,18 +446,15 @@ export class LadestellenAustriaCard extends LitElement {
             <div class="orphan-id">${id}</div>
           </div>
           <div class="station-actions">
-            <button
-              class="icon-action"
-              type="button"
-              aria-label=${localize("card.unpin")}
-              title=${localize("card.unpin")}
+            <ha-icon-button
+              .label=${localize("card.unpin")}
               @click=${(ev: Event) => {
                 ev.stopPropagation();
                 this._unpinStation(id);
               }}
             >
-              <ha-icon icon="mdi:close" aria-hidden="true"></ha-icon>
-            </button>
+              <ha-icon icon="mdi:close"></ha-icon>
+            </ha-icon-button>
           </div>
         </div>
       </li>
