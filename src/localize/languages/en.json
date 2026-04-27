@@ -106,7 +106,7 @@
     "entity": "Sensor",
     "entity_missing": "Selected sensor is unavailable. Pick a different Ladestellen Austria sensor.",
     "max_stations": "Stations to show",
-    "show_hero": "Show hero summary",
+    "show_hero": "Show hero block",
     "show_pricing": "Show pricing",
     "show_amenities": "Show amenity details",
     "sort_by_power": "Sort by power (fastest first)",
