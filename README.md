@@ -8,6 +8,21 @@
 
 Home Assistant custom integration for the Austrian EV charging station directory (*Ladestellenverzeichnis*), powered by **E-Control Austria's** official API. Targets the Platinum tier of the HA Quality Scale.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/card.webp" height="320" alt="Lovelace card" /></td>
+    <td align="center"><img src="screenshots/card-config.webp" height="320" alt="Card editor" /></td>
+    <td align="center"><img src="screenshots/config-flow.webp" height="320" alt="Config flow" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Lovelace card</em></td>
+    <td align="center"><em>Card editor</em></td>
+    <td align="center"><em>Config flow</em></td>
+  </tr>
+</table>
+
 ## Features
 
 - Distance-to-nearest-station sensor + full nearby list (label, address, connectors, power, live status, operator, pricing) as state attributes.
