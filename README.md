@@ -212,7 +212,7 @@ If you expose the integration's data on a publicly-accessible website (anything 
 
 - **§3(h) — Service-disruption disclaimer.** Add a *Haftungs- und Gewährleistungsausschluss für Störungen der Dienste* on the website (covering availability of the embedded service itself, separate from §3(e)'s data-accuracy clause).
 
-A reference implementation of all three is wired into the [demo site](https://demo.rolandzeiner.at/#ladestellen) — copy the §3(e) and §3(h) blocks from there if you don't want to draft your own.
+For the exact wording of §3(e) and the obligations that apply, refer to the [official Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use). The integration's developer is not a lawyer; how you implement these obligations on your own deployment is your responsibility.
 
 ### Termination
 
