@@ -41,6 +41,7 @@ import {
   pointStatusLabel,
   rackSlotStatus,
   shortConnector,
+  slotOverlayIcon,
 } from "./utils";
 
 import "./editor";
@@ -953,26 +954,29 @@ export class LadestellenAustriaCard extends LitElement {
           >${powerType.toUpperCase()}</span
         >`
       : nothing;
-    // Out-of-order / faulted / inoperative slots swap their kW + connector
-    // for a wrench icon — the electrical spec isn't actionable while the
-    // point is down, so showing it adds noise. Power-type badge + status
-    // dot stay for consistency with the rest of the rack.
-    if (statusCat === "warn") {
-      // Warn slot = point is down for maintenance / out of order. The
-      // wrench is the entire story; skip the power-badge (electrical
-      // spec is moot when the point isn't usable) and the status dot
-      // (the slot's warn tint + wrench already signal "not usable").
+    // Special-state slots swap their kW + connector for a status icon —
+    // the electrical spec isn't actionable when the point is out of order,
+    // out of stock, planned, removed, or unknown. Mirrors the parking
+    // card's slot-overlay icons so both cards read identically. Optional
+    // bgTint upgrades the slot's tint (info / error) for PLANNED / REMOVED
+    // even though they share the "warn" bucket. Power-badge + status dot
+    // are dropped — the icon + tint are the entire story.
+    const overlay = slotOverlayIcon(point.status);
+    if (overlay) {
+      const slotClass = overlay.bgTint
+        ? `rack-slot slot-tint-${overlay.bgTint}`
+        : "rack-slot";
       return html`
         <div
-          class="rack-slot"
+          class=${slotClass}
           role="group"
           aria-label=${ariaLabel}
           data-status=${statusCat}
           title=${tooltip}
         >
           <ha-icon
-            class="rack-warn-icon"
-            icon="mdi:wrench-outline"
+            class=${`rack-overlay-icon tone-${overlay.tone}`}
+            icon=${overlay.icon}
           ></ha-icon>
         </div>
       `;
