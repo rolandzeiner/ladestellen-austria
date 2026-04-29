@@ -482,7 +482,13 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # path and is silent.
         if os.environ.get("LADESTELLEN_AUSTRIA_DEV_FIXTURE") == "1":
             with contextlib.suppress(ImportError):
-                from . import _dev_fixture
+                # _dev_fixture.py is gitignored — present in dev,
+                # missing in CI / production. The compound ignore
+                # silences both "attr-defined" (when CI's mypy can't
+                # see the file) AND "unused-ignore" (when local mypy
+                # resolves the file and would otherwise grumble that
+                # the attr-defined ignore is unnecessary).
+                from . import _dev_fixture  # type: ignore[attr-defined,unused-ignore]
                 stations = [_dev_fixture.STATION, *stations]
         stations.sort(key=lambda s: s.get("distance") or float("inf"))
         truncated = stations[:DEFAULT_MAX_RESULTS]
