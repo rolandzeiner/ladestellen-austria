@@ -32,7 +32,7 @@ def test_typescript_norm_status_formula_unchanged() -> None:
     """Pin the TS formula's body so a future edit must update both sides."""
     text = _TS_UTILS.read_text(encoding="utf-8")
     assert _TS_NORM_RE.search(text), (
-        f"src/utils.ts normStatus body changed; update tests/test_status_parity.py "
+        "src/utils.ts normStatus body changed; update tests/test_status_parity.py "
         "and confirm the Python helper at const.normalize_status still matches."
     )
 
