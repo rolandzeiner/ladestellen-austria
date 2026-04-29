@@ -3,7 +3,10 @@
 # redundant with this file but harmless. Trim them as confidence grows.
 
 [tool.ruff]
-target-version = "py314"
+# Aligned with the CI Python pin (.github/workflows/validate.yml). HA
+# core targets 3.13.x; bumping this is a breaking change for downstream
+# contributors building on older interpreters — keep it explicit.
+target-version = "py313"
 line-length = 88
 
 [tool.mypy]

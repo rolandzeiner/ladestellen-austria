@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
@@ -20,9 +20,44 @@ from homeassistant.helpers.event import async_call_later
 
 from .const import CARD_VERSION
 
+# Typed access to LovelaceData via the public HassKey HA exposes since
+# 2024.x. The string fallback covers HA versions that pre-date the key.
+try:
+    # Compound ignore covers both:
+    #   - attr-defined: HA versions before LOVELACE_DATA shipped
+    #   - unused-ignore: HA versions where the symbol IS exported and
+    #     local mypy would otherwise grumble that the ignore is unused.
+    from homeassistant.components.lovelace.const import (  # type: ignore[attr-defined,unused-ignore]
+        LOVELACE_DATA,
+    )
+except ImportError:  # pragma: no cover — fallback for HA before LOVELACE_DATA shipped
+    LOVELACE_DATA = None  # type: ignore[assignment,unused-ignore]
+
+# `lovelace.resources` is a union of ResourceYAMLCollection (read-only
+# in YAML-mode dashboards) and ResourceStorageCollection (the only one
+# that exposes async_create_item / async_update_item / async_delete_item).
+# We pick storage mode by duck-typing on the mutation methods — the
+# string mode/resource_mode field has churned across HA versions, the
+# collection contract is the actual invariant. mypy gets the narrowing
+# via `cast()` after the hasattr check; the type-only import below
+# keeps the cast strict-typed without forcing the symbol to exist at
+# runtime on older HA installs.
+if TYPE_CHECKING:
+    from homeassistant.components.lovelace.resources import (
+        ResourceStorageCollection,
+    )
+
 _LOGGER = logging.getLogger(__name__)
 
 URL_BASE = "/ladestellen_austria"
+
+# Cap on _async_wait_for_lovelace_resources retry ticks. Each tick is 5s,
+# so 60 ticks = 5 min. Reaching the cap means Lovelace's resource loader
+# never flipped `loaded` — broken storage, YAML-mode race during reload,
+# or future Lovelace internals change. Cheaper to surface the bad state
+# with one warning than poll forever.
+_LOVELACE_LOAD_RETRY_MAX = 60
+_LOVELACE_LOAD_RETRY_INTERVAL_S = 5
 
 JSMODULES: list[dict[str, str]] = [
     {
@@ -43,7 +78,14 @@ class JSModuleRegistration:
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the registrar."""
         self.hass = hass
-        self.lovelace = self.hass.data.get("lovelace")
+        # Prefer the typed HassKey introduced in HA 2024.x — the bare
+        # string lookup is what HA core can rename without notice (see
+        # the `mode` → `resource_mode` rename acknowledged in the
+        # module docstring).
+        if LOVELACE_DATA is not None:
+            self.lovelace = self.hass.data.get(LOVELACE_DATA)
+        else:
+            self.lovelace = self.hass.data.get("lovelace")
 
     async def async_register(self) -> None:
         """Register frontend resources."""
@@ -57,8 +99,25 @@ class JSModuleRegistration:
             )
             return
         await self._async_register_path()
-        if self.lovelace is not None and self.lovelace.resource_mode == "storage":
+        if self.lovelace is not None and self._is_storage_mode():
             await self._async_wait_for_lovelace_resources()
+
+    def _is_storage_mode(self) -> bool:
+        """Detect storage mode by reading the LovelaceData mode field.
+
+        HA core's ``LovelaceData`` exposes the dashboard mode as ``mode``
+        (the original community-guide field). An older docstring in
+        this module claimed a ``mode`` → ``resource_mode`` rename, but
+        HA core never landed that — current versions still ship
+        ``mode``. We try both for cross-version robustness; the first
+        attribute that exists wins.
+        """
+        assert self.lovelace is not None
+        for attr in ("mode", "resource_mode"):
+            value = getattr(self.lovelace, attr, None)
+            if value is not None:
+                return bool(value == "storage")
+        return False
 
     async def _async_register_path(self) -> None:
         """Register the static HTTP path that serves the JS bundle.
@@ -83,25 +142,48 @@ class JSModuleRegistration:
         """Wait for Lovelace resources to load, then register modules."""
         # Guarded by async_register(); narrow the Optional for mypy --strict.
         assert self.lovelace is not None
+        attempts = 0
 
         async def _check_loaded(_now: Any) -> None:
+            nonlocal attempts
             assert self.lovelace is not None
             if self.lovelace.resources.loaded:
                 await self._async_register_modules()
-            else:
-                _LOGGER.debug("Lovelace resources not loaded, retrying in 5s")
-                async_call_later(self.hass, 5, _check_loaded)
+                return
+            attempts += 1
+            if attempts >= _LOVELACE_LOAD_RETRY_MAX:
+                _LOGGER.warning(
+                    "Lovelace resources never reported `loaded` after %d × %ds "
+                    "(broken storage, YAML-mode race, or Lovelace internals "
+                    "change?). Giving up — users on storage mode will need to "
+                    "reload the integration once Lovelace is back online.",
+                    _LOVELACE_LOAD_RETRY_MAX,
+                    _LOVELACE_LOAD_RETRY_INTERVAL_S,
+                )
+                return
+            _LOGGER.debug(
+                "Lovelace resources not loaded, retrying in %ds (%d/%d)",
+                _LOVELACE_LOAD_RETRY_INTERVAL_S,
+                attempts,
+                _LOVELACE_LOAD_RETRY_MAX,
+            )
+            async_call_later(
+                self.hass, _LOVELACE_LOAD_RETRY_INTERVAL_S, _check_loaded
+            )
 
         await _check_loaded(0)
 
     async def _async_register_modules(self) -> None:
         """Register or update JavaScript modules."""
         assert self.lovelace is not None
+        # async_register() gates this method behind _is_storage_mode(),
+        # so the resources collection is always the StorageCollection
+        # variant. cast() tells mypy to treat the union as the narrow
+        # type; runtime safety is the caller's _is_storage_mode() check.
+        resources = cast("ResourceStorageCollection", self.lovelace.resources)
         _LOGGER.debug("Installing JavaScript modules")
         existing_resources = [
-            r
-            for r in self.lovelace.resources.async_items()
-            if r["url"].startswith(URL_BASE)
+            r for r in resources.async_items() if r["url"].startswith(URL_BASE)
         ]
         for module in JSMODULES:
             url = f"{URL_BASE}/{module['filename']}"
@@ -115,7 +197,7 @@ class JSModuleRegistration:
                             module["name"],
                             module["version"],
                         )
-                        await self.lovelace.resources.async_update_item(
+                        await resources.async_update_item(
                             resource["id"],
                             {
                                 "res_type": "module",
@@ -127,7 +209,7 @@ class JSModuleRegistration:
                 _LOGGER.info(
                     "Registering %s version %s", module["name"], module["version"]
                 )
-                await self.lovelace.resources.async_create_item(
+                await resources.async_create_item(
                     {
                         "res_type": "module",
                         "url": f"{url}?v={module['version']}",
@@ -147,14 +229,13 @@ class JSModuleRegistration:
 
     async def async_unregister(self) -> None:
         """Remove Lovelace resources owned by this integration."""
-        if self.lovelace is None or self.lovelace.resource_mode != "storage":
+        if self.lovelace is None or not self._is_storage_mode():
             return
+        resources = cast("ResourceStorageCollection", self.lovelace.resources)
         for module in JSMODULES:
             url = f"{URL_BASE}/{module['filename']}"
-            resources = [
-                r
-                for r in self.lovelace.resources.async_items()
-                if r["url"].startswith(url)
+            existing = [
+                r for r in resources.async_items() if r["url"].startswith(url)
             ]
-            for resource in resources:
-                await self.lovelace.resources.async_delete_item(resource["id"])
+            for resource in existing:
+                await resources.async_delete_item(resource["id"])
