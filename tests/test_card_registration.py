@@ -24,10 +24,17 @@ from custom_components.ladestellen_austria.const import CARD_VERSION
 def _make_lovelace(
     *,
     resource_mode: str = "storage",
+    mode: str = "storage",
     loaded: bool = True,
     items: list[dict[str, Any]] | None = None,
 ) -> SimpleNamespace:
-    """Build a fake Lovelace data object with async resource methods."""
+    """Build a fake Lovelace data object with async resource methods.
+
+    Mirrors the canonical helper shape from the ha-integration-platinum
+    skill — exposes both `resource_mode` (the field this integration's
+    registrar reads) and `mode` (covered for forward-compat with sibling
+    test suites that branch on dashboard YAML-mode).
+    """
     resources = SimpleNamespace(
         loaded=loaded,
         async_items=MagicMock(return_value=items or []),
@@ -35,7 +42,11 @@ def _make_lovelace(
         async_update_item=AsyncMock(),
         async_delete_item=AsyncMock(),
     )
-    return SimpleNamespace(resource_mode=resource_mode, resources=resources)
+    return SimpleNamespace(
+        resource_mode=resource_mode,
+        mode=mode,
+        resources=resources,
+    )
 
 
 def _install_lovelace(hass: HomeAssistant, lovelace: Any) -> None:

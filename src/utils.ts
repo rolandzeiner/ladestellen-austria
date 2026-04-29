@@ -181,6 +181,40 @@ export function slotOverlayIcon(status: string): SlotOverlay | null {
 }
 
 /**
+ * One per-point variant resolver, called from both card renderers so the
+ * status-→ visuals decision tree lives in one place. Both cards consult
+ * `bucket` for colour, `overlay` for an MDI overlay icon, `bgTint` for
+ * a background-tint class, and `showCar` (parking-card only) for the
+ * SVG-car overlay choice. Booleans `isAvailable` / `isBusy` / `isWarn`
+ * mirror the bucket so call sites stay readable.
+ */
+export interface SlotVariant {
+  bucket: RackStatus;
+  isAvailable: boolean;
+  isBusy: boolean;
+  isWarn: boolean;
+  overlay: SlotOverlay | null;
+  showCar: boolean;
+  showOverlayIcon: boolean;
+}
+export function slotVariant(point: Point): SlotVariant {
+  const bucket = rackSlotStatus(point.status);
+  const overlay = slotOverlayIcon(point.status);
+  return {
+    bucket,
+    isAvailable: bucket === "ok",
+    isBusy: bucket === "busy",
+    isWarn: bucket === "warn",
+    overlay,
+    // The SVG car only shows when the slot is busy AND no MDI overlay
+    // claimed the cell — RESERVED + BLOCKED tint as busy but render the
+    // mdi:bookmark / mdi:cancel icon instead of the car.
+    showCar: bucket === "busy" && overlay === null,
+    showOverlayIcon: overlay !== null,
+  };
+}
+
+/**
  * kW formatter — Austrian comma decimals, up to one fractional digit.
  * 3.7 → "3,7", 22 → "22", 80 → "80". Preserves API precision (§3i).
  */

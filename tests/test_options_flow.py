@@ -8,21 +8,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.ladestellen_austria.const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from custom_components.ladestellen_austria.const import DEFAULT_SCAN_INTERVAL
 
-from .conftest import BASE_ENTRY_DATA
+from .conftest import make_entry
 
 
 def _entry(hass: HomeAssistant) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={**BASE_ENTRY_DATA},
-        options={},
-        title="Test",
-        unique_id="www.meineseite.at:48.21:16.37",
-    )
-    entry.add_to_hass(hass)
-    return entry
+    return make_entry(hass)
 
 
 async def test_options_form_shows(hass: HomeAssistant, mock_fetch: AsyncMock) -> None:

@@ -1,3 +1,19 @@
+// Visual editor for the list card. Implemented "by the book": every
+// typed field goes through <ha-form> with a declarative schema array
+// (HA 2024+ best practice — same shape as the built-in tile-card,
+// entities, gauge editors). Expandable sections group related fields
+// the way HA's design system intends, the schema-driven a11y wiring
+// (label + describedby + form-field id pairing) is handled by ha-form
+// itself, and the value-changed handler is one line that splats the
+// merged config back into our reactive state.
+//
+// Custom widgets (connector / amenity / payment chip filters and the
+// pin picker) sit BELOW the ha-form as bespoke `.editor-section`
+// blocks — they have no clean ha-form selector equivalent and the
+// skill explicitly carves out the "keep-some-custom-rendering path"
+// for cases like this. Both layers use the same .editor-section /
+// .section-header styling so the editor reads as one coherent flow.
+
 import {
   LitElement,
   html,
@@ -22,6 +38,74 @@ import {
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
 
+// ha-form schema. Each `name` is resolved via computeLabel into
+// `editor.<name>` so the localize namespace stays flat. Expandable
+// sections wrap the per-section schemas; HA renders them as collapsible
+// groups with the section title from `editor.section_<name>`.
+//
+// `HaFormSchema` is the pragmatic shape — ha-form's TS types aren't
+// exported through custom-card-helpers, but the runtime accepts the
+// declarative JSON shape directly.
+type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
+
+const SCHEMA: HaFormSchema = [
+  {
+    name: "entity",
+    required: true,
+    selector: { entity: { domain: "sensor", integration: "ladestellen_austria" } },
+  },
+  { name: "name", selector: { text: {} } },
+  {
+    type: "expandable",
+    name: "display",
+    // flatten: true — without this, ha-form scopes the inner schema's
+    // values under data[name] (i.e. data.display.show_hero) when it
+    // fires value-changed. The card renderer reads `this.config.show_hero`
+    // flat; the nested shape silently leaves every flag at its default.
+    // hui-tile-card-editor uses the same flag for the same reason.
+    flatten: true,
+    schema: [
+      {
+        name: "max_stations",
+        selector: { number: { min: 1, max: 10, step: 1, mode: "slider" } },
+      },
+      { name: "hide_header", selector: { boolean: {} } },
+      { name: "show_hero", selector: { boolean: {} } },
+      { name: "show_pricing", selector: { boolean: {} } },
+      { name: "show_amenities", selector: { boolean: {} } },
+      { name: "sort_by_power", selector: { boolean: {} } },
+      { name: "logo_adapt_to_theme", selector: { boolean: {} } },
+    ],
+  },
+  {
+    type: "expandable",
+    name: "filters",
+    flatten: true,
+    schema: [
+      { name: "only_available", selector: { boolean: {} } },
+      { name: "only_free", selector: { boolean: {} } },
+      { name: "only_open", selector: { boolean: {} } },
+    ],
+  },
+];
+
+// ha-form reads defaults from `data`, so booleans pre-toggle correctly
+// even before the user has touched them (the card's render-time
+// `?? true` / `!== false` defaults are mirrored here so what the user
+// sees in the editor matches what the card renders).
+const FORM_DEFAULTS: Record<string, unknown> = {
+  max_stations: 10,
+  hide_header: false,
+  show_hero: true,
+  show_pricing: true,
+  show_amenities: true,
+  sort_by_power: false,
+  logo_adapt_to_theme: false,
+  only_available: false,
+  only_free: false,
+  only_open: false,
+};
+
 @customElement("ladestellen-austria-card-editor")
 export class LadestellenAustriaCardEditor
   extends LitElement
@@ -35,199 +119,118 @@ export class LadestellenAustriaCardEditor
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
     // WCAG 3.3.7 (redundant entry) — derive `name` from the selected
-    // sensor's friendly_name when the user hasn't explicitly set it, so
-    // the second field doesn't re-ask for data already implied by the
-    // first.
+    // sensor's friendly_name when the user hasn't explicitly set it.
     const friendlyName =
       config.entity && this.hass?.states[config.entity]?.attributes
         .friendly_name;
-    this._config = {
-      name: typeof friendlyName === "string" ? friendlyName : undefined,
-      ...config,
-    };
+    this._config =
+      typeof friendlyName === "string"
+        ? { name: friendlyName, ...config }
+        : { ...config };
+  }
+
+  // ha-form's value-changed delivers the merged config (current data +
+  // user's edit). Update `_config` locally THEN fire config-changed.
+  // Lovelace's dashboard catches the event to persist the new config
+  // but does NOT re-invoke setConfig on this editor instance — the
+  // editor element persists across edits, so `_config` is the
+  // single source of truth for the next render's `data` prop AND for
+  // the bespoke widgets below (chip filters, pin picker) whose
+  // selected-state visuals read from it. Without the local update
+  // toggles flip in ha-form briefly then snap back on the next render.
+  private _formChanged(ev: CustomEvent): void {
+    const next = ev.detail.value as LadestellenAustriaCardConfig;
+    if (!next) return;
+    this._config = next;
+    fireEvent(this, "config-changed", { config: next });
+  }
+
+  // `editor.<name>` for plain fields, `editor.section_<name>` for
+  // expandable section titles. Falls back to the raw key when a
+  // translation is missing so debugging surfaces the gap visibly.
+  private _computeLabel = (schema: { name: string; type?: string }): string => {
+    const key = schema.type === "expandable"
+      ? `editor.section_${schema.name}`
+      : `editor.${schema.name}`;
+    const resolved = localize(key);
+    return resolved === key ? schema.name : resolved;
+  };
+
+  private _toggleConnector(token: string): void {
+    const current = this._config.connector_types ?? [];
+    const next = current.includes(token)
+      ? current.filter((t) => t !== token)
+      : [...current, token];
+    this._config = { ...this._config, connector_types: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _toggleAmenity(key: string): void {
+    const current = this._config.amenities ?? [];
+    const next = current.includes(key)
+      ? current.filter((k) => k !== key)
+      : [...current, key];
+    this._config = { ...this._config, amenities: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _togglePayment(key: string): void {
+    const current = this._config.payment_methods ?? [];
+    const next = current.includes(key)
+      ? current.filter((k) => k !== key)
+      : [...current, key];
+    this._config = { ...this._config, payment_methods: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _togglePin(stationId: string): void {
+    const current = this._config.pinned_station_ids ?? [];
+    const next = current.includes(stationId)
+      ? current.filter((id) => id !== stationId)
+      : [...current, stationId];
+    this._config = { ...this._config, pinned_station_ids: next };
+    fireEvent(this, "config-changed", { config: this._config });
   }
 
   protected render(): TemplateResult {
     setLanguage(this.hass?.language);
+    if (!this.hass) {
+      return html`<p>${localize("common.loading")}</p>`;
+    }
+
+    const data: Record<string, unknown> = { ...FORM_DEFAULTS, ...this._config };
     const selectedConnectors = this._config.connector_types ?? [];
     const selectedAmenities = this._config.amenities ?? [];
     const selectedPayments = this._config.payment_methods ?? [];
-    // WCAG 3.3.1 (error identification) — flag an entity that isn't in
-    // hass.states so the error is conveyed in text, not just by the
-    // downstream empty-state. aria-describedby points AT users at the
-    // <ha-alert> rendered below.
+    // WCAG 3.3.1 (error identification) — flag a configured entity that
+    // isn't in hass.states (e.g. integration removed). ha-form's entity
+    // selector shows its own validity styling but doesn't surface a
+    // user-facing message; the alert below it does.
     const entityInvalid =
-      !!this._config.entity && !!this.hass && !this.hass.states[this._config.entity];
+      !!this._config.entity && !this.hass.states[this._config.entity];
+
     return html`
       <div class="editor">
-        <div class="editor-section">
-          <div class="section-header">${localize("editor.section_main")}</div>
-
-          ${this.hass
-            ? html`
-                <ha-selector
-                  .hass=${this.hass}
-                  .selector=${{
-                    entity: { domain: "sensor", integration: "ladestellen_austria" },
-                  }}
-                  .value=${this._config.entity || undefined}
-                  .configValue=${"entity"}
-                  .label=${localize("editor.entity")}
-                  .required=${true}
-                  aria-invalid=${entityInvalid ? "true" : "false"}
-                  aria-describedby=${entityInvalid ? "entity-error" : nothing}
-                  @value-changed=${this._valueChanged}
-                ></ha-selector>
-                ${entityInvalid
-                  ? html`<ha-alert
-                      id="entity-error"
-                      alert-type="error"
-                    >
-                      ${localize("editor.entity_missing")}
-                    </ha-alert>`
-                  : nothing}
-              `
-            : html`<p>${localize("common.loading")}</p>`}
-
-          <ha-textfield
-            label=${localize("editor.name")}
-            .value=${this._config.name || ""}
-            .configValue=${"name"}
-            @input=${this._valueChanged}
-          ></ha-textfield>
-        </div>
+        <ha-form
+          .hass=${this.hass}
+          .data=${data}
+          .schema=${SCHEMA}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._formChanged}
+        ></ha-form>
+        ${entityInvalid
+          ? html`<ha-alert alert-type="error">
+              ${localize("editor.entity_missing")}
+            </ha-alert>`
+          : nothing}
 
         <div class="editor-section">
-          <div class="section-header">${localize("editor.section_display")}</div>
-
-          ${this.hass
-            ? html`
-                <ha-selector
-                  .hass=${this.hass}
-                  .selector=${{
-                    number: { min: 1, max: 10, step: 1, mode: "slider" },
-                  }}
-                  .value=${this._config.max_stations ?? 10}
-                  .configValue=${"max_stations"}
-                  .label=${localize("editor.max_stations")}
-                  @value-changed=${this._valueChanged}
-                ></ha-selector>
-              `
-            : nothing}
-
-          <div class="toggle-row">
-            <label for="toggle-hide-header"
-              >${localize("editor.hide_header")}</label
-            >
-            <ha-switch
-              id="toggle-hide-header"
-              .checked=${this._config.hide_header ?? false}
-              .configValue=${"hide_header"}
-              @change=${this._valueChanged}
-            ></ha-switch>
+          <div class="section-header">
+            ${localize("editor.section_chip_filters")}
           </div>
-
-          <div class="toggle-row">
-            <label for="toggle-show-hero"
-              >${localize("editor.show_hero")}</label
-            >
-            <ha-switch
-              id="toggle-show-hero"
-              .checked=${this._config.show_hero !== false}
-              .configValue=${"show_hero"}
-              @change=${this._valueChanged}
-            ></ha-switch>
+          <div class="editor-hint">
+            ${localize("editor.connector_filter_hint")}
           </div>
-
-          <div class="toggle-row">
-            <label for="toggle-show-pricing"
-              >${localize("editor.show_pricing")}</label
-            >
-            <ha-switch
-              id="toggle-show-pricing"
-              .checked=${this._config.show_pricing ?? true}
-              .configValue=${"show_pricing"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-show-amenities"
-              >${localize("editor.show_amenities")}</label
-            >
-            <ha-switch
-              id="toggle-show-amenities"
-              .checked=${this._config.show_amenities ?? true}
-              .configValue=${"show_amenities"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-sort-by-power"
-              >${localize("editor.sort_by_power")}</label
-            >
-            <ha-switch
-              id="toggle-sort-by-power"
-              .checked=${this._config.sort_by_power ?? false}
-              .configValue=${"sort_by_power"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-logo-adapt"
-              >${localize("editor.logo_adapt_to_theme")}</label
-            >
-            <ha-switch
-              id="toggle-logo-adapt"
-              .checked=${this._config.logo_adapt_to_theme ?? false}
-              .configValue=${"logo_adapt_to_theme"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-        </div>
-
-        <div class="editor-section">
-          <div class="section-header">${localize("editor.section_filters")}</div>
-
-          <div class="toggle-row">
-            <label for="toggle-only-available"
-              >${localize("editor.only_available")}</label
-            >
-            <ha-switch
-              id="toggle-only-available"
-              .checked=${this._config.only_available ?? false}
-              .configValue=${"only_available"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-only-free"
-              >${localize("editor.only_free")}</label
-            >
-            <ha-switch
-              id="toggle-only-free"
-              .checked=${this._config.only_free ?? false}
-              .configValue=${"only_free"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="toggle-only-open"
-              >${localize("editor.only_open")}</label
-            >
-            <ha-switch
-              id="toggle-only-open"
-              .checked=${this._config.only_open ?? false}
-              .configValue=${"only_open"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="editor-hint">${localize("editor.connector_filter_hint")}</div>
           <div class="chip-row">
             ${CONNECTOR_FILTER_OPTIONS.map(
               (token) => html`
@@ -244,7 +247,9 @@ export class LadestellenAustriaCardEditor
             )}
           </div>
 
-          <div class="editor-hint">${localize("editor.amenity_filter_hint")}</div>
+          <div class="editor-hint">
+            ${localize("editor.amenity_filter_hint")}
+          </div>
           <div class="chip-row">
             ${AMENITY_FILTER_OPTIONS.map(
               (opt) => html`
@@ -262,7 +267,9 @@ export class LadestellenAustriaCardEditor
             )}
           </div>
 
-          <div class="editor-hint">${localize("editor.payment_filter_hint")}</div>
+          <div class="editor-hint">
+            ${localize("editor.payment_filter_hint")}
+          </div>
           <div class="chip-row">
             ${PAYMENT_FILTER_OPTIONS.map(
               (opt) => html`
@@ -296,14 +303,8 @@ export class LadestellenAustriaCardEditor
     const pinnedSet = new Set(pinned);
     const liveIds = new Set(stations.map((s) => s.stationId));
     const orphanIds = pinned.filter((id) => !liveIds.has(id));
-    // When the chosen sensor follows a device_tracker, pinning is moot —
-    // the nearby-stations list changes every time the user moves. Show a
-    // hint instead of the pin list, but keep the section visible so users
-    // don't wonder where their old pins went (they're preserved in the
-    // config until the user switches back to static mode).
     const dynamicMode =
       (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
-
     return html`
       <div class="editor-section">
         <div class="section-header">${localize("editor.section_pinned")}</div>
@@ -345,7 +346,7 @@ export class LadestellenAustriaCardEditor
                 })}
               </div>
             `}
-        ${orphanIds.length > 0
+        ${!dynamicMode && orphanIds.length > 0
           ? html`
               <div class="editor-hint editor-hint--muted">
                 ${localize("editor.pin_orphans_heading")}
@@ -355,12 +356,14 @@ export class LadestellenAustriaCardEditor
                   (id) => html`
                     <button
                       type="button"
-                      class="pin-row orphan"
+                      class="pin-row pinned orphan"
                       @click=${() => this._togglePin(id)}
                     >
-                      <ha-icon icon="mdi:pin-off-outline"></ha-icon>
-                      <span class="pin-label">${id}</span>
-                      <span class="pin-meta">${localize("editor.pin_unpin")}</span>
+                      <ha-icon icon="mdi:pin"></ha-icon>
+                      <span class="pin-label orphan-id">${id}</span>
+                      <span class="pin-meta">
+                        ${localize("editor.pin_unpin")}
+                      </span>
                     </button>
                   `,
                 )}
@@ -369,62 +372,6 @@ export class LadestellenAustriaCardEditor
           : nothing}
       </div>
     `;
-  }
-
-  private _togglePin(stationId: string): void {
-    const current = this._config.pinned_station_ids ?? [];
-    const next = current.includes(stationId)
-      ? current.filter((id) => id !== stationId)
-      : [...current, stationId];
-    this._config = { ...this._config, pinned_station_ids: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _toggleConnector(token: string): void {
-    const current = this._config.connector_types ?? [];
-    const next = current.includes(token)
-      ? current.filter((t) => t !== token)
-      : [...current, token];
-    this._config = { ...this._config, connector_types: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _toggleAmenity(key: string): void {
-    const current = this._config.amenities ?? [];
-    const next = current.includes(key)
-      ? current.filter((t) => t !== key)
-      : [...current, key];
-    this._config = { ...this._config, amenities: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _togglePayment(key: string): void {
-    const current = this._config.payment_methods ?? [];
-    const next = current.includes(key)
-      ? current.filter((t) => t !== key)
-      : [...current, key];
-    this._config = { ...this._config, payment_methods: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _valueChanged(ev: Event): void {
-    if (!this._config || !this.hass) return;
-    const target = ev.target as EventTarget & {
-      configValue?: keyof LadestellenAustriaCardConfig;
-      value?: unknown;
-      checked?: boolean;
-    };
-    if (!target.configValue) return;
-
-    const newValue =
-      target.checked !== undefined
-        ? target.checked
-        : ((ev as CustomEvent).detail?.value ?? target.value);
-
-    if (this._config[target.configValue] === newValue) return;
-
-    this._config = { ...this._config, [target.configValue]: newValue };
-    fireEvent(this, "config-changed", { config: this._config });
   }
 
   static styles: CSSResultGroup = editorStyles;

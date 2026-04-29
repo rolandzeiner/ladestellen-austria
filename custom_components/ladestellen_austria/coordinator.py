@@ -6,6 +6,7 @@ import contextlib
 import logging
 import os
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -35,7 +36,6 @@ from homeassistant.util.location import distance
 
 from .const import (
     API_BASE_URL,
-    API_KEY_HEADER,
     CONF_API_KEY,
     CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
@@ -48,15 +48,51 @@ from .const import (
     DYNAMIC_DOMAIN_COOLDOWN_MINUTES,
     DYNAMIC_SAFETY_INTERVAL_HOURS,
     EVENT_SLOT_STATUS_CHANGED,
-    REFERER_HEADER,
     REQUEST_TIMEOUT_SEC,
     SEARCH_PATH,
-    USER_AGENT,
+    build_default_headers,
+    classify_probe_status,
+    normalize_status,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 type LadestellenAustriaConfigEntry = ConfigEntry["LadestellenAustriaCoordinator"]
+
+
+@dataclass(frozen=True, slots=True)
+class _StationMeta:
+    """Per-station scratch data carried alongside each indexed point.
+
+    Indexed via `_index_points` for cheap status-transition diffing —
+    the bus event payload needs the station's label + distance, but
+    those don't belong inside the API-shaped point dict (mutating it
+    with `_station_*` scratch keys was the previous shape). Pairing
+    keeps the API payload pristine.
+    """
+    label: str | None
+    distance: float | None
+
+
+def _evse_sort_key(point: dict[str, Any]) -> tuple[int, int, str]:
+    """Stable sort key for a station's points.
+
+    EMSP-style evseIds carry a trailing per-station ordinal
+    (e.g. `*AT*EAA*E5055*1` then `*AT*EAA*E5055*2`). We split on `*` and
+    parse the last segment when it's numeric. The first tuple element
+    is a parse-success flag so unparseable points sort AFTER numeric
+    ones in stable form rather than colliding at the start; the third
+    element is the full evseId, used both for tiebreaking when the
+    trailing segment ties and as the lexical fallback when the suffix
+    isn't numeric (so two non-numeric IDs sort deterministically).
+    """
+    raw = str(point.get("evseId") or "")
+    suffix = raw.rsplit("*", 1)[-1] if "*" in raw else raw
+    try:
+        ordinal = int(suffix)
+    except ValueError:
+        return (1, 0, raw)
+    return (0, ordinal, raw)
 
 
 class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -72,14 +108,19 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hass: HomeAssistant,
         entry: LadestellenAustriaConfigEntry,
     ) -> None:
-        """Initialise the coordinator."""
-        config = {**entry.data, **entry.options}
+        """Initialise the coordinator.
+
+        Credentials + location live in `entry.data` (written once by the
+        config flow). Only `scan_interval` is editable through the
+        options flow, so it's the one field we read with the
+        `options → data → DEFAULT` precedence.
+        """
         self._entry = entry
-        self._api_key: str = config[CONF_API_KEY]
-        self._domain: str = config[CONF_DOMAIN]
-        self._latitude: float = float(config[CONF_LATITUDE])
-        self._longitude: float = float(config[CONF_LONGITUDE])
-        self._dynamic_entity: str | None = config.get(CONF_DYNAMIC_ENTITY)
+        self._api_key: str = entry.data[CONF_API_KEY]
+        self._domain: str = entry.data[CONF_DOMAIN]
+        self._latitude: float = float(entry.data[CONF_LATITUDE])
+        self._longitude: float = float(entry.data[CONF_LONGITUDE])
+        self._dynamic_entity: str | None = entry.data.get(CONF_DYNAMIC_ENTITY)
         self._session = async_get_clientsession(hass)
 
         self._issue_raised: bool = False
@@ -101,7 +142,13 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self._dynamic_entity:
             interval = timedelta(hours=DYNAMIC_SAFETY_INTERVAL_HOURS)
         else:
-            scan = config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            # scan_interval is the only options-flow-editable field;
+            # options take precedence over data, both fall back to the
+            # default if neither is set.
+            scan = entry.options.get(
+                CONF_SCAN_INTERVAL,
+                entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            )
             interval = timedelta(minutes=scan)
         super().__init__(
             hass,
@@ -320,19 +367,8 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _build_headers(self) -> dict[str, str]:
-        """Build outbound request headers.
-
-        Auth is split across two headers: `Apikey` carries the secret, and
-        `Referer` must match the domain the user registered at ladestellen.at
-        (gateway strips scheme/port/path before matching, so hard-coding https
-        is safe regardless of how HA itself is served).
-        """
-        return {
-            "User-Agent": USER_AGENT,
-            API_KEY_HEADER: self._api_key,
-            REFERER_HEADER: f"https://{self._domain}",
-            "Accept": "application/json",
-        }
+        """Build outbound request headers via the shared helper."""
+        return build_default_headers(self._api_key, self._domain)
 
     async def _fetch_search(
         self, latitude: float, longitude: float
@@ -363,7 +399,11 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_placeholders={"seconds": str(REQUEST_TIMEOUT_SEC)},
             ) from err
         except aiohttp.ClientResponseError as err:
-            if err.status in (401, 403):
+            # Single source of truth for "what does this status mean" lives
+            # in classify_probe_status. Auth failures here drive HA's
+            # reauth flow; everything else degrades to UpdateFailed.
+            outcome = classify_probe_status(err.status)
+            if outcome in ("invalid_auth", "domain_mismatch"):
                 raise ConfigEntryAuthFailed(
                     translation_domain=DOMAIN,
                     translation_key="api_auth_error",
@@ -433,18 +473,35 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lng = self._longitude
 
         stations = await self._fetch_search(lat, lng)
-        # Local-only dev hook: when _dev_fixture.py is present AND we're
-        # not running under pytest (PYTEST_CURRENT_TEST is set by pytest
-        # for the duration of every test), prepend a synthetic station
-        # that exercises every RefillPointStatusEnum value so card
-        # rendering can be eyeballed end-to-end. The file is gitignored
-        # — ImportError is the production path and is silent.
-        if not os.environ.get("PYTEST_CURRENT_TEST"):
+        # Local-only dev hook: contributors export
+        # `LADESTELLEN_AUSTRIA_DEV_FIXTURE=1` and drop a (gitignored)
+        # `_dev_fixture.py` next to this file to prepend a synthetic
+        # station that exercises every RefillPointStatusEnum value.
+        # Production never sets the env var; tests don't set it either,
+        # so snapshot diffs stay clean. ImportError is the production
+        # path and is silent.
+        if os.environ.get("LADESTELLEN_AUSTRIA_DEV_FIXTURE") == "1":
             with contextlib.suppress(ImportError):
-                from . import _dev_fixture  # type: ignore[attr-defined]
+                # _dev_fixture.py is gitignored — present in dev,
+                # missing in CI / production. The compound ignore
+                # silences both "attr-defined" (when CI's mypy can't
+                # see the file) AND "unused-ignore" (when local mypy
+                # resolves the file and would otherwise grumble that
+                # the attr-defined ignore is unnecessary).
+                from . import _dev_fixture  # type: ignore[attr-defined,unused-ignore]
                 stations = [_dev_fixture.STATION, *stations]
         stations.sort(key=lambda s: s.get("distance") or float("inf"))
         truncated = stations[:DEFAULT_MAX_RESULTS]
+
+        # Sort each station's points by the operator-issued ordinal that
+        # lives in the trailing segment of the EMSP-style evseId
+        # (e.g. *AT*EAA*E5055*1 before *AT*EAA*E5055*2). Doing this here
+        # keeps the frontend dumb — the parking card and the rack render
+        # `station.points` in array order without parsing IDs.
+        for station in truncated:
+            points = station.get("points")
+            if isinstance(points, list):
+                station["points"] = sorted(points, key=_evse_sort_key)
 
         if self.last_update_success is False:
             _LOGGER.info(
@@ -486,12 +543,13 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not prev:
             return
         curr = self._index_points(current_stations)
-        for key, new_point in curr.items():
-            old_point = prev.get(key)
-            if old_point is None:
+        for key, (new_point, meta) in curr.items():
+            old_entry = prev.get(key)
+            if old_entry is None:
                 continue
-            old_status = (old_point.get("status") or "").upper().replace("_", "")
-            new_status = (new_point.get("status") or "").upper().replace("_", "")
+            old_point, _ = old_entry
+            old_status = normalize_status(old_point.get("status"))
+            new_status = normalize_status(new_point.get("status"))
             if not old_status or not new_status or old_status == new_status:
                 continue
             station_id, evse_id = key
@@ -500,8 +558,8 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 {
                     "entry_id": self._entry.entry_id,
                     "station_id": station_id,
-                    "station_label": new_point.get("_station_label"),
-                    "station_distance": new_point.get("_station_distance"),
+                    "station_label": meta.label,
+                    "station_distance": meta.distance,
                     "evse_id": evse_id,
                     "old_status": old_point.get("status"),
                     "new_status": new_point.get("status"),
@@ -511,30 +569,29 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @staticmethod
     def _index_points(
         stations: list[dict[str, Any]],
-    ) -> dict[tuple[str, str], dict[str, Any]]:
+    ) -> dict[tuple[str, str], tuple[dict[str, Any], _StationMeta]]:
         """Index every point by (stationId, evseId) for fast diffing.
 
-        Carries the station's label and distance forward on each point
-        under `_station_*` keys so the event payload can include them
-        without a second lookup. Skips points with no evseId — without
-        a stable identity we can't diff them across refreshes.
+        Returns the API-shaped point dict alongside a `_StationMeta`
+        carrying the station's label + distance — the diff loop needs
+        both, but mutating the point dict with scratch keys was a code
+        smell. Skips points with no evseId — without a stable identity
+        we can't diff them across refreshes.
         """
-        index: dict[tuple[str, str], dict[str, Any]] = {}
+        index: dict[tuple[str, str], tuple[dict[str, Any], _StationMeta]] = {}
         for station in stations:
             if not isinstance(station, dict):
                 continue
             station_id = station.get("stationId") or ""
-            station_label = station.get("label")
-            station_distance = station.get("distance")
+            meta = _StationMeta(
+                label=station.get("label"),
+                distance=station.get("distance"),
+            )
             for point in station.get("points") or []:
                 if not isinstance(point, dict):
                     continue
                 evse_id = point.get("evseId") or ""
                 if not evse_id:
                     continue
-                index[(station_id, evse_id)] = {
-                    **point,
-                    "_station_label": station_label,
-                    "_station_distance": station_distance,
-                }
+                index[(station_id, evse_id)] = (point, meta)
         return index

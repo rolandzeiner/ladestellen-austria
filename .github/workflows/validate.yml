@@ -80,6 +80,11 @@ jobs:
         run: npm ci
       - name: Audit production deps
         run: npm audit --omit=dev --audit-level=high
+      - name: Type-check (strict)
+        # Rollup's @rollup/plugin-typescript is more permissive than tsc
+        # in strict mode. Run tsc separately so TS regressions surface in
+        # CI instead of slipping into the bundle.
+        run: npx tsc --noEmit
       - name: Build card bundle
         run: npm run build
       - name: Syntax-check bundle

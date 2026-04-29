@@ -14,7 +14,7 @@
         },
         "data_description": {
           "domain": "Der vollständige Domainenname, der bei ladestellen.at hinterlegt wurde — ohne Protokoll, Port oder Pfad. Muss mit dem Host übereinstimmen, von dem Home Assistant die Anfragen abschickt.",
-          "dynamic_entity": "Optional: ein device_tracker (z. B. dein Handy via Home-Assistant-App) wählen, damit die Ladestellenliste stets von deiner aktuellen GPS-Position abgerufen wird. Leer lassen für festen Standort. Im dynamischen Modus wird das obige Intervall durch einen 6-Stunden-Sicherheitstimer ersetzt — die eigentlichen Aktualisierungen erfolgen bei Bewegung (mind. 1,5 km bzw. 10 min zwischen Aktualisierungen)."
+          "dynamic_entity": "Optional: ein device_tracker (z. B. dein Handy via Home-Assistant-App) wählen, damit die Ladestellenliste stets von deiner aktuellen GPS-Position abgerufen wird. Leer lassen für festen Standort. Im dynamischen Modus wird das obige Intervall durch einen 6-Stunden-Sicherheitstimer ersetzt — die eigentlichen Aktualisierungen erfolgen bei Bewegung (mind. 1,5 km bzw. 10 Min. zwischen Aktualisierungen)."
         }
       },
       "reconfigure": {
@@ -41,7 +41,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Der Upstream-Dienst ist nicht erreichbar. Netzwerk prüfen und erneut versuchen.",
+      "cannot_connect": "Die E-Control-API ist nicht erreichbar. Netzwerk prüfen und erneut versuchen.",
       "invalid_auth": "Der API-Schlüssel wurde abgelehnt (HTTP 401).",
       "invalid_api_key": "Bitte einen gültigen API-Schlüssel eingeben.",
       "invalid_domain": "Gültigen Hostnamen ohne Protokoll, Port oder Pfad eingeben.",
@@ -80,19 +80,19 @@
   },
   "exceptions": {
     "api_timeout": {
-      "message": "Ladestellen-Austria-API-Zeitüberschreitung nach {seconds}s"
+      "message": "E-Control-API: Zeitüberschreitung nach {seconds} s"
     },
     "api_auth_error": {
-      "message": "Ladestellen-Austria-API hat die Zugangsdaten abgelehnt (HTTP {status}). Home Assistant bittet um eine erneute Eingabe."
+      "message": "E-Control-API hat die Zugangsdaten abgelehnt (HTTP {status}). Home Assistant fordert eine erneute Eingabe an."
     },
     "api_http_error": {
-      "message": "Ladestellen-Austria-API lieferte HTTP {status}: {reason}"
+      "message": "E-Control-API lieferte HTTP {status}: {reason}"
     },
     "api_connection_error": {
-      "message": "Ladestellen-Austria-API-Verbindungsfehler: {error_type}: {error}"
+      "message": "E-Control-API: Verbindungsfehler: {error_type}: {error}"
     },
     "api_invalid_response": {
-      "message": "Ladestellen-Austria-API lieferte eine unerwartete Antwort (Status {status}): {error}"
+      "message": "E-Control-API lieferte eine unerwartete Antwort (Status {status}): {error}"
     }
   },
   "issues": {

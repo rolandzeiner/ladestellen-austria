@@ -6,10 +6,16 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
+from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy.assertion import SnapshotAssertion
 
-from custom_components.ladestellen_austria.const import CONF_API_KEY, CONF_DOMAIN
+from custom_components.ladestellen_austria.const import (
+    CONF_API_KEY,
+    CONF_DOMAIN,
+    DOMAIN,
+)
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -43,6 +49,34 @@ BASE_ENTRY_DATA: dict[str, object] = {
     CONF_LONGITUDE: 16.37,
     CONF_SCAN_INTERVAL: 30,
 }
+
+
+def make_entry(
+    hass: HomeAssistant | None = None,
+    *,
+    data_overrides: dict[str, object] | None = None,
+    options: dict[str, object] | None = None,
+    title: str = "Test",
+    unique_id: str | None = "www.meineseite.at:48.21:16.37",
+) -> MockConfigEntry:
+    """Build a MockConfigEntry with sensible defaults for this integration.
+
+    One canonical entry-builder for all tests. Pass `hass` to also
+    register the entry on the bus (most tests want this); omit `hass`
+    for tests that operate on the entry without a HA core (rare).
+    `data_overrides` is shallow-merged onto BASE_ENTRY_DATA so callers
+    can flip a single field without restating the rest.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={**BASE_ENTRY_DATA, **(data_overrides or {})},
+        options=options or {},
+        title=title,
+        unique_id=unique_id,
+    )
+    if hass is not None:
+        entry.add_to_hass(hass)
+    return entry
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
-// Visual editor for the parking-slot card. Two decisions to make:
-// - which sensor (limited to ladestellen_austria integration entities)
-// - which station from that sensor's stations[]
-// Plus an optional custom title. Mirrors the shape of the list-card
-// editor (ladestellen-austria-card-editor) but stays small.
+// Visual editor for the parking-slot card. Same `ha-form` shape as
+// the list-card editor — entity + name + appearance fields go through
+// a declarative schema, the station picker (a click-to-select list of
+// the sensor's stations[]) and the colour swatch sit below as bespoke
+// `.editor-section` blocks.
 
 import {
   LitElement,
@@ -22,6 +22,20 @@ import type { ParkingLotCardConfig, Station } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
 
+// Schema is built inside render() so the car-colour dropdown labels
+// can pick up the user's current language without a schema rebuild
+// step. Using `any[]` here is the pragmatic shape — ha-form's TS types
+// aren't exported in custom-card-helpers, and the runtime accepts the
+// declarative JSON-shape directly.
+type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
+
+const FORM_DEFAULTS: Record<string, unknown> = {
+  hide_header: false,
+  show_free_count: true,
+  logo_adapt_to_theme: false,
+  car_color_mode: "random",
+};
+
 @customElement("ladestellen-austria-parking-card-editor")
 export class LadestellenAustriaParkingCardEditor
   extends LitElement
@@ -37,57 +51,136 @@ export class LadestellenAustriaParkingCardEditor
     this._config = { ...config };
   }
 
+  // Update `_config` locally THEN fire — Lovelace's dashboard persists
+  // config-changed but doesn't re-invoke setConfig on this editor
+  // instance. The local update is what drives the next render's
+  // `data` prop for ha-form AND the conditional rendering of the
+  // colour swatch (only shown when car_color_mode === "fixed") and
+  // the station picker's selected-state visuals.
+  private _formChanged(ev: CustomEvent): void {
+    const next = ev.detail.value as ParkingLotCardConfig;
+    if (!next) return;
+    this._config = next;
+    fireEvent(this, "config-changed", { config: next });
+  }
+
+  private _computeLabel = (schema: {
+    name: string;
+    type?: string;
+  }): string => {
+    const key = schema.type === "expandable"
+      ? `editor.section_${schema.name}`
+      : `editor.${schema.name}`;
+    const resolved = localize(key);
+    return resolved === key ? schema.name : resolved;
+  };
+
+  // Two schemas — split so the station-picker section can render
+  // BETWEEN them. Both ha-forms share the same `_formChanged` handler
+  // and the same `data` prop (full _config); each form preserves the
+  // fields it doesn't render and writes back the merged config.
+  private _topSchema(): HaFormSchema {
+    return [
+      {
+        name: "entity",
+        required: true,
+        selector: {
+          entity: { domain: "sensor", integration: "ladestellen_austria" },
+        },
+      },
+      { name: "name", selector: { text: {} } },
+    ];
+  }
+
+  private _appearanceSchema(): HaFormSchema {
+    // ha-form's `select` selector renders option `label` as the visible
+    // string. Resolving at render-time means language switches reflect
+    // immediately without a schema rebuild step.
+    return [
+      {
+        type: "expandable",
+        name: "appearance",
+        // flatten: true keeps the inner fields at the top level of
+        // ev.detail.value (data.car_color_mode, not data.appearance.car_color_mode)
+        // so the card-side `_config.car_color_mode === "fixed"` check
+        // resolves correctly and the colour-swatch reveal works.
+        flatten: true,
+        schema: [
+          { name: "hide_header", selector: { boolean: {} } },
+          { name: "show_free_count", selector: { boolean: {} } },
+          { name: "logo_adapt_to_theme", selector: { boolean: {} } },
+          {
+            name: "car_color_mode",
+            selector: {
+              select: {
+                mode: "dropdown",
+                options: [
+                  {
+                    value: "random",
+                    label: localize("editor.car_color_random"),
+                  },
+                  {
+                    value: "theme",
+                    label: localize("editor.car_color_theme"),
+                  },
+                  {
+                    value: "fixed",
+                    label: localize("editor.car_color_fixed"),
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ];
+  }
+
+  private _selectStation(stationId: string): void {
+    const next = this._config.station_id === stationId ? "" : stationId;
+    this._config = { ...this._config, station_id: next };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
+  private _carColorFixedChanged(ev: Event): void {
+    const target = ev.target as HTMLInputElement | null;
+    if (!target) return;
+    const value = target.value;
+    if (this._config.car_color_fixed === value) return;
+    this._config = { ...this._config, car_color_fixed: value };
+    fireEvent(this, "config-changed", { config: this._config });
+  }
+
   protected render(): TemplateResult {
     setLanguage(this.hass?.language);
+    if (!this.hass) {
+      return html`<p>${localize("common.loading")}</p>`;
+    }
     const entityId = this._config.entity;
-    const stateObj = entityId ? this.hass?.states[entityId] : undefined;
+    const stateObj = entityId ? this.hass.states[entityId] : undefined;
     const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
     const selectedId = this._config.station_id ?? "";
-    // WCAG 3.3.1 (error identification) — flag an invalid entity in
-    // text so the error isn't only conveyed by downstream empty states.
+    const data: Record<string, unknown> = {
+      ...FORM_DEFAULTS,
+      ...this._config,
+    };
     const entityInvalid =
-      !!entityId && !!this.hass && !this.hass.states[entityId];
+      !!entityId && !this.hass.states[entityId];
+
     return html`
       <div class="editor">
-        <div class="editor-section">
-          <div class="section-header">${localize("editor.section_main")}</div>
-
-          ${this.hass
-            ? html`
-                <ha-selector
-                  .hass=${this.hass}
-                  .selector=${{
-                    entity: {
-                      domain: "sensor",
-                      integration: "ladestellen_austria",
-                    },
-                  }}
-                  .value=${this._config.entity || undefined}
-                  .configValue=${"entity"}
-                  .label=${localize("editor.entity")}
-                  .required=${true}
-                  aria-invalid=${entityInvalid ? "true" : "false"}
-                  aria-describedby=${entityInvalid ? "entity-error" : nothing}
-                  @value-changed=${this._valueChanged}
-                ></ha-selector>
-                ${entityInvalid
-                  ? html`<ha-alert
-                      id="entity-error"
-                      alert-type="error"
-                    >
-                      ${localize("editor.entity_missing")}
-                    </ha-alert>`
-                  : nothing}
-              `
-            : html`<p>${localize("common.loading")}</p>`}
-
-          <ha-textfield
-            label=${localize("editor.name")}
-            .value=${this._config.name || ""}
-            .configValue=${"name"}
-            @input=${this._valueChanged}
-          ></ha-textfield>
-        </div>
+        <ha-form
+          .hass=${this.hass}
+          .data=${data}
+          .schema=${this._topSchema()}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._formChanged}
+        ></ha-form>
+        ${entityInvalid
+          ? html`<ha-alert alert-type="error">
+              ${localize("editor.entity_missing")}
+            </ha-alert>`
+          : nothing}
 
         <div class="editor-section">
           <div class="section-header">
@@ -96,7 +189,6 @@ export class LadestellenAustriaParkingCardEditor
           <div class="editor-hint">
             ${localize("parking.pick_station_hint")}
           </div>
-
           ${!entityId
             ? html`<div class="editor-hint editor-hint--muted">
                 ${localize("editor.pin_select_sensor_first")}
@@ -138,76 +230,20 @@ export class LadestellenAustriaParkingCardEditor
             : nothing}
         </div>
 
-        <div class="editor-section">
-          <div class="section-header">
-            ${localize("editor.section_appearance")}
-          </div>
+        <ha-form
+          .hass=${this.hass}
+          .data=${data}
+          .schema=${this._appearanceSchema()}
+          .computeLabel=${this._computeLabel}
+          @value-changed=${this._formChanged}
+        ></ha-form>
 
-          <div class="toggle-row">
-            <label for="parking-toggle-hide-header"
-              >${localize("editor.hide_header")}</label
-            >
-            <ha-switch
-              id="parking-toggle-hide-header"
-              .checked=${this._config.hide_header ?? false}
-              .configValue=${"hide_header"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="parking-toggle-show-free"
-              >${localize("editor.show_free_count")}</label
-            >
-            <ha-switch
-              id="parking-toggle-show-free"
-              .checked=${this._config.show_free_count !== false}
-              .configValue=${"show_free_count"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <div class="toggle-row">
-            <label for="parking-toggle-logo-adapt"
-              >${localize("editor.logo_adapt_to_theme")}</label
-            >
-            <ha-switch
-              id="parking-toggle-logo-adapt"
-              .checked=${this._config.logo_adapt_to_theme ?? false}
-              .configValue=${"logo_adapt_to_theme"}
-              @change=${this._valueChanged}
-            ></ha-switch>
-          </div>
-
-          <ha-selector
-            .hass=${this.hass}
-            .selector=${{
-              select: {
-                mode: "dropdown",
-                options: [
-                  {
-                    value: "random",
-                    label: localize("editor.car_color_random"),
-                  },
-                  {
-                    value: "theme",
-                    label: localize("editor.car_color_theme"),
-                  },
-                  {
-                    value: "fixed",
-                    label: localize("editor.car_color_fixed"),
-                  },
-                ],
-              },
-            }}
-            .value=${this._config.car_color_mode ?? "random"}
-            .configValue=${"car_color_mode"}
-            .label=${localize("editor.car_color_mode")}
-            @value-changed=${this._valueChanged}
-          ></ha-selector>
-
-          ${this._config.car_color_mode === "fixed"
-            ? html`<div class="toggle-row">
+        ${this._config.car_color_mode === "fixed"
+          ? html`<div class="editor-section">
+              <div class="section-header">
+                ${localize("editor.car_color_pick")}
+              </div>
+              <div class="toggle-row">
                 <span>${localize("editor.car_color_pick")}</span>
                 <label
                   class="color-swatch"
@@ -228,56 +264,20 @@ export class LadestellenAustriaParkingCardEditor
                     type="color"
                     class="color-swatch-input"
                     .value=${this._config.car_color_fixed || "#1d4ed8"}
-                    .configValue=${"car_color_fixed"}
                     aria-label=${localize("editor.car_color_pick")}
-                    @input=${this._valueChanged}
-                    @change=${this._valueChanged}
+                    @input=${this._carColorFixedChanged}
+                    @change=${this._carColorFixedChanged}
                   />
                 </label>
-              </div>`
-            : nothing}
-        </div>
+              </div>
+            </div>`
+          : nothing}
 
         <div class="editor-section">
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
         </div>
       </div>
     `;
-  }
-
-  private _selectStation(stationId: string): void {
-    const next = this._config.station_id === stationId ? "" : stationId;
-    this._config = { ...this._config, station_id: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _valueChanged(ev: Event): void {
-    if (!this._config || !this.hass) return;
-    const target = ev.target as EventTarget & {
-      configValue?: keyof ParkingLotCardConfig;
-      value?: unknown;
-      checked?: boolean;
-      type?: string;
-      tagName?: string;
-    };
-    if (!target.configValue) return;
-
-    // Discriminate booleans by tag/type, not by `target.checked !==
-    // undefined`. Every <input> exposes `.checked` as a real boolean
-    // (false on a colour input), so the old check silently routed
-    // colour-picker events to the boolean branch and overwrote the
-    // config field with `false`.
-    const tag = (target.tagName ?? "").toUpperCase();
-    const isToggle = tag === "HA-SWITCH" || target.type === "checkbox";
-
-    const newValue = isToggle
-      ? Boolean(target.checked)
-      : ((ev as CustomEvent).detail?.value ?? target.value);
-
-    if (this._config[target.configValue] === newValue) return;
-
-    this._config = { ...this._config, [target.configValue]: newValue };
-    fireEvent(this, "config-changed", { config: this._config });
   }
 
   static styles: CSSResultGroup = editorStyles;

@@ -2,7 +2,11 @@
   "common": {
     "version": "Version",
     "invalid_configuration": "Invalid configuration",
-    "loading": "Loading…"
+    "invalid_entity": "Card config: 'entity' must be a string referencing a sensor entity_id.",
+    "invalid_station_id": "Card config: 'station_id' must be a string.",
+    "loading": "Loading…",
+    "version_update": "A newer card version ({v}) is available. Reload to apply.",
+    "version_reload": "Reload"
   },
   "card": {
     "no_entity": "Select a Ladestellen Austria sensor in the card editor.",
@@ -102,6 +106,8 @@
     "section_main": "Main",
     "section_display": "Display",
     "section_filters": "Filters",
+    "section_chip_filters": "Filter by type",
+    "section_appearance": "Appearance",
     "name": "Card title (optional)",
     "entity": "Sensor",
     "entity_missing": "Selected sensor is unavailable. Pick a different Ladestellen Austria sensor.",
@@ -112,7 +118,6 @@
     "sort_by_power": "Sort by power (fastest first)",
     "logo_adapt_to_theme": "Adapt logo to theme (black on light, white on dark)",
     "hide_header": "Hide header",
-    "section_appearance": "Appearance",
     "show_free_count": "Show free / total counter",
     "car_color_mode": "Car colour",
     "car_color_random": "Random per spot",
@@ -125,7 +130,7 @@
     "connector_filter_hint": "Tap connector types to only show stations offering at least one of them. Empty = no filter.",
     "amenity_filter_hint": "Tap amenities to narrow to stations offering all selected features (AND). Empty = no filter.",
     "payment_filter_hint": "Tap payment methods to only show stations accepting at least one of them. Empty = no filter.",
-    "hint_compliance": "Data is supplied under the ladestellen.at Terms of Use. The E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' attribution in the footer are legally required and cannot be hidden.",
+    "hint_compliance": "The E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' attribution in the footer are required by the ladestellen.at Terms of Use.",
     "section_pinned": "Pinned stations",
     "pin_hint": "Pinned stations always appear first and bypass filters. They still count toward the display cap above.",
     "pin_select_sensor_first": "Select a sensor first to see available stations.",

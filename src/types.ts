@@ -4,11 +4,26 @@ import type {
   LovelaceCardEditor,
 } from "custom-card-helpers";
 
+// Type declarations the Lovelace ecosystem exposes globally but doesn't
+// yet ship in custom-card-helpers. Both cards push entries onto
+// `window.customCards` so the dashboard's "Add Card" picker can list
+// them; the field isn't typed by HA core, hence the augmentation here
+// (rather than the triple-cast each card used to repeat).
 declare global {
   interface HTMLElementTagNameMap {
     "ladestellen-austria-card-editor": LovelaceCardEditor;
     "ladestellen-austria-parking-card-editor": LovelaceCardEditor;
     "hui-error-card": LovelaceCard;
+  }
+
+  interface Window {
+    customCards?: Array<{
+      type: string;
+      name: string;
+      description: string;
+      preview?: boolean;
+      documentationURL?: string;
+    }>;
   }
 }
 
