@@ -7,7 +7,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_API_KEY, CONF_DOMAIN
+from .const import ATTRIBUTION, CONF_API_KEY, CONF_DOMAIN
 from .coordinator import LadestellenAustriaConfigEntry
 
 TO_REDACT: set[str] = {
@@ -35,6 +35,7 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     data = coordinator.data or {}
     return {
+        "attribution": ATTRIBUTION,
         "entry": {
             "title": entry.title,
             "version": entry.version,
@@ -43,6 +44,7 @@ async def async_get_config_entry_diagnostics(
         },
         "coordinator": {
             "last_update_success": coordinator.last_update_success,
+            "last_exception": repr(coordinator.last_exception),
             "update_interval": str(coordinator.update_interval),
             "station_count": data.get("count", 0),
         },

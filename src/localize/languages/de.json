@@ -2,7 +2,11 @@
   "common": {
     "version": "Version",
     "invalid_configuration": "Ungültige Konfiguration",
-    "loading": "Lade…"
+    "invalid_entity": "Kartenkonfiguration: „entity“ muss ein String mit einer Sensor-entity_id sein.",
+    "invalid_station_id": "Kartenkonfiguration: „station_id“ muss ein String sein.",
+    "loading": "Lade…",
+    "version_update": "Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",
+    "version_reload": "Neu laden"
   },
   "card": {
     "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
@@ -102,6 +106,8 @@
     "section_main": "Allgemein",
     "section_display": "Anzeige",
     "section_filters": "Filter",
+    "section_chip_filters": "Nach Typ filtern",
+    "section_appearance": "Darstellung",
     "name": "Kartentitel (optional)",
     "entity": "Sensor",
     "entity_missing": "Ausgewählter Sensor ist nicht verfügbar. Bitte einen anderen Ladestellen-Austria-Sensor wählen.",
@@ -112,7 +118,6 @@
     "sort_by_power": "Nach Leistung sortieren (schnellste zuerst)",
     "logo_adapt_to_theme": "Logo an Design anpassen (schwarz auf hell, weiß auf dunkel)",
     "hide_header": "Kopfzeile ausblenden",
-    "section_appearance": "Darstellung",
     "show_free_count": "Frei/Gesamt-Zähler anzeigen",
     "car_color_mode": "Auto-Farbe",
     "car_color_random": "Zufällig pro Platz",
@@ -125,7 +130,7 @@
     "connector_filter_hint": "Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",
     "amenity_filter_hint": "Ausstattungsmerkmale antippen, um nur Ladestellen mit allen gewählten Merkmalen anzuzeigen (UND). Leer = kein Filter.",
     "payment_filter_hint": "Bezahlmethoden antippen, um nur Ladestellen anzuzeigen, die mindestens eine davon akzeptieren. Leer = kein Filter.",
-    "hint_compliance": "Die Daten werden unter den ladestellen.at-Nutzungsbedingungen bereitgestellt. Das E-Control-Logo (mit Link auf e-control.at) und der Hinweis „Datenquelle: E-Control“ in der Fußzeile sind rechtlich vorgeschrieben und dürfen nicht entfernt werden.",
+    "hint_compliance": "Die Anzeige des E-Control-Logos (verlinkt auf e-control.at) und des Hinweises „Datenquelle: E-Control“ in der Fußzeile ist von den ladestellen.at-Nutzungsbedingungen vorgeschrieben.",
     "section_pinned": "Angepinnte Ladestellen",
     "pin_hint": "Angepinnte Ladestellen erscheinen immer zuerst und ignorieren Filter. Sie zählen weiterhin zur obigen Maximalanzahl.",
     "pin_select_sensor_first": "Zuerst einen Sensor auswählen, um verfügbare Ladestellen zu sehen.",

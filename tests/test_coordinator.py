@@ -24,12 +24,16 @@ from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
 
-from .conftest import BASE_ENTRY_DATA, EXAMPLE_COORDINATOR_DATA
+from .conftest import EXAMPLE_COORDINATOR_DATA, make_entry
 
 
 def _make_entry(data: dict[str, object] | None = None) -> MockConfigEntry:
-    entry_data = {**BASE_ENTRY_DATA, **(data or {})}
-    return MockConfigEntry(domain=DOMAIN, data=entry_data, options={})
+    """Local thin wrapper — coordinator tests don't add to hass."""
+    return make_entry(
+        data_overrides=data,
+        title="Test",
+        unique_id=None,
+    )
 
 
 def _json_resp(body: object, status: int = 200) -> MagicMock:

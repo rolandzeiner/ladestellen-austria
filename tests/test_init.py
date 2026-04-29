@@ -7,21 +7,11 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.ladestellen_austria.const import DOMAIN
-
-from .conftest import BASE_ENTRY_DATA
+from .conftest import make_entry
 
 
 def _entry(hass: HomeAssistant, *, unique_id: str | None = None) -> MockConfigEntry:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={**BASE_ENTRY_DATA},
-        options={},
-        title="Test",
-        unique_id=unique_id or "www.meineseite.at:48.21:16.37",
-    )
-    entry.add_to_hass(hass)
-    return entry
+    return make_entry(hass, unique_id=unique_id or "www.meineseite.at:48.21:16.37")
 
 
 async def test_setup_and_unload_entry(

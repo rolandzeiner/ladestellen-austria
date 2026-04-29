@@ -4,13 +4,20 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import voluptuous as vol
+from homeassistant.components.websocket_api import async_register_command
+from homeassistant.components.websocket_api.connection import ActiveConnection
+from homeassistant.components.websocket_api.decorators import (
+    async_response,
+    websocket_command,
+)
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import CoreState, Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .card_registration import JSModuleRegistration
-from .const import DOMAIN
+from .const import CARD_VERSION, DOMAIN, INTEGRATION_VERSION
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -19,9 +26,30 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 
+@websocket_command(
+    {vol.Required("type"): "ladestellen_austria/card_version"}
+)
+@async_response
+async def _websocket_card_version(
+    hass: HomeAssistant,
+    connection: ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the bundled card version so the frontend can detect mismatches.
+
+    The frontend bundle hard-codes `CARD_VERSION` at build time. When HA
+    updates the integration but the user is still running a tab that
+    cached the old bundle, this probe lets the card surface a reload
+    banner instead of silently misbehaving.
+    """
+    connection.send_result(msg["id"], {"version": CARD_VERSION})
+
+
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Set up the Ladestellen Austria component + register the card."""
     hass.data.setdefault(DOMAIN, {})
+
+    async_register_command(hass, _websocket_card_version)
 
     # Register the Lovelace card once at component setup — never per-entry.
     # If HA is not yet running, defer until EVENT_HOMEASSISTANT_STARTED so
@@ -42,6 +70,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> bool:
     """Set up Ladestellen Austria from a config entry."""
+    _LOGGER.info("Ladestellen Austria %s setup", INTEGRATION_VERSION)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
     # HA auto-invokes coordinator._async_setup() inside this call before the
     # first fetch; it also raises ConfigEntryNotReady on fetch failure.
@@ -72,6 +101,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: LadestellenAustriaConfig
 async def _async_reload_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> None:
     """Reload the config entry when options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: LadestellenAustriaConfigEntry
+) -> bool:
+    """Migrate older entry shapes forward.
+
+    Currently a no-op — VERSION 1, MINOR_VERSION 1 is the only shape ever
+    written. The hook is wired up so the next additive bump (MINOR_VERSION 2)
+    or breaking bump (VERSION 2) can drop in branch logic without a separate
+    plumbing pass. Returning False rolls the entry into SETUP_ERROR; True
+    means "shape now matches the current code".
+    """
+    return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> bool:

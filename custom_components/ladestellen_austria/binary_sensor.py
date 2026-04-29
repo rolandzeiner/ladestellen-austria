@@ -21,7 +21,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN
+from .const import ATTRIBUTION, DOMAIN, normalize_status
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
 
 PARALLEL_UPDATES = 0
@@ -100,7 +100,7 @@ class HasFreeSlotBinarySensor(
                 if not isinstance(point, dict):
                     continue
                 total += 1
-                if (point.get("status") or "").upper().replace("_", "") == "AVAILABLE":
+                if normalize_status(point.get("status")) == "AVAILABLE":
                     station_free += 1
             free += station_free
             if station_free > 0:

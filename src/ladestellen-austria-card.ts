@@ -30,6 +30,11 @@ import type {
 } from "./types";
 import { CARD_VERSION } from "./const";
 import { localize, setLanguage } from "./localize/localize";
+import {
+  checkCardVersionWS,
+  renderFooter,
+  renderVersionBanner,
+} from "./shared-render";
 import { cardStyles } from "./styles";
 import {
   formatCent,
@@ -41,7 +46,7 @@ import {
   pointStatusLabel,
   rackSlotStatus,
   shortConnector,
-  slotOverlayIcon,
+  slotVariant,
 } from "./utils";
 
 import "./editor";
@@ -56,19 +61,8 @@ console.info(
   "color: white; font-weight: bold; background: dimgray",
 );
 
-interface WindowWithCustomCards extends Window {
-  customCards: Array<{
-    type: string;
-    name: string;
-    description: string;
-    preview?: boolean;
-    documentationURL?: string;
-  }>;
-}
-
-(window as unknown as WindowWithCustomCards).customCards =
-  (window as unknown as WindowWithCustomCards).customCards || [];
-(window as unknown as WindowWithCustomCards).customCards.push({
+window.customCards = window.customCards ?? [];
+window.customCards.push({
   type: "ladestellen-austria-card",
   name: "Ladestellen Austria",
   description: "Nearby EV charging stations, powered by E-Control Austria",
@@ -77,9 +71,6 @@ interface WindowWithCustomCards extends Window {
 });
 
 const DEFAULT_MAX_STATIONS = 10;
-// §3d of the ladestellen.at Terms of Use requires this exact string shown
-// "unmittelbar bei den von der E-Control angezeigten Daten". Do not edit.
-const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
 type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
 
@@ -124,10 +115,18 @@ export class LadestellenAustriaCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
+  @state() private _versionMismatch: string | null = null;
+  private _versionCheckDone = false;
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
     if (!config) {
       throw new Error(localize("common.invalid_configuration"));
+    }
+    // Shape validation — raise a real HA error card with a localized
+    // message when YAML users forget required fields, instead of a
+    // silent empty-state.
+    if (config.entity !== undefined && typeof config.entity !== "string") {
+      throw new Error(localize("common.invalid_entity"));
     }
     this.config = {
       name: "Ladestellen Austria",
@@ -149,7 +148,9 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
-    if (!this.config) return false;
+    // Lit calls shouldUpdate before the first render only after a
+    // property change; HA's Lovelace pipeline always invokes setConfig
+    // synchronously before mounting, so this.config is non-null here.
     if (changedProps.has("config") || changedProps.has("_expanded")) {
       return true;
     }
@@ -179,13 +180,31 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  protected render(): TemplateResult {
-    // Push hass.language into the localize() helper on every render so the
-    // card always matches HA's server-side user-profile language setting,
-    // regardless of whether the frontend ever wrote to localStorage.
-    setLanguage(this.hass?.language);
+  protected willUpdate(changedProps: PropertyValues): void {
+    super.willUpdate(changedProps);
+    // Push hass.language into the localize() helper whenever hass
+    // changes — keeps the card aligned with HA's user-profile language
+    // setting without re-pushing on every unrelated re-render.
+    if (changedProps.has("hass")) {
+      setLanguage(this.hass?.language);
+    }
+  }
 
-    if (!this.hass || !this.config) {
+  protected render(): TemplateResult {
+    // Fire the WS card-version probe once on first render where hass is
+    // available. Mismatch flips _versionMismatch which Lit treats as a
+    // reactive state property → next render shows the reload banner.
+    if (!this._versionCheckDone && this.hass) {
+      this._versionCheckDone = true;
+      void checkCardVersionWS(this.hass).then((mismatch) => {
+        if (mismatch) this._versionMismatch = mismatch;
+      });
+    }
+
+    // Block on missing config (defensive — setConfig should have run).
+    // Block on missing hass separately so the empty-state stays reactive:
+    // when hass arrives, Lit re-renders and we proceed past this guard.
+    if (!this.config || !this.hass) {
       return html`<ha-card>
         <div class="card-content">
           <div class="wrap">
@@ -206,7 +225,11 @@ export class LadestellenAustriaCard extends LitElement {
             <div class="wrap">
               <div class="empty-state">${localize("card.no_entity")}</div>
             </div>
-            ${this._renderFooter(undefined)}
+            ${renderFooter(
+              this.hass,
+              undefined,
+              this.config?.logo_adapt_to_theme === true,
+            )}
           </div>
         </ha-card>
       `;
@@ -283,6 +306,7 @@ export class LadestellenAustriaCard extends LitElement {
       <ha-card>
         <div class="card-content">
           <div class="wrap">
+            ${renderVersionBanner(this._versionMismatch)}
             ${this.config.hide_header
               ? nothing
               : html`<header class="header">
@@ -321,7 +345,7 @@ export class LadestellenAustriaCard extends LitElement {
                 </div>`
               : nothing}
             ${visible.length > 0
-              ? html`<ul class="stations">
+              ? html`<ul class="stations" role="list">
                   ${visible.map((item) =>
                     item.kind === "live"
                       ? this._renderStation(
@@ -336,8 +360,10 @@ export class LadestellenAustriaCard extends LitElement {
                   ${localize("card.no_stations")}
                 </div>`}
           </div>
-          ${this._renderFooter(
+          ${renderFooter(
+            this.hass,
             stateObj.attributes["attribution"] as string | undefined,
+            this.config.logo_adapt_to_theme === true,
           )}
         </div>
       </ha-card>
@@ -562,42 +588,7 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  // §3c and §3d compliance rolled into a single footer row: logo-link
-  // on the left, "Datenquelle: E-Control" on the right. Hard-coded
-  // attribution text as a fallback in case a user template sensor
-  // strips the upstream attribute. When logo_adapt_to_theme is on, the
-  // PNG renders as a silhouette (filter brightness(0) [invert(1)]) that
-  // follows hass.themes.darkMode.
-  private _renderFooter(attr: string | undefined): TemplateResult {
-    const adaptive = this.config?.logo_adapt_to_theme === true;
-    const darkMode = Boolean(
-      (this.hass?.themes as { darkMode?: boolean } | undefined)?.darkMode,
-    );
-    const logoClasses = adaptive
-      ? `brand-logo adaptive ${darkMode ? "adaptive-dark" : "adaptive-light"}`
-      : "brand-logo";
-    const text =
-      attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
-    return html`
-      <div class="footer">
-        <a
-          class="brand-link"
-          href="https://www.e-control.at/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="E-Control"
-          @click=${(ev: Event) => ev.stopPropagation()}
-        >
-          <img
-            class=${logoClasses}
-            src="/ladestellen_austria/e-control_logo.svg"
-            alt="E-Control"
-          />
-        </a>
-        <span class="attribution-text">${text}</span>
-      </div>
-    `;
-  }
+  // Footer rendering lives in shared-render.ts; both cards share it.
 
   private _renderHero(
     nearest: Station | undefined,
@@ -606,8 +597,8 @@ export class LadestellenAustriaCard extends LitElement {
     rawTotal: number,
   ): TemplateResult {
     if (!nearest) {
-      return html`<section class="hero hero--empty" aria-live="polite">
-        ${localize("card.no_stations")}
+      return html`<section class="hero hero--empty">
+        <span aria-live="polite">${localize("card.no_stations")}</span>
       </section>`;
     }
     const km = this._formatKm(nearest.distance);
@@ -623,10 +614,10 @@ export class LadestellenAustriaCard extends LitElement {
             .replace("{filtered}", String(filteredTotal))
             .replace("{total}", String(rawTotal));
     return html`
-      <section class="hero" aria-live="polite">
+      <section class="hero">
         <div class="metric">
           <div class="metric-value">
-            <span class="metric-num">${km}</span>
+            <span class="metric-num" aria-live="polite">${km}</span>
             <span class="metric-of">km</span>
           </div>
           <div class="metric-label">${cityLabel}</div>
@@ -703,6 +694,7 @@ export class LadestellenAustriaCard extends LitElement {
     const locParts = [cityLine, distanceText].filter(Boolean);
     const locText = locParts.join(" · ");
 
+    const detailId = `station-panel-${station.stationId}`;
     return html`
       <li
         class=${cls}
@@ -711,6 +703,7 @@ export class LadestellenAustriaCard extends LitElement {
         tabindex="0"
         role="button"
         aria-expanded=${expanded ? "true" : "false"}
+        aria-controls=${detailId}
       >
         <div class="station-body">
           <span
@@ -748,9 +741,9 @@ export class LadestellenAustriaCard extends LitElement {
                 : nothing}
             </div>
             <div class="row-secondary">
-              <span class="station-name">${station.label}</span>
+              <span class="station-name" lang="de">${station.label}</span>
               ${locText
-                ? html`<span class="station-loc">${locText}</span>`
+                ? html`<span class="station-loc" lang="de">${locText}</span>`
                 : nothing}
             </div>
           </div>
@@ -776,14 +769,14 @@ export class LadestellenAustriaCard extends LitElement {
             ></ha-icon>
           </div>
         </div>
-        ${expanded
-          ? this._renderStationDetail(
-              station,
-              isOpenNow,
-              showAmenities,
-              mapsUrl,
-            )
-          : nothing}
+        ${this._renderStationDetail(
+          station,
+          isOpenNow,
+          showAmenities,
+          mapsUrl,
+          expanded,
+          detailId,
+        )}
       </li>
     `;
   }
@@ -800,6 +793,8 @@ export class LadestellenAustriaCard extends LitElement {
     isOpenNow: boolean | null,
     showAmenities: boolean,
     mapsUrl: string,
+    expanded: boolean,
+    detailId: string,
   ): TemplateResult {
     const amenities = this._amenityItems(station);
     const points = station.points ?? [];
@@ -808,13 +803,20 @@ export class LadestellenAustriaCard extends LitElement {
     const feesLine = this._feesLine(points);
     const operatorName = station.operatorName || station.owner || "";
     return html`
-      <div class="detail">
+      <div
+        class="detail"
+        id=${detailId}
+        role="region"
+        aria-hidden=${expanded ? "false" : "true"}
+        ?inert=${!expanded}
+      >
+        <div class="detail-inner">
         ${operatorName
           ? html`<div class="operator-line">
               <span class="detail-label">
                 ${localize("card.operator_heading")}
               </span>
-              <span class="operator-name">${operatorName}</span>
+              <span class="operator-name" lang="de">${operatorName}</span>
             </div>`
           : nothing}
         ${station.description
@@ -877,7 +879,7 @@ export class LadestellenAustriaCard extends LitElement {
               <div class="detail-label">
                 ${localize("card.address_heading")}
               </div>
-              <div class="detail-text">${address}</div>
+              <div class="detail-text" lang="de">${address}</div>
             </div>`
           : nothing}
         <div class="actions">
@@ -932,6 +934,7 @@ export class LadestellenAustriaCard extends LitElement {
               </a>`
             : nothing}
         </div>
+        </div>
       </div>
     `;
   }
@@ -946,7 +949,7 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _renderRackSlot(point: Point): TemplateResult {
     const powerType = pointPowerType(point);
-    const statusCat = rackSlotStatus(point.status);
+    const { bucket: statusCat, overlay } = slotVariant(point);
     const tooltip = this._pointTooltip(point);
     const ariaLabel = this._pointAriaLabel(point, powerType);
     const badge = powerType
@@ -961,7 +964,6 @@ export class LadestellenAustriaCard extends LitElement {
     // bgTint upgrades the slot's tint (info / error) for PLANNED / REMOVED
     // even though they share the "warn" bucket. Power-badge + status dot
     // are dropped — the icon + tint are the entire story.
-    const overlay = slotOverlayIcon(point.status);
     if (overlay) {
       const slotClass = overlay.bgTint
         ? `rack-slot slot-tint-${overlay.bgTint}`
@@ -1040,7 +1042,11 @@ export class LadestellenAustriaCard extends LitElement {
         `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
       );
     }
-    return lines.join("\n");
+    // `\n` collapses to a single space in HTML `title=` attributes, which
+    // produced run-on tooltips. Use a visible separator so the hover
+    // string reads cleanly across browsers; assistive tech goes through
+    // _pointAriaLabel which is composed independently.
+    return lines.join(" · ");
   }
 
   private _renderOpeningHoursSection(
@@ -1199,8 +1205,8 @@ export class LadestellenAustriaCard extends LitElement {
     const day = WEEKDAY_NAME_TO_IDX[(dayName ?? "").toUpperCase()];
     if (day === undefined) return null;
     const [hStr, mStr] = (time ?? "").split(":");
-    const h = parseInt(hStr, 10);
-    const m = parseInt(mStr, 10);
+    const h = parseInt(hStr ?? "", 10);
+    const m = parseInt(mStr ?? "", 10);
     if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
     return day * 1440 + h * 60 + m;
   }

@@ -1,6 +1,112 @@
 import { css } from "lit";
 
 // ---------------------------------------------------------------------------
+// Shared style fragments composed into BOTH cardStyles (list card) and
+// parkingLotStyles (parking card). Composition via array — Lit flattens
+// CSSResultGroup arrays, so each fragment lands in the shadow root once
+// per stylesheet that includes it. Anything genuinely byte-identical
+// across the two cards lives here; anything per-card stays in its own
+// stylesheet block.
+// ---------------------------------------------------------------------------
+
+/**
+ * Version-mismatch banner. Surfaced when the WS probe reports a different
+ * CARD_VERSION than the bundle running in the user's tab. Negative margins
+ * span the full card width regardless of .wrap padding.
+ */
+const sharedVersionBanner = css`
+  .version-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--lade-warning, #f59e0b);
+    color: #fff;
+    padding: 10px 14px;
+    margin: calc(var(--lade-pad-y) * -1) calc(var(--lade-pad-x) * -1) 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+  .version-reload-btn {
+    flex-shrink: 0;
+    background: #fff;
+    color: var(--lade-warning, #f59e0b);
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .version-reload-btn:hover {
+    background: rgba(255, 255, 255, 0.92);
+  }
+`;
+
+/**
+ * Brand-attribution footer (E-Control logo link + "Datenquelle:
+ * E-Control" text). Renders identically in both cards. Adaptive logo
+ * filter follows hass.themes.darkMode when logo_adapt_to_theme is on.
+ */
+const sharedFooter = css`
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px var(--lade-pad-x);
+    border-top: 1px solid var(--divider-color);
+  }
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: opacity 0.16s ease;
+  }
+  .brand-link:hover {
+    opacity: 0.7;
+  }
+  .brand-logo {
+    display: block;
+    height: 20px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    transition: filter 0.16s ease;
+  }
+  .brand-logo.adaptive.adaptive-light {
+    filter: brightness(0);
+  }
+  .brand-logo.adaptive.adaptive-dark {
+    filter: brightness(0) invert(1);
+  }
+  .attribution-text {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    letter-spacing: 0.03em;
+    opacity: 0.85;
+  }
+`;
+
+/**
+ * WCAG 2.3.3 catch-all — kill animations + transitions for users who
+ * have requested reduced motion. Identical in both cards; the per-card
+ * forced-colors fallback differs (different selectors) and stays local.
+ */
+const sharedReducedMotion = css`
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
 // Card styles — Lit shadow-DOM scoped. Modern HA "tile-card" visual language:
 //   - Single-source-of-truth tokens on :host (radii, padding, slot/tile size).
 //   - Per-row accent piped via `style="--lade-accent:<colour>;"` so the icon-tile,
@@ -10,7 +116,7 @@ import { css } from "lit";
 //   - Container queries against the card's own width (lscard), not the viewport.
 // ---------------------------------------------------------------------------
 
-export const cardStyles = css`
+const cardOwnStyles = css`
   :host {
     /* color-scheme enables light-dark() and steers forced-colors palette
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
@@ -67,6 +173,8 @@ export const cardStyles = css`
     flex-direction: column;
     gap: var(--lade-row-gap);
   }
+
+  /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header ─────────────────────────────────────────────────── */
   .header {
@@ -375,7 +483,10 @@ export const cardStyles = css`
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Allow wrapping at any character (long Austrian street names like
+       "Wiener Bundesstraße" overflow narrow tiles); ellipsis still
+       triggers when the row hits its overflow:hidden boundary. */
+    overflow-wrap: anywhere;
     color: var(--secondary-text-color);
   }
   .station-loc {
@@ -490,22 +601,31 @@ export const cardStyles = css`
   }
 
   /* ── Expanded detail ─────────────────────────────────────────────── */
+  /* Mirrors wiener-linien-austria's hero-detail / dep-row-detail: outer
+     uses grid-template-rows: 0fr ↔ 1fr to animate to intrinsic height
+     in both directions; inner clips with overflow:hidden + min-height:0.
+     The panel stays in the DOM so collapse is symmetric with expand;
+     inert + aria-hidden lift focus and AT out of the collapsed row. */
   .detail {
+    display: grid;
+    /* minmax(0, …) forces the implicit row min to 0; bare 0fr
+       still resolves to minmax(auto, 0fr) and falls back to the
+       grid item's min-content, which leaks one row of content. */
+    grid-template-rows: minmax(0, 0fr);
+    min-height: 0;
+    overflow: hidden;
+    transition: grid-template-rows 0.24s ease;
+  }
+  .station.expanded .detail {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .detail-inner {
+    overflow: hidden;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 0 var(--lade-pad-x) 12px;
-    animation: l-reveal 0.22s ease;
-  }
-  @keyframes l-reveal {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
   }
   .detail-section {
     display: flex;
@@ -821,43 +941,7 @@ export const cardStyles = css`
   }
 
   /* ── Brand footer (§3c logo-link + §3d attribution) ───────────────── */
-  .footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px var(--lade-pad-x);
-    border-top: 1px solid var(--divider-color);
-  }
-  .brand-link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    transition: opacity 0.16s ease;
-  }
-  .brand-link:hover {
-    opacity: 0.7;
-  }
-  .brand-logo {
-    display: block;
-    height: 20px;
-    width: auto;
-    max-width: 140px;
-    object-fit: contain;
-    transition: filter 0.16s ease;
-  }
-  .brand-logo.adaptive.adaptive-light {
-    filter: brightness(0);
-  }
-  .brand-logo.adaptive.adaptive-dark {
-    filter: brightness(0) invert(1);
-  }
-  .attribution-text {
-    font-size: 0.75rem;
-    color: var(--secondary-text-color);
-    letter-spacing: 0.03em;
-    opacity: 0.85;
-  }
+  /* Footer + brand-logo + attribution-text CSS lives in sharedFooter. */
 
   /* ── Empty state ─────────────────────────────────────────────────── */
   .empty-state {
@@ -962,17 +1046,7 @@ export const cardStyles = css`
     }
   }
 
-  /* Honour user motion preference (catch-all). */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
+  /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */
 `;
 
 // ---------------------------------------------------------------------------
@@ -984,18 +1058,25 @@ export const editorStyles = css`
     display: block;
   }
   .editor {
-    padding: var(--ha-space-4, 16px);
+    padding: var(--ha-spacing-4, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--ha-space-3, 12px);
+    gap: var(--ha-spacing-3, 12px);
   }
   .editor-section {
     background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-    border-radius: var(--ha-border-radius-lg, 12px);
-    padding: var(--ha-space-3, 14px) var(--ha-space-4, 16px);
+    border-radius: var(--ha-radius-lg, 12px);
+    padding: var(--ha-spacing-3, 14px) var(--ha-spacing-4, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--ha-space-2, 10px);
+    gap: var(--ha-spacing-2, 10px);
+  }
+  /* ha-formfield wraps each <ha-switch> with a label-bound row that
+     respects HA's compact rhythm; no extra gap override needed. */
+  .editor-section ha-formfield {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   .section-header {
     font-size: var(--ha-font-size-xs, 11px);
@@ -1142,6 +1223,13 @@ export const editorStyles = css`
   .color-swatch:active {
     transform: translateY(1px);
   }
+  /* Keyboard focus lands on the inner <input>, not the wrapping label —
+     :focus-within catches the focus event on the actual focused
+     descendant and paints the brand-tinted ring on the visible chip. */
+  .color-swatch:focus-within {
+    outline: 2px solid var(--swatch-color);
+    outline-offset: 2px;
+  }
   .color-swatch ha-icon {
     --mdc-icon-size: 22px;
     color: var(--swatch-color);
@@ -1176,7 +1264,7 @@ export const editorStyles = css`
 // Container-queried against the card's own width (plcard).
 // ---------------------------------------------------------------------------
 
-export const parkingLotStyles = css`
+const parkingOwnStyles = css`
   :host {
     /* color-scheme enables light-dark() and steers forced-colors palette
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
@@ -1227,6 +1315,8 @@ export const parkingLotStyles = css`
     flex-direction: column;
     gap: var(--lade-row-gap);
   }
+
+  /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header (icon-tile + title group) ────────────────────────── */
   .header {
@@ -1543,9 +1633,10 @@ export const parkingLotStyles = css`
   /* Tinted slot states (out-of-order family + OUT_OF_STOCK / PLANNED /
      REMOVED) reuse the same flat-fill recipe as is-available so the
      visual weight matches across all backgrounded states — only the
-     accent colour differs. */
-  .parking-slot.is-warn,
-  .parking-slot.slot-tint-warning {
+     accent colour differs. is-warn covers the OUT_OF_ORDER family +
+     OUT_OF_STOCK; slotOverlayIcon never emits bgTint:"warning" alone
+     so .slot-tint-warning would be a dead selector. */
+  .parking-slot.is-warn {
     background: color-mix(in srgb, var(--lade-warning) 22%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
@@ -1577,49 +1668,9 @@ export const parkingLotStyles = css`
 
   /* ── Brand footer (§3c logo-link + §3d attribution) ───────────────── */
   /* Required by ladestellen.at ToU §3c (E-Control link) + §3d (verbatim
-     "Datenquelle: E-Control" next to the data). Mirrors the list card's
-     footer byte-for-byte — non-negotiable, do not restyle the logo path
-     or attribution string. */
-  .footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px var(--lade-pad-x);
-    border-top: 1px solid var(--divider-color);
-  }
-  .brand-link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    transition: opacity 0.16s ease;
-  }
-  .brand-link:hover {
-    opacity: 0.7;
-  }
-  .brand-logo {
-    display: block;
-    height: 20px;
-    width: auto;
-    max-width: 140px;
-    object-fit: contain;
-    transition: filter 0.16s ease;
-  }
-  /* Optional theme-adaptive rendering. brightness(0) collapses all
-     channels to black while keeping alpha; invert(1) flips to white for
-     dark mode. Enabled by the card's logo_adapt_to_theme config. */
-  .brand-logo.adaptive.adaptive-light {
-    filter: brightness(0);
-  }
-  .brand-logo.adaptive.adaptive-dark {
-    filter: brightness(0) invert(1);
-  }
-  .attribution-text {
-    font-size: 0.75rem;
-    color: var(--secondary-text-color);
-    letter-spacing: 0.03em;
-    opacity: 0.85;
-  }
+     "Datenquelle: E-Control" next to the data). The CSS lives in
+     sharedFooter; the markup lives in shared-render.ts. Non-negotiable
+     in both places — do not restyle the logo path or attribution string. */
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container plcard (inline-size < 360px) {
@@ -1686,14 +1737,26 @@ export const parkingLotStyles = css`
       forced-color-adjust: none;
     }
   }
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
+  /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */
 `;
+
+
+// ---------------------------------------------------------------------------
+// Composed exports — Lit shadow-DOM picks up all fragments in array order.
+// Per-card own styles go LAST so any token overrides land after the
+// shared baseline.
+// ---------------------------------------------------------------------------
+
+export const cardStyles = [
+  sharedVersionBanner,
+  sharedFooter,
+  sharedReducedMotion,
+  cardOwnStyles,
+];
+
+export const parkingLotStyles = [
+  sharedVersionBanner,
+  sharedFooter,
+  sharedReducedMotion,
+  parkingOwnStyles,
+];

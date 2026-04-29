@@ -30,6 +30,7 @@ rules:
     comment: Coordinator pattern; entities do not subscribe to events directly.
   entity-unique-id:
     status: done
+    comment: Entity unique_id formula `{entry_id}_{key}` — frozen since v0.2.0; see sensor.py / binary_sensor.py inline comments for rationale.
   has-entity-name:
     status: done
   runtime-data:

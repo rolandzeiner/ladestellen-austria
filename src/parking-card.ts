@@ -27,7 +27,14 @@ import type {
   Point,
   Station,
 } from "./types";
+import { carSvg } from "./car-svg";
+import { CARD_VERSION } from "./const";
 import { localize, setLanguage } from "./localize/localize";
+import {
+  checkCardVersionWS,
+  renderFooter,
+  renderVersionBanner,
+} from "./shared-render";
 import { parkingLotStyles } from "./styles";
 import {
   formatKw,
@@ -35,33 +42,15 @@ import {
   pointPowerType,
   pointStatusLabel,
   rackSlotStatus,
-  slotOverlayIcon,
   slotStatusShortKey,
+  slotVariant,
   type RackStatus,
 } from "./utils";
 
 import "./parking-editor";
 
-// §3d of the ladestellen.at Terms of Use requires this exact string shown
-// "unmittelbar bei den von der E-Control angezeigten Daten". Do not edit.
-// Duplicated verbatim from the list card so the parking card stays
-// independent (no cross-card import). §3c likewise requires the
-// E-Control logo link rendered alongside.
-const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
-
-interface WindowWithCustomCards extends Window {
-  customCards: Array<{
-    type: string;
-    name: string;
-    description: string;
-    preview?: boolean;
-    documentationURL?: string;
-  }>;
-}
-
-(window as unknown as WindowWithCustomCards).customCards =
-  (window as unknown as WindowWithCustomCards).customCards || [];
-(window as unknown as WindowWithCustomCards).customCards.push({
+window.customCards = window.customCards ?? [];
+window.customCards.push({
   type: "ladestellen-austria-parking-card",
   name: "Ladestellen Austria — Parking",
   description:
@@ -95,16 +84,34 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // where :hover isn't a reliable interaction model. Toggling adds/
   // removes the slot's evseId; identity comparison in shouldUpdate.
   @state() private _revealedSlots: Set<string> = new Set();
+  @state() private _versionMismatch: string | null = null;
+  private _versionCheckDone = false;
 
   public setConfig(config: ParkingLotCardConfig): void {
     if (!config) {
       throw new Error(localize("common.invalid_configuration"));
     }
-    this.config = { ...config };
+    if (config.entity !== undefined && typeof config.entity !== "string") {
+      throw new Error(localize("common.invalid_entity"));
+    }
+    if (config.station_id !== undefined && typeof config.station_id !== "string") {
+      throw new Error(localize("common.invalid_station_id"));
+    }
+    // Spread defaults first so reads can be plain (no `?? true` /
+    // `!== false` scattered through render). Mirrors the list card's
+    // setConfig policy — both cards now share one shape.
+    this.config = {
+      hide_header: false,
+      show_free_count: true,
+      logo_adapt_to_theme: false,
+      car_color_mode: "random",
+      ...config,
+    };
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
-    if (!this.config) return false;
+    // setConfig is called synchronously before mount; this.config is
+    // non-null by the time any property change can fire shouldUpdate.
     if (changedProps.has("config") || changedProps.has("_revealedSlots")) {
       return true;
     }
@@ -135,13 +142,26 @@ export class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
+  protected willUpdate(changedProps: PropertyValues): void {
+    super.willUpdate(changedProps);
+    if (changedProps.has("hass")) {
+      setLanguage(this.hass?.language);
+    }
+  }
+
   protected render(): TemplateResult {
-    setLanguage(this.hass?.language);
+    if (!this._versionCheckDone && this.hass) {
+      this._versionCheckDone = true;
+      void checkCardVersionWS(this.hass).then((mismatch) => {
+        if (mismatch) this._versionMismatch = mismatch;
+      });
+    }
 
     if (!this.hass || !this.config) {
       return html`<ha-card>
         <div class="card-content">
           <div class="wrap">
+            ${renderVersionBanner(this._versionMismatch)}
             <div class="empty-state">${localize("common.loading")}</div>
           </div>
         </div>
@@ -156,9 +176,14 @@ export class LadestellenAustriaParkingCard extends LitElement {
       return html`<ha-card>
         <div class="card-content">
           <div class="wrap">
+            ${renderVersionBanner(this._versionMismatch)}
             <div class="empty-state">${localize("card.no_entity")}</div>
           </div>
-          ${this._renderFooter(undefined)}
+          ${renderFooter(
+            this.hass,
+            undefined,
+            this.config?.logo_adapt_to_theme === true,
+          )}
         </div>
       </ha-card>`;
     }
@@ -173,6 +198,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
       return html`<ha-card>
         <div class="card-content">
           <div class="wrap">
+            ${renderVersionBanner(this._versionMismatch)}
             ${customTitle && !this.config.hide_header
               ? html`<header class="header">
                   <div class="icon-tile" aria-hidden="true">
@@ -189,33 +215,19 @@ export class LadestellenAustriaParkingCard extends LitElement {
                 : localize("parking.station_not_found")}
             </div>
           </div>
-          ${this._renderFooter(
+          ${renderFooter(
+            this.hass,
             stateObj.attributes["attribution"] as string | undefined,
+            this.config.logo_adapt_to_theme === true,
           )}
         </div>
       </ha-card>`;
     }
 
-    // Slot order: sort by the trailing segment of the EVSE-ID — the
-    // per-station point index the operator issued (e.g. *VIE*E5055*1
-    // before *VIE*E5055*2). This follows the operator's own signal
-    // rather than overriding it (ToU §3i — display data as it's
-    // transmitted), and gives users a stable reading direction in
-    // place of arbitrary array-position order. Falls back to lexical
-    // compare on the full EVSE-ID when the trailing segment isn't
-    // numeric.
-    const points = (station.points ?? []).slice().sort((a, b) => {
-      const ai = parseInt(
-        (a.evseId ?? "").split("*").pop() ?? "",
-        10,
-      );
-      const bi = parseInt(
-        (b.evseId ?? "").split("*").pop() ?? "",
-        10,
-      );
-      if (Number.isFinite(ai) && Number.isFinite(bi)) return ai - bi;
-      return (a.evseId ?? "").localeCompare(b.evseId ?? "");
-    });
+    // Coordinator already sorts each station's points by the trailing
+    // EMSP-ID ordinal — see _evse_sort_key in coordinator.py. We just
+    // consume the array order.
+    const points = station.points ?? [];
     const availCount = points.filter(
       (p) => rackSlotStatus(p.status) === "ok",
     ).length;
@@ -234,6 +246,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
             class="wrap"
             style="--lade-accent: var(--primary-color);"
           >
+            ${renderVersionBanner(this._versionMismatch)}
             ${this.config.hide_header
               ? nothing
               : html`<header class="header">
@@ -251,12 +264,15 @@ export class LadestellenAustriaParkingCard extends LitElement {
                         class=${availCount > 0
                           ? "header-count has-free"
                           : "header-count"}
-                        role="status"
-                        aria-live="polite"
                         aria-label=${countText}
                       >
                         <div class="header-count-value">
-                          <span class="header-count-num">${availCount}</span>
+                          <span
+                            class="header-count-num"
+                            role="status"
+                            aria-live="polite"
+                            >${availCount}</span
+                          >
                           <span class="header-count-of">/ ${totalCount}</span>
                         </div>
                         <div class="header-count-label">
@@ -279,8 +295,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
                   </div>
                 </div>`}
           </div>
-          ${this._renderFooter(
+          ${renderFooter(
+            this.hass,
             stateObj.attributes["attribution"] as string | undefined,
+            this.config.logo_adapt_to_theme === true,
           )}
         </div>
       </ha-card>
@@ -288,7 +306,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   private _renderSlot(point: Point): TemplateResult {
-    const statusCat: RackStatus = rackSlotStatus(point.status);
+    const variant = slotVariant(point);
+    const {
+      bucket: statusCat,
+      isAvailable,
+      isBusy,
+      isWarn,
+      overlay,
+      showCar,
+      showOverlayIcon,
+    } = variant;
     const powerType = pointPowerType(point);
     const connector = pointConnectorLabel(point);
     const kwText = formatKw(point.capacityKw);
@@ -301,17 +328,6 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // status_reserved / _out_of_stock / _planned / …) so users see
     // "reserviert" instead of the bucket "belegt".
     const shortKey = slotStatusShortKey(point.status);
-    const isAvailable = statusCat === "ok";
-    const isBusy = statusCat === "busy";
-    const isWarn = statusCat === "warn";
-    // Per-status icon overlay (RESERVED / BLOCKED / OUT_OF_ORDER family /
-    // OUT_OF_STOCK / PLANNED / REMOVED / UNKNOWN). When set, the icon
-    // overrides the car: RESERVED/BLOCKED still tint the slot busy but
-    // get their own icon since they aren't physically occupied. CHARGING
-    // and OCCUPIED return null here so the SVG car keeps rendering.
-    const overlay = slotOverlayIcon(point.status);
-    const showCar = isBusy && !overlay;
-    const showOverlayIcon = overlay !== null;
     const hasOverlay = showCar || showOverlayIcon;
     const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const slotClass = isAvailable
@@ -357,8 +373,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
         }}
       >
         ${showCar && carColor
-          ? html`<span class="slot-car" aria-hidden="true">
-              ${this._renderCarSvg(carColor)}
+          ? html`<span
+              class="slot-car"
+              aria-hidden="true"
+              style=${`--slot-car-color: ${carColor};`}
+            >
+              ${carSvg()}
             </span>`
           : nothing}
         ${overlay
@@ -453,98 +473,14 @@ export class LadestellenAustriaParkingCard extends LitElement {
     for (let i = 0; i < id.length; i++) {
       h = (h * 31 + id.charCodeAt(i)) >>> 0;
     }
-    return palette[h % palette.length];
+    return palette[h % palette.length] ?? "#1f2937";
   }
 
-  // Top-down vector car. Body filled with the per-slot colour; smoked
-  // glass for windshield + rear window; pale headlights at the top,
-  // red taillights at the bottom; little side mirrors. Sits inside a
-  // .slot-car overlay that fades out on hover/focus/reveal.
-  private _renderCarSvg(color: string): TemplateResult {
-    // Body + mirror fills go through inline-style so a CSS variable
-    // (e.g. theme mode → "var(--primary-color)") resolves correctly.
-    // SVG attribute-fill won't compute CSS vars; inline style does.
-    const bodyFill = `fill: ${color};`;
-    return html`
-      <svg
-        viewBox="0 0 50 90"
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden="true"
-      >
-        <rect
-          x="3"
-          y="2"
-          width="44"
-          height="86"
-          rx="10"
-          style=${bodyFill}
-        />
-        <path
-          d="M10 18 Q25 14 40 18 L37 36 L13 36 Z"
-          fill="rgba(15,20,35,0.7)"
-        />
-        <path
-          d="M13 54 L37 54 L40 70 Q25 74 10 70 Z"
-          fill="rgba(15,20,35,0.65)"
-        />
-        <circle cx="14" cy="9" r="2" fill="#fff8c5" />
-        <circle cx="36" cy="9" r="2" fill="#fff8c5" />
-        <circle cx="14" cy="81" r="2" fill="#e63946" />
-        <circle cx="36" cy="81" r="2" fill="#e63946" />
-        <rect
-          x="1"
-          y="22"
-          width="3"
-          height="5"
-          rx="1"
-          style=${bodyFill}
-        />
-        <rect
-          x="46"
-          y="22"
-          width="3"
-          height="5"
-          rx="1"
-          style=${bodyFill}
-        />
-      </svg>
-    `;
-  }
+  // Top-down car SVG lives in src/car-svg.ts; the wrapper here just
+  // pipes the per-slot colour through `--slot-car-color` so the SVG
+  // stays static.
 
-  // §3c + §3d compliance: E-Control brand link on the left, "Datenquelle:
-  // E-Control" attribution on the right. Hard-coded ATTRIBUTION_REQUIRED
-  // fallback in case a user's template sensor strips the upstream
-  // attribute. Mirrors the list card's footer one-for-one.
-  private _renderFooter(attr: string | undefined): TemplateResult {
-    const adaptive = this.config?.logo_adapt_to_theme === true;
-    const darkMode = Boolean(
-      (this.hass?.themes as { darkMode?: boolean } | undefined)?.darkMode,
-    );
-    const logoClasses = adaptive
-      ? `brand-logo adaptive ${darkMode ? "adaptive-dark" : "adaptive-light"}`
-      : "brand-logo";
-    const text =
-      attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
-    return html`
-      <div class="footer">
-        <a
-          class="brand-link"
-          href="https://www.e-control.at/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="E-Control"
-          @click=${(ev: Event) => ev.stopPropagation()}
-        >
-          <img
-            class=${logoClasses}
-            src="/ladestellen_austria/e-control_logo.svg"
-            alt="E-Control"
-          />
-        </a>
-        <span class="attribution-text">${text}</span>
-      </div>
-    `;
-  }
+  // Footer rendering lives in shared-render.ts; both cards share it.
 
   static styles: CSSResultGroup = parkingLotStyles;
 }

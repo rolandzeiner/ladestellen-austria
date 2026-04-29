@@ -37,17 +37,18 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     API_BASE_URL,
-    API_KEY_HEADER,
     CONF_API_KEY,
     CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    REFERER_HEADER,
+    MAX_POLL_MINUTES,
+    MIN_POLL_MINUTES,
     REGISTRATION_URL,
     REQUEST_TIMEOUT_SEC,
     SEARCH_PATH,
-    USER_AGENT,
+    build_default_headers,
+    classify_probe_status,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -116,8 +117,8 @@ def _build_schema(
         )
     ] = NumberSelector(
         NumberSelectorConfig(
-            min=5,
-            max=720,
+            min=MIN_POLL_MINUTES,
+            max=MAX_POLL_MINUTES,
             step=5,
             unit_of_measurement="min",
             mode=NumberSelectorMode.BOX,
@@ -260,12 +261,7 @@ async def _test_api_connection(
 ) -> str | None:
     """Probe /search with the supplied credentials. Return an error key or None."""
     session = async_get_clientsession(hass)
-    headers = {
-        "User-Agent": USER_AGENT,
-        API_KEY_HEADER: api_key,
-        REFERER_HEADER: f"https://{domain}",
-        "Accept": "application/json",
-    }
+    headers = build_default_headers(api_key, domain)
     params = {"latitude": str(latitude), "longitude": str(longitude)}
     timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SEC)
     try:
@@ -278,21 +274,19 @@ async def _test_api_connection(
     except (aiohttp.ClientError, TimeoutError):
         return "cannot_connect"
 
-    if resp.status == 401:
-        return "invalid_auth"
-    if resp.status == 403:
-        return "domain_mismatch"
-    if resp.status >= 400:
-        return "cannot_connect"
-    return None
+    return classify_probe_status(resp.status)
 
 
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Ladestellen Austria."""
 
-    # Bump + add async_migrate_entry when entry.data shape changes.
+    # Bump VERSION + add async_migrate_entry when entry.data shape changes
+    # in a non-additive way (renames, removals, type changes). MINOR_VERSION
+    # tracks additive-only changes (new optional keys) so HA can distinguish
+    # "needs migration" from "newer client wrote a key I'll just ignore".
     # Tracks the config-entry schema, NOT the integration release version.
     VERSION = 1
+    MINOR_VERSION = 1
 
     @staticmethod
     @callback

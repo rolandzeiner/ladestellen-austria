@@ -1,7 +1,9 @@
 # serializer version: 1
 # name: test_diagnostics_snapshot
   dict({
+    'attribution': 'Datenquelle: E-Control',
     'coordinator': dict({
+      'last_exception': 'None',
       'last_update_success': True,
       'station_count': 1,
       'update_interval': '0:30:00',

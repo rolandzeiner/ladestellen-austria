@@ -1,29 +1,36 @@
 """Constants for Ladestellen Austria."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Final
 
 from homeassistant.const import __version__ as _HA_VERSION
 
 DOMAIN: Final = "ladestellen_austria"
 
-INTEGRATION_VERSION: Final = "0.2.2"
+# Single source of truth for the integration version: manifest.json. Reading
+# it here at import keeps INTEGRATION_VERSION, the User-Agent string, and the
+# Lovelace cache-buster in lockstep with the file HA itself reads at install
+# time. Bumping the release is now one edit instead of three.
+INTEGRATION_VERSION: Final = json.loads(
+    (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
+)["version"]
 
 # Must match src/const.ts CARD_VERSION byte-for-byte; tests/test_card_version.py
 # enforces the invariant in CI. Bump both in the same commit. manifest.json
 # "version" stays on the clean release (no -beta); this constant plus
 # src/const.ts can carry a -beta-N suffix during development.
 #
-# Used here only as the cache-buster query string appended to the Lovelace
-# resource URL by card_registration.py (`/ladestellen_austria/<file>?v=<ver>`).
-# When the version bumps, browsers see a new URL and re-fetch the bundle
-# instead of using the cached copy.
-#
-# This integration does NOT register a WebSocket card-version probe — there
-# is no live mismatch banner. Users on a tab that was open across an upgrade
-# will keep running the cached card until they hard-refresh; the cache-buster
-# guarantees the next page load picks up the new bundle.
-CARD_VERSION: Final = "0.2.2"
+# Two cache-stale defences combine here:
+#   1. Cache-buster: card_registration.py appends `?v=<CARD_VERSION>` to the
+#      Lovelace resource URL. New version → new URL → browser re-fetches.
+#   2. Live WS probe: __init__.py registers `ladestellen_austria/card_version`
+#      which the frontend bundle calls on first hass-set. If the running JS
+#      reports a different CARD_VERSION than the backend, the card renders a
+#      reload banner. This catches users with a tab open across an upgrade,
+#      where the cache-buster only fires on the next page load.
+CARD_VERSION: Final = INTEGRATION_VERSION
 
 USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
 
@@ -36,7 +43,29 @@ CONF_DOMAIN: Final = "domain"
 # hides that section when the sensor reports dynamic_mode: True.
 CONF_DYNAMIC_ENTITY: Final = "dynamic_entity"
 
+# ------------------------------------------------------------------
+# Polling cadence — units are MINUTES (the ladestellen.at gateway is
+# rate-limited per ToU §4: "max 2500 req/hour, 30 concurrent fair-use").
+# DEFAULT_SCAN_INTERVAL = 10 min sits comfortably inside that envelope
+# even when a single household runs multiple entries (e.g. one static
+# + one dynamic). The 5-720 floor/ceiling matches the config-flow's
+# NumberSelector range; codified as constants here so both the form
+# and any future migration logic share one source of truth.
+# ------------------------------------------------------------------
 DEFAULT_SCAN_INTERVAL: Final = 10
+MIN_POLL_MINUTES: Final = 5
+MAX_POLL_MINUTES: Final = 720
+
+# ------------------------------------------------------------------
+# Sensor-attribute size discipline (recorder budget).
+# Each station carries label, address, points[], connectors[], pricing,
+# opening-hours, and distance — empirically ~600-1200 bytes per station
+# at the 13-status fixture density. 10 stations × ~1 KB stays well
+# below HA's 16 KB recorder attribute cap with margin for outliers
+# (large operators, long opening-hours strings). Don't blindly raise
+# this without measuring — going to 25 has tipped the cap on the
+# tankstellen sister integration in the past.
+# ------------------------------------------------------------------
 DEFAULT_MAX_RESULTS: Final = 10
 
 # ------------------------------------------------------------------
@@ -89,3 +118,60 @@ ATTRIBUTION: Final = "Datenquelle: E-Control"
 # automations (e.g. "ping me when my favourite charger frees up").
 # Payload schema: see coordinator._diff_and_fire_status_events.
 EVENT_SLOT_STATUS_CHANGED: Final = f"{DOMAIN}_slot_status_changed"
+
+
+def classify_probe_status(status: int) -> str | None:
+    """Map an HTTP status code from /search to a config-flow error key.
+
+    Single source of truth for the credentials-probe outcome contract.
+    Both `coordinator._fetch_search` and `config_flow._test_api_connection`
+    consult this — without it, the two sites drifted on which 4xx codes
+    map to which `config.error.*` translation key (the audit caught it).
+    Returns None when the response is OK (2xx/3xx).
+
+    - 401 → invalid_auth   (api_key rejected)
+    - 403 → domain_mismatch (referer not in user's registered set)
+    - any other ≥400 → cannot_connect
+    """
+    if status == 401:
+        return "invalid_auth"
+    if status == 403:
+        return "domain_mismatch"
+    if status >= 400:
+        return "cannot_connect"
+    return None
+
+
+def normalize_status(status: str | None) -> str:
+    """Bucket-comparison key for an upstream RefillPointStatusEnum value.
+
+    Uppercases and strips underscores so `OUTOFORDER` and `OUT_OF_ORDER`
+    produce the same key. Mirrors the TypeScript `normStatus()` in
+    `src/utils.ts`; both the frontend rack-status bucketing and the
+    coordinator's status-transition diff need to agree on the canonical
+    key — keeping the formula in one Python helper plus its TS twin
+    means a contributor changing the rules on one side has only one
+    function to update on the other (CI test enforces parity).
+    """
+    return (status or "").upper().replace("_", "")
+
+
+def build_default_headers(api_key: str, domain: str) -> dict[str, str]:
+    """Build the canonical outbound header set used by every API call.
+
+    Single source of truth for the coordinator and the config-flow trial
+    probe. The gateway compares the Referer header's hostname against the
+    bare domain registered at ladestellen.at; hard-coding https is fine
+    because the gateway strips scheme/port/path before matching.
+
+    `Accept-Encoding: gzip` is sent unconditionally — aiohttp transparently
+    decompresses gzipped responses and harmlessly accepts identity if the
+    upstream doesn't compress.
+    """
+    return {
+        "User-Agent": USER_AGENT,
+        API_KEY_HEADER: api_key,
+        REFERER_HEADER: f"https://{domain}",
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+    }

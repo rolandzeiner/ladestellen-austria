@@ -64,12 +64,13 @@ export function localize(
   replace = "",
 ): string {
   const lang = getLang();
+  const englishFallback = languages["en"] ?? {};
   let translated = resolveTranslation(
     string,
-    languages[lang] || languages["en"],
+    languages[lang] ?? englishFallback,
   );
   if (translated === undefined) {
-    translated = resolveTranslation(string, languages["en"]);
+    translated = resolveTranslation(string, englishFallback);
   }
   if (translated === undefined) translated = string;
   if (search !== "" && replace !== "") {
