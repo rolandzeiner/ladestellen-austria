@@ -180,15 +180,42 @@ Upstream issues: `support@ladestellen.at` (API) / `office@e-control.at` (general
 
 ## Terms of Use — integration compliance
 
-Registering an API key at [admin.ladestellen.at](https://admin.ladestellen.at/#/api/registrieren) binds you to a contract with E-Control (full ToU at [admin.ladestellen.at/#/api/terms-of-use](https://admin.ladestellen.at/#/api/terms-of-use); §9 carries a €10,000 penalty). Read it — non-technical obligations (notifications, public-facing disclaimer, quarterly stats, no ad/sponsor integration) are yours, not the integration's.
+Registering an API key at [admin.ladestellen.at](https://admin.ladestellen.at/#/api/registrieren) binds you to a contract with E-Control (full ToU at [admin.ladestellen.at/#/api/terms-of-use](https://admin.ladestellen.at/#/api/terms-of-use); §9 carries a €10,000 penalty for breach of §1–§5). Read it.
 
-What this integration handles automatically:
+### What this integration handles automatically
 
-- **§3c — E-Control logo + §3d — Attribution:** both cards render the E-Control logo as a clickable link to `https://www.e-control.at/` and the verbatim *Datenquelle: E-Control* footer; sensors carry the same attribution. Frozen, can't be hidden.
-- **§3i — No data mutation:** values flow through unchanged; precision and ordering preserved as received.
-- **§3j — API-key confidentiality:** stored as a password field, never logged, redacted in diagnostics.
-- **§4 — Rate limits (2,500 req/hour per user):** one outbound `/search` per refresh, 10-min default (5-min minimum). [Dynamic location mode](#dynamic-location-mode) replaces interval polling with movement-triggered refreshes under their own cooldown guards.
-- **§7 — No bulk redistribution:** no export feature, no re-served API.
+- **§3(c) E-Control logo + §3(d) Attribution:** both cards render the E-Control logo as a clickable link to `https://www.e-control.at/` and the verbatim *Datenquelle: E-Control* footer; sensors carry the same attribution. Frozen, can't be hidden.
+- **§3(i) No data mutation:** values flow through unchanged; precision and ordering preserved as received.
+- **§3(j) API-key confidentiality:** stored as a password field, never logged, redacted in diagnostics.
+- **§4 Rate limits** (max 2 500 req/hour per user, 30 concurrent fair-use): one outbound `/search` per refresh, 10-min default (5-min minimum). [Dynamic location mode](#dynamic-location-mode) replaces interval polling with movement-triggered refreshes under their own cooldown guards.
+- **§7 No bulk redistribution:** no export feature, no re-served API.
+
+### What YOU must do (every user, even private HA)
+
+- **§3(j) Don't share your key.** Don't post it in screenshots, configs, or issue reports. Diagnostics redact it automatically.
+- **§3(k) No third-party / ad / sponsor links** anchored on the data.
+- **§3(l) Don't charge visitors** in any form for the E-Control-sourced data.
+- **§7 Don't redistribute** the data as bulk export or re-served API.
+
+### Additional obligations for PUBLIC-FACING applications
+
+If you expose the integration's data on a publicly-accessible website (anything beyond your own private HA dashboard), the following clauses kick in. A single-user private HA instance with no external dashboard has no "Nutzer-Service visitors" in the sense of §3(g) and so doesn't meaningfully owe the email rituals — but the moment you put the data on a public URL, all of these apply:
+
+- **§3(a) — Notify go-live.** Email `support@ladestellen.at` stating from when and in which way you are using the *Nutzer-Service*.
+- **§3(b) — Disclose the URL.** Email `support@ladestellen.at` with the public URL/IP where the *Nutzer-Service* is reachable.
+- **§3(f) — Notify shutdown.** If you take the public app offline (permanently or temporarily), email `support@ladestellen.at`.
+- **§3(g) — Quarterly access stats.** Email `support@ladestellen.at` once per quarter with the *Unique-Visits* and *Unique-Visitors* of the public app during that quarter.
+- **§3(e) — Data-accuracy disclaimer.** Display the following text *"gut sichtbar"* (clearly visible) next to the data source, verbatim:
+
+  > Die Dateneingaben der angegebenen Standorte und Informationen werden ausschließlich durch die Betreiber der Ladepunkte direkt und selbst vorgenommen. Diese Betreiber haben die Möglichkeit, die Informationen tagesaktuell zu halten. Für die Richtigkeit, Vollständigkeit und Aktualität der von den Betreibern selbst vorgenommenen Angaben kann keine Haftung übernommen werden. Für Schäden, die sich aus fehlerhaften Inhalten oder Handlungen ergeben, welche im Vertrauen auf die Richtigkeit des Inhaltes gemacht wurden, übernimmt die E-Control keine Haftung.
+
+- **§3(h) — Service-disruption disclaimer.** Add a *Haftungs- und Gewährleistungsausschluss für Störungen der Dienste* on the website (covering availability of the embedded service itself, separate from §3(e)'s data-accuracy clause).
+
+A reference implementation of all three is wired into the [demo site](https://demo.rolandzeiner.at/#ladestellen) — copy the §3(e) and §3(h) blocks from there if you don't want to draft your own.
+
+### Termination
+
+E-Control can revoke API access with **three months' notice** without giving reasons (§10), or **immediately** on breach or suspected misuse of §1–§5. Keep the obligations above in good order.
 
 ## License
 
