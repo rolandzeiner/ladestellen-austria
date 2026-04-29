@@ -652,9 +652,34 @@ export const cardStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .rack-warn-icon {
+  .rack-overlay-icon {
     --mdc-icon-size: 28px;
+  }
+  .rack-overlay-icon.tone-warning {
     color: var(--lade-warning);
+  }
+  .rack-overlay-icon.tone-error {
+    color: var(--lade-error);
+  }
+  .rack-overlay-icon.tone-info {
+    color: var(--info-color, #039be5);
+  }
+  .rack-overlay-icon.tone-muted {
+    color: var(--secondary-text-color);
+  }
+  /* bgTint overrides: PLANNED reads as future-info, REMOVED as error.
+     OUT_OF_STOCK reuses the existing warn tint (no override needed). */
+  .rack-slot.slot-tint-info {
+    background: color-mix(in srgb, var(--info-color, #039be5) 14%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--info-color, #039be5) 30%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
+  }
+  .rack-slot.slot-tint-error {
+    background: color-mix(in srgb, var(--lade-error) 14%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--lade-error) 30%, transparent),
+      inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-dot {
     position: absolute;
@@ -871,7 +896,7 @@ export const cardStyles = css`
     .rack-connector {
       font-size: 0.625rem;
     }
-    .rack-warn-icon {
+    .rack-overlay-icon {
       --mdc-icon-size: 22px;
     }
     .power-badge {
