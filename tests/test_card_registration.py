@@ -24,16 +24,18 @@ from custom_components.ladestellen_austria.const import CARD_VERSION
 def _make_lovelace(
     *,
     resource_mode: str = "storage",
-    mode: str = "storage",
+    mode: str | None = None,
     loaded: bool = True,
     items: list[dict[str, Any]] | None = None,
 ) -> SimpleNamespace:
     """Build a fake Lovelace data object with async resource methods.
 
-    Mirrors the canonical helper shape from the ha-integration-platinum
-    skill — exposes both `resource_mode` (the field this integration's
-    registrar reads) and `mode` (covered for forward-compat with sibling
-    test suites that branch on dashboard YAML-mode).
+    The registrar's ``_is_storage_mode`` reads ``mode`` first (the real
+    HA core field), falling back to ``resource_mode``. Tests pass
+    ``resource_mode`` for backwards-compat — the helper mirrors that
+    onto ``mode`` so both paths exercise the same branch. The mutation
+    methods are AsyncMocks regardless of mode so yaml-mode tests can
+    still ``assert_not_awaited`` on them.
     """
     resources = SimpleNamespace(
         loaded=loaded,
@@ -44,7 +46,7 @@ def _make_lovelace(
     )
     return SimpleNamespace(
         resource_mode=resource_mode,
-        mode=mode,
+        mode=mode if mode is not None else resource_mode,
         resources=resources,
     )
 
