@@ -14,4 +14,4 @@ ruff>=0.15.0,<1
 # which was removed/renamed in pycares 5.x. Until aiodns ships a
 # pycares-5-compatible release, hold the transitive resolution at 4.x.
 # Drop this line once `import aiodns` no longer crashes on pycares 5.
-pycares<5
+pycares<6
