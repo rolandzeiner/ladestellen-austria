@@ -10,6 +10,9 @@ syrupy>=4.8.0,<5
 mypy>=1.20.0,<2
 ruff>=0.15.0,<1
 
-# Transitive pin — keep pycares below 6.x while aiodns settles on the
-# pycares 5.x API. Bump together with aiodns when 6.x compatibility lands.
-pycares<6
+# Transitive pin — pycares 5.x removed `ares_query_a_result`, which
+# aiodns 3.5.0 still references in its type hints. aiodns 3.6+ fixed it,
+# but Home Assistant 2025.1.x pins aiodns < 3.6, so the only stable
+# combination on the current HA pin is aiodns 3.5.x + pycares 4.x.
+# Bump pycares cap together with aiodns when HA ships >= 3.6.
+pycares<5
