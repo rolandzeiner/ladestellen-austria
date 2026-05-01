@@ -54,7 +54,7 @@ class NearestStationSensor(
     # 16 KB attribute cap, so the recorder was already refusing to store
     # the snapshot. Frontend (card, templates, /api/states) still receives
     # them in real time — only history is skipped.
-    _unrecorded_attributes = frozenset({"stations"})
+    _unrecorded_attributes = frozenset({"stations", "live_status_available"})
 
     def __init__(
         self,
