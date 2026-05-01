@@ -129,3 +129,13 @@ custom_components/ladestellen_austria/_dev_fixture.py
 *.log
 pip-log.txt
 pip-delete-this-directory.txt
+
+# ---------------------------------------------------------------------------
+# Fallow code-quality tool — config + caches. Personal tooling; ship the
+# repo without forcing fallow on contributors. Drop the rule if you decide
+# fallow should be a project-wide standard.
+# ---------------------------------------------------------------------------
+.fallowrc.json
+.fallowrc.jsonc
+fallow.toml
+.fallow/

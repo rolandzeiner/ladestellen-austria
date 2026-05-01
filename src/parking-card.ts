@@ -60,7 +60,7 @@ window.customCards.push({
 });
 
 @customElement("ladestellen-austria-parking-card")
-export class LadestellenAustriaParkingCard extends LitElement {
+class LadestellenAustriaParkingCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
     return document.createElement(
       "ladestellen-austria-parking-card-editor",

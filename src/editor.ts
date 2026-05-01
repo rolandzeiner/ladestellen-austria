@@ -107,7 +107,7 @@ const FORM_DEFAULTS: Record<string, unknown> = {
 };
 
 @customElement("ladestellen-austria-card-editor")
-export class LadestellenAustriaCardEditor
+class LadestellenAustriaCardEditor
   extends LitElement
   implements LovelaceCardEditor
 {

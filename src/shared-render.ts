@@ -21,7 +21,7 @@ import { localize } from "./localize/localize";
 // shown as a footer attribution next to E-Control data:
 //   "Datenquelle: E-Control"
 // Do not edit; bumping it requires re-reading the ToU.
-export const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
+const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
 
 /**
  * Probe the backend's card-version WebSocket command. Returns the
@@ -50,7 +50,7 @@ export async function checkCardVersionWS(
  * picks up the freshly-cached JS bundle so the version-mismatch banner
  * clears on next mount.
  */
-export function reloadAfterCacheWipe(): void {
+function reloadAfterCacheWipe(): void {
   try {
     window.caches?.keys?.().then((keys) => {
       keys.forEach((k) => window.caches?.delete?.(k));
