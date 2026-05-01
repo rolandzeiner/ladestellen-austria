@@ -32,7 +32,15 @@ INTEGRATION_VERSION: Final = json.loads(
 #      where the cache-buster only fires on the next page load.
 CARD_VERSION: Final = INTEGRATION_VERSION
 
-USER_AGENT: Final = f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION}"
+# User-Agent header sent on every outbound API call. HA convention is
+# "HomeAssistant/{ha_ver} {domain}/{int_ver}". The trailing "(+<repo-url>)"
+# comment follows RFC-9110 product-token-comment convention so E-Control
+# has a direct contact point for abuse / coordination without having to
+# find the repo by guessing.
+USER_AGENT: Final = (
+    f"HomeAssistant/{_HA_VERSION} {DOMAIN}/{INTEGRATION_VERSION} "
+    f"(+https://github.com/rolandzeiner/ladestellen-austria)"
+)
 
 CONF_API_KEY: Final = "api_key"
 CONF_DOMAIN: Final = "domain"
