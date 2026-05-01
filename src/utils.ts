@@ -148,7 +148,7 @@ export interface SlotOverlay {
   // here — they fall through to the SVG car overlay (busy bucket).
   bgTint?: SlotBgTint;
 }
-export function slotOverlayIcon(status: string): SlotOverlay | null {
+function slotOverlayIcon(status: string): SlotOverlay | null {
   switch (normStatus(status)) {
     case "OUTOFORDER":
     case "FAULTED":

@@ -4,8 +4,9 @@
 
 [tool.ruff]
 # Aligned with the CI Python pin (.github/workflows/validate.yml). HA
-# core targets 3.13.x; bumping this is a breaking change for downstream
-# contributors building on older interpreters — keep it explicit.
+# core targets 3.13.x today; bumping this is a breaking change for
+# downstream contributors building on older interpreters — keep it
+# explicit. (3.14 attempted 2026-05-01, rolled back — see validate.yml.)
 target-version = "py313"
 line-length = 88
 

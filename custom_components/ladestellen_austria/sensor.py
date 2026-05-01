@@ -49,6 +49,13 @@ class NearestStationSensor(
     # collection — existing orphan stats cleared via HA's Statistics UI.
     _attr_attribution = ATTRIBUTION
 
+    # Excluded from the recorder: the `stations` list is large enough at
+    # high-density entries (urban areas, big radius) to trip the recorder's
+    # 16 KB attribute cap, so the recorder was already refusing to store
+    # the snapshot. Frontend (card, templates, /api/states) still receives
+    # them in real time — only history is skipped.
+    _unrecorded_attributes = frozenset({"stations", "live_status_available"})
+
     def __init__(
         self,
         coordinator: LadestellenAustriaCoordinator,

@@ -3,10 +3,20 @@
 Canonical pattern from the HA developer community guide:
 https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909
 
-Note for HA 2026+: the guide's code uses ``self.lovelace.mode`` but that
-attribute was renamed. The ``LovelaceData`` dataclass (see
-homeassistant/components/lovelace/__init__.py) exposes the storage/yaml
-distinction via ``resource_mode``. The version here has been adjusted.
+Storage-vs-yaml detection — ground truth verified against HA core:
+
+  * HA ≤ 2026.1: ``LovelaceData.mode: str``
+    https://github.com/home-assistant/core/blob/2026.1.0/homeassistant/components/lovelace/__init__.py
+  * HA ≥ 2026.2: ``LovelaceData.resource_mode: str`` (clean rename)
+    https://github.com/home-assistant/core/blob/2026.2.0/homeassistant/components/lovelace/__init__.py
+
+There is no version that ships both. ``_is_storage_mode`` reads
+whichever attribute is set so the same code works on either side
+of the rename. ``resources`` itself is a
+``ResourceYAMLCollection | ResourceStorageCollection`` union; the
+type-only import + ``cast`` below narrow it for the storage-only
+mutation calls without a runtime dependency on the typed class
+existing on every HA version.
 """
 from __future__ import annotations
 
@@ -33,15 +43,13 @@ try:
 except ImportError:  # pragma: no cover — fallback for HA before LOVELACE_DATA shipped
     LOVELACE_DATA = None  # type: ignore[assignment,unused-ignore]
 
-# `lovelace.resources` is a union of ResourceYAMLCollection (read-only
-# in YAML-mode dashboards) and ResourceStorageCollection (the only one
-# that exposes async_create_item / async_update_item / async_delete_item).
-# We pick storage mode by duck-typing on the mutation methods — the
-# string mode/resource_mode field has churned across HA versions, the
-# collection contract is the actual invariant. mypy gets the narrowing
-# via `cast()` after the hasattr check; the type-only import below
-# keeps the cast strict-typed without forcing the symbol to exist at
-# runtime on older HA installs.
+# `lovelace.resources` is a union of ResourceYAMLCollection (read-only)
+# and ResourceStorageCollection (exposes async_create_item /
+# async_update_item / async_delete_item). _is_storage_mode gates the
+# branches that need the storage shape; the cast() at each call site
+# narrows the union for mypy. Type-only import — the symbol is only
+# referenced in the cast string literal, never at runtime, so older HA
+# installs without this submodule layout still work.
 if TYPE_CHECKING:
     from homeassistant.components.lovelace.resources import (
         ResourceStorageCollection,
@@ -78,10 +86,10 @@ class JSModuleRegistration:
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the registrar."""
         self.hass = hass
-        # Prefer the typed HassKey introduced in HA 2024.x — the bare
-        # string lookup is what HA core can rename without notice (see
-        # the `mode` → `resource_mode` rename acknowledged in the
-        # module docstring).
+        # Prefer the typed HassKey introduced in HA 2024.x. The bare
+        # string lookup is the older pattern — kept as the
+        # ImportError-fallback path so older HA installs (which may
+        # not export LOVELACE_DATA yet) still resolve correctly.
         if LOVELACE_DATA is not None:
             self.lovelace = self.hass.data.get(LOVELACE_DATA)
         else:
@@ -103,17 +111,16 @@ class JSModuleRegistration:
             await self._async_wait_for_lovelace_resources()
 
     def _is_storage_mode(self) -> bool:
-        """Detect storage mode by reading the LovelaceData mode field.
+        """Read the LovelaceData storage-vs-yaml field.
 
-        HA core's ``LovelaceData`` exposes the dashboard mode as ``mode``
-        (the original community-guide field). An older docstring in
-        this module claimed a ``mode`` → ``resource_mode`` rename, but
-        HA core never landed that — current versions still ship
-        ``mode``. We try both for cross-version robustness; the first
-        attribute that exists wins.
+        The field was renamed across HA versions:
+          - HA ≤ 2026.1: ``mode``
+          - HA ≥ 2026.2: ``resource_mode``
+        Whichever is present, we read it; the other won't exist on
+        that HA version. See the module docstring for source links.
         """
         assert self.lovelace is not None
-        for attr in ("mode", "resource_mode"):
+        for attr in ("resource_mode", "mode"):
             value = getattr(self.lovelace, attr, None)
             if value is not None:
                 return bool(value == "storage")
