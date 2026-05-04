@@ -9,6 +9,7 @@
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/rolandzeiner/ladestellen-austria/issues",
+  "loggers": ["custom_components.ladestellen_austria"],
   "requirements": [],
   "version": "0.3.3"
 }
