@@ -122,20 +122,18 @@ REGISTRATION_URL: Final = "https://admin.ladestellen.at/#/api/registrieren"
 ATTRIBUTION: Final = "Datenquelle: E-Control"
 
 # HA bus event fired when a single EVSE's status changes between two
-# successful coordinator refreshes. Listened to by user-authored
-# automations (e.g. "ping me when my favourite charger frees up").
-# Payload schema: see coordinator._diff_and_fire_status_events.
+# successful coordinator refreshes. Payload schema: see
+# coordinator._fire_status_transition_events.
 EVENT_SLOT_STATUS_CHANGED: Final = f"{DOMAIN}_slot_status_changed"
 
 
 def classify_probe_status(status: int) -> str | None:
     """Map an HTTP status code from /search to a config-flow error key.
 
-    Single source of truth for the credentials-probe outcome contract.
-    Both `coordinator._fetch_search` and `config_flow._test_api_connection`
-    consult this — without it, the two sites drifted on which 4xx codes
-    map to which `config.error.*` translation key (the audit caught it).
-    Returns None when the response is OK (2xx/3xx).
+    Single source of truth for the credentials-probe outcome contract;
+    both `coordinator._fetch_search` and `config_flow._test_api_connection`
+    consult this so the two sites can't drift on the 4xx → translation
+    key mapping. Returns None when the response is OK (2xx/3xx).
 
     - 401 → invalid_auth   (api_key rejected)
     - 403 → domain_mismatch (referer not in user's registered set)

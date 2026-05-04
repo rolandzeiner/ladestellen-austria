@@ -56,10 +56,9 @@ export interface LovelaceCardEditor extends HTMLElement {
  *  it directly from card code. */
 export type LovelaceCard = HTMLElement;
 
-/** Local `fireEvent` shim — same shape as the helper from
- *  custom-card-helpers. `bubbles: true` + `composed: true` are required
- *  so the event crosses the editor's shadow boundary and reaches the
- *  dashboard's card-editor listener. */
+/** `bubbles: true` + `composed: true` are required so the event
+ *  crosses the editor's shadow boundary and reaches the dashboard's
+ *  card-editor listener. */
 export function fireEvent<T>(
   node: HTMLElement,
   type: string,

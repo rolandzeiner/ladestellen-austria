@@ -111,8 +111,6 @@ const sharedReducedMotion = css`
 //   - Single-source-of-truth tokens on :host (radii, padding, slot/tile size).
 //   - Per-row accent piped via `style="--lade-accent:<colour>;"` so the icon-tile,
 //     row tint, rack surface, and CTA all read from one prop.
-//   - Chips (formerly "pills") for compact metric tags.
-//   - Filled .btn-primary CTA + circular .icon-action right-side actions.
 //   - Container queries against the card's own width (lscard), not the viewport.
 // ---------------------------------------------------------------------------
 
@@ -130,15 +128,9 @@ const cardOwnStyles = css`
 
     /* Semantic state tokens layered over HA's official semantic palette
        so theme authors can recolour the whole portfolio in one place;
-       hard-coded fallbacks (matching the values previously inlined as
-       --success-color / --warning-color throughout this stylesheet)
-       for older HA versions. */
+       hard-coded fallbacks for older HA versions without these vars. */
     --lade-rt:      var(--ha-color-success, #22c55e);
     --lade-warning: var(--ha-color-warning, #f57c00);
-    /* #ef4444 chosen as the fallback because that's the hex this
-       stylesheet most-commonly used for outage/closed states; #db4437
-       (HA's traditional --error-color) appeared in only two places
-       and the 9-place hex now wins for visual continuity. */
     --lade-error:   var(--ha-color-error,   #ef4444);
     --lade-info:    var(--ha-color-info,    #1565c0);
 

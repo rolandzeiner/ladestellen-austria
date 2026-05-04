@@ -776,9 +776,6 @@ export class LadestellenAustriaCard extends LitElement {
   // Expanded-panel layout (top → bottom):
   //   Operator · Ladepunkte (rack [+ fees line]) · Öffnungszeiten (+ live chip)
   //   · Bezahlung · Ausstattung · Adresse · Actions.
-  // The single-number "3/4 frei" chip that used to head this panel is gone —
-  // the rack carries per-point availability at higher information density, so
-  // keeping the chip alongside would have been redundant noise.
   private _renderStationDetail(
     station: Station,
     isOpenNow: boolean | null,
@@ -950,11 +947,9 @@ export class LadestellenAustriaCard extends LitElement {
       : nothing;
     // Special-state slots swap their kW + connector for a status icon —
     // the electrical spec isn't actionable when the point is out of order,
-    // out of stock, planned, removed, or unknown. Mirrors the parking
-    // card's slot-overlay icons so both cards read identically. Optional
-    // bgTint upgrades the slot's tint (info / error) for PLANNED / REMOVED
-    // even though they share the "warn" bucket. Power-badge + status dot
-    // are dropped — the icon + tint are the entire story.
+    // out of stock, planned, removed, or unknown. Optional bgTint
+    // upgrades the slot's tint (info / error) for PLANNED / REMOVED even
+    // though they share the "warn" bucket.
     if (overlay) {
       const slotClass = overlay.bgTint
         ? `rack-slot slot-tint-${overlay.bgTint}`
@@ -995,9 +990,6 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  // Screen-reader label for a rack slot — composed from the same signals
-  // visible on screen (power-type, kW, connector, localized status) so
-  // assistive tech gets parity with sighted users.
   private _pointAriaLabel(
     point: Point,
     powerType: "dc" | "ac" | null,
@@ -1014,8 +1006,6 @@ export class LadestellenAustriaCard extends LitElement {
     return parts.join(" · ");
   }
 
-  // Tooltip for a rack slot. evseId + localized status + any active fees.
-  // Newline-separated; browsers render \n in native title tooltips.
   private _pointTooltip(point: Point): string {
     const lines = [
       `${point.evseId ?? ""} · ${pointStatusLabel(point.status)}`.trim(),

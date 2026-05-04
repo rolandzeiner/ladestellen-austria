@@ -120,15 +120,9 @@ function e(e,t,i,n){var a,r=arguments.length,o=r<3?t:null===n?n=Object.getOwnPro
 
     /* Semantic state tokens layered over HA's official semantic palette
        so theme authors can recolour the whole portfolio in one place;
-       hard-coded fallbacks (matching the values previously inlined as
-       --success-color / --warning-color throughout this stylesheet)
-       for older HA versions. */
+       hard-coded fallbacks for older HA versions without these vars. */
     --lade-rt:      var(--ha-color-success, #22c55e);
     --lade-warning: var(--ha-color-warning, #f57c00);
-    /* #ef4444 chosen as the fallback because that's the hex this
-       stylesheet most-commonly used for outage/closed states; #db4437
-       (HA's traditional --error-color) appeared in only two places
-       and the 9-place hex now wins for visual continuity. */
     --lade-error:   var(--ha-color-error,   #ef4444);
     --lade-info:    var(--ha-color-info,    #1565c0);
 

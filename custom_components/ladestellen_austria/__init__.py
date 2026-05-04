@@ -50,9 +50,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     # WS commands registered here survive integration removal — HA's
-    # websocket_api has no public deregister hook. Behaviour on
-    # duplicate registration is HA core internal; we never reach that
-    # branch since `async_setup` only runs once per HA process.
+    # websocket_api has no public deregister hook. `async_setup` only
+    # runs once per HA process, so duplicate registration isn't a
+    # concern in practice.
     async_register_command(hass, _websocket_card_version)
 
     # Register the Lovelace card once at component setup — never per-entry.

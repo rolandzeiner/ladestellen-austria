@@ -123,16 +123,14 @@ export function slotStatusShortKey(status: string): string {
 }
 
 /**
- * Per-status MDI icon overlay for the parking card. Mirrors the wrench
- * pattern: states that aren't simply "free" or "in use by a car" get a
- * dedicated icon overlay so the slot reads at a glance, with the same
- * fade-on-hover/focus reveal of the spec underneath.
+ * Per-status MDI icon overlay for the parking card. States that aren't
+ * "free" (blank slot) or "in use by a car" (SVG car overlay) get a
+ * dedicated icon so the slot reads at a glance, with the same fade-on-
+ * hover/focus reveal of the spec underneath.
  *
- * Returns null for AVAILABLE / CHARGING / OCCUPIED — those states are
- * handled either by leaving the slot blank (free) or by the SVG car
- * overlay rendered separately. RESERVED + BLOCKED were previously
- * lumped with the car; they now get their own icons since "held" and
- * "admin-disabled" are semantically different from "physically in use".
+ * Returns null for AVAILABLE / CHARGING / OCCUPIED — those are handled
+ * by leaving the slot blank or by the SVG car overlay rendered
+ * separately.
  *
  * Tone keys map to CSS classes (.tone-warning / .tone-error / .tone-info
  * / .tone-muted) on the overlay span — see parkingLotStyles.

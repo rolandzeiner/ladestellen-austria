@@ -86,7 +86,7 @@ Both cards always show the E-Control logo-link and *Datenquelle: E-Control* attr
 | `sensor.<entry_name>_nearest_station` | Distance to the nearest station (km) | `station_count`, `stations[]` (id, label, address, distance, status, points, connectors, pricing), `live_status_available`, `dynamic_mode`, `dynamic_entity` |
 | `binary_sensor.<entry_name>_has_free_slot` | `on` if any EVSE in range reports `AVAILABLE` | `free_slot_count`, `total_slot_count`, `stations_with_free` |
 
-Icons: `mdi:ev-station` / `mdi:ev-plug-type2`. Sensor device-class: `distance` (no state-class — long-term statistics expects a stable unit, but the user can configure km vs mi via HA's unit-system setting; see Development for the rationale). Binary-sensor device-class: `presence`.
+Icons: `mdi:ev-station` / `mdi:ev-plug-type2`. Sensor device-class: `distance` (no state-class — distance-to-nearest-POI isn't a statistical measurement and HA's unit-system can flip km vs mi underfoot, which trips the recorder's stable-unit invariant). Binary-sensor device-class: `presence`.
 
 ## Events
 

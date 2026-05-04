@@ -1,22 +1,11 @@
 """Lovelace JS module registration for Ladestellen Austria.
 
-Canonical pattern from the HA developer community guide:
+Pattern from the HA developer community guide:
 https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909
 
-Storage-vs-yaml detection — the ``LovelaceData`` field that signals
-storage mode was renamed across HA versions:
-
-  * HA ≤ 2026.1: ``LovelaceData.mode: str``
-  * HA ≥ 2026.2: ``LovelaceData.resource_mode: str``
-
-``_is_storage_mode`` reads whichever attribute is set, preferring
-``resource_mode`` when both happen to be defined — duck-typed by design
-so we don't have to track every micro-rename across HA versions.
-``resources`` itself is a
-``ResourceYAMLCollection | ResourceStorageCollection`` union; the
-type-only import + ``cast`` below narrow it for the storage-only
-mutation calls without a runtime dependency on the typed class
-existing on every HA version.
+The ``LovelaceData`` field that signals storage-vs-yaml mode was
+renamed across HA versions (``mode`` → ``resource_mode``). We read
+whichever attribute is set; ``_is_storage_mode`` carries the details.
 """
 from __future__ import annotations
 
@@ -113,11 +102,9 @@ class JSModuleRegistration:
     def _is_storage_mode(self) -> bool:
         """Read the LovelaceData storage-vs-yaml field.
 
-        The field was renamed across HA versions:
-          - HA ≤ 2026.1: ``mode``
-          - HA ≥ 2026.2: ``resource_mode``
-        Whichever is present, we read it; the other won't exist on
-        that HA version. See the module docstring for source links.
+        Renamed across HA versions: ``mode`` (≤ 2026.1) → ``resource_mode``
+        (≥ 2026.2). Whichever is present we read; the other won't exist
+        on that HA version.
         """
         assert self.lovelace is not None
         for attr in ("resource_mode", "mode"):
@@ -129,12 +116,10 @@ class JSModuleRegistration:
     async def _async_register_path(self) -> None:
         """Register the static HTTP path that serves the JS bundle.
 
-        The ``ha-lovelace-card`` skill's Rollup config writes the bundle to
-        ``custom_components/<domain>/www/<filename>``; serving that ``www``
-        subdirectory under URL_BASE keeps the resource URL flat
-        (``URL_BASE/<filename>``) — no ``/www`` segment in the URL the user
-        copies onto their dashboard, and the JS file actually exists where
-        Rollup put it.
+        Rollup writes the bundle to ``custom_components/<domain>/www/
+        <filename>``; serving that ``www`` subdirectory under URL_BASE
+        keeps the resource URL flat (``URL_BASE/<filename>``) — no
+        ``/www`` segment in the URL the user copies onto their dashboard.
         """
         www_dir = Path(__file__).parent / "www"
         try:
