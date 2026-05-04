@@ -19,26 +19,11 @@ function resolveTranslation(
   return typeof value === "string" ? value : undefined;
 }
 
-/** Resolve the active UI language to a base code (`de`, `en`, …).
- *
- * Fallback chain:
- *   1. `localStorage.selectedLanguage` — set by HA when the user changes
- *      their profile language. Stored JSON-stringified (`"de-AT"`), so
- *      we strip quotes.
- *   2. `navigator.language` — browser default, used when HA hasn't
- *      written the key yet (first-time users).
- *   3. Hard `"en"`.
- *
- * The return value is the base language only (`de-AT` → `de`,
- * `en-GB` → `en`). Previous versions returned `de_AT` verbatim, which
- * didn't match the languages map and silently fell back to English —
- * the reason the card read English on Austrian HA installs.
- */
-// Explicitly-set active language, pushed from the card's render() via
-// setLanguage(this.hass.language). Takes priority over localStorage +
-// navigator because `hass.language` is the server-side source of truth —
-// it mirrors HA's configured user-profile language even when the frontend
-// hasn't written it to localStorage.
+// Source of truth is `hass.language`, pushed in via setLanguage() from
+// the card's willUpdate. `navigator.language` covers the brief window
+// before hass is available; a hard `"en"` is the final floor. getLang
+// strips region tags (`de-AT` → `de`) so lookups match the languages
+// map keys.
 let activeLanguage: string | undefined;
 
 /** Push the active HA UI language from a component that has `hass`. */
@@ -51,11 +36,9 @@ export function setLanguage(lang: string | undefined | null): void {
 function getLang(): string {
   const raw =
     activeLanguage ||
-    localStorage.getItem("selectedLanguage") ||
     (typeof navigator !== "undefined" ? navigator.language : "") ||
     "en";
-  const cleaned = raw.replace(/['"]+/g, "");
-  return cleaned.substring(0, 2).toLowerCase();
+  return raw.replace(/['"]+/g, "").substring(0, 2).toLowerCase();
 }
 
 export function localize(

@@ -1,17 +1,18 @@
 # Contributing to Ladestellen Austria
 
-Thanks for taking the time to look. This file is the single answer to "how do I work on this repo?" — read it once and you'll have everything you need.
-
 ## Dev setup
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements_test.txt pre-commit
-pre-commit install      # runs ruff + mypy + checks on every commit
+pre-commit install
 
-npm ci                  # Lovelace card deps
-npm run build           # produces custom_components/ladestellen_austria/www/ladestellen-austria-card.js
+npm ci
+npm run build           # → custom_components/ladestellen_austria/www/ladestellen-austria-card.js
+npm run dev             # watch mode
 ```
+
+For iterating against a live HA container, `./scripts/dev-push.sh` rebuilds the bundle and rsyncs `custom_components/ladestellen_austria/` over SSH; see the script header for prereqs and flags.
 
 ## Branching & releases
 
@@ -21,23 +22,22 @@ npm run build           # produces custom_components/ladestellen_austria/www/lad
 
 ## Card-version sync
 
-`src/const.ts` `CARD_VERSION` and `custom_components/ladestellen_austria/const.py` `CARD_VERSION` **must stay byte-identical** — `tests/test_card_version.py` enforces it. Bump both in the same commit. If they drift, users get an infinite reload-banner loop.
+Bump `manifest.json` `version` and `src/const.ts` `CARD_VERSION` **in the same commit** — `const.py` reads `CARD_VERSION` from the manifest, and `tests/test_card_version.py` asserts the TS constant matches byte-for-byte. If they drift, users get an infinite reload-banner loop.
 
-`README.md` badge + `manifest.json` stay at the clean (non-beta) version; `const.py` + the TS constant can carry a `-beta-N` suffix during development.
+`README.md` badge + `manifest.json` stay at the clean (non-beta) version; `src/const.ts` can carry a `-beta-N` suffix during development.
 
 ## Tooling & config
 
-- `pyproject.toml` — source of truth for ruff (target-version, line-length), mypy (strict, ignore_missing_imports, files), and coverage config. Change rules here, not in CI flags.
-- `pytest.ini` — pytest config (asyncio mode + path).
-- `ATTRIBUTION` — canonical data-source statement and licence terms; matches the `attribution` attribute every sensor emits. Update when the upstream API or licence wording changes (and keep `const.ATTRIBUTION` in sync).
+- `pyproject.toml` is the source of truth for ruff, mypy, and coverage rules — change them here, not in CI flags.
+- `ATTRIBUTION` is the canonical data-source statement; it must stay in sync with `const.ATTRIBUTION` (the value every sensor emits).
 
-View per-file coverage locally:
+Per-file coverage locally:
 
 ```bash
 pytest tests/ --cov --cov-report=term-missing
 ```
 
-The `_dev_fixture.py` hook in `custom_components/ladestellen_austria/` is **gitignored** and a CI job (`no-dev-fixture`) hard-fails if it ever lands. Use it to inject synthetic 13-status stations during local card development; never commit it.
+`_dev_fixture.py` in `custom_components/ladestellen_austria/` is **gitignored** and the `no-dev-fixture` CI job hard-fails if it ever lands. Use it to inject synthetic 13-status stations during local card work; never commit it.
 
 ## Snapshot tests
 
@@ -55,10 +55,11 @@ Commit the updated `.ambr` file alongside the code change so the diff is reviewa
 pytest tests/ -v
 mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
 ruff check .
+npx tsc --noEmit            # rollup's TS plugin is more permissive than tsc
 npm run build
 ```
 
-CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard. Failing locally wastes a push.
+CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high`. Failing locally wastes a push.
 
 ## Reporting issues
 

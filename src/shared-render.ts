@@ -1,19 +1,14 @@
-// Shared render helpers + small utilities used by BOTH the list card
-// and the parking card. Extracted so the version-banner, footer, and
-// the WS card-version probe live in one place — neither card carries
-// its own copy of the same logic any more.
+// Shared render helpers used by both cards: version-banner, footer,
+// and the WS card-version probe live here so neither card carries its
+// own copy. Pure functions — the cards keep their own @state and call
+// these from render() / event handlers.
 //
-// Conventions:
-// - Pure functions: no `this`, take what they need as arguments,
-//   return a TemplateResult or a Promise. The cards keep their own
-//   reactive state (@state _versionMismatch, etc.) and call these
-//   helpers from render() / event handlers.
-// - The footer's ATTRIBUTION_REQUIRED string is the contract clause
-//   from §3d of the ladestellen.at ToU. Single source of truth here.
+// ATTRIBUTION_REQUIRED is the verbatim §3d clause from the
+// ladestellen.at ToU — single source of truth for both cards.
 
 import { html, nothing, type TemplateResult } from "lit";
-import type { HomeAssistant } from "custom-card-helpers";
 
+import type { HomeAssistant } from "./types";
 import { CARD_VERSION } from "./const";
 import { localize } from "./localize/localize";
 

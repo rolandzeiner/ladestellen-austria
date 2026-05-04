@@ -12,20 +12,21 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+
 import {
   fireEvent,
   type HomeAssistant,
   type LovelaceCardEditor,
-} from "custom-card-helpers";
-
-import type { ParkingLotCardConfig, Station } from "./types";
+  type ParkingLotCardConfig,
+  type Station,
+} from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
 
 // Schema is built inside render() so the car-colour dropdown labels
 // can pick up the user's current language without a schema rebuild
-// step. Using `any[]` here is the pragmatic shape — ha-form's TS types
-// aren't exported in custom-card-helpers, and the runtime accepts the
+// step. ha-form's TS types aren't shipped on a stable channel by HA
+// core, so we use a permissive shape; the runtime accepts the
 // declarative JSON-shape directly.
 type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
 

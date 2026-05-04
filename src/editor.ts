@@ -1,18 +1,10 @@
-// Visual editor for the list card. Implemented "by the book": every
-// typed field goes through <ha-form> with a declarative schema array
-// (HA 2024+ best practice — same shape as the built-in tile-card,
-// entities, gauge editors). Expandable sections group related fields
-// the way HA's design system intends, the schema-driven a11y wiring
-// (label + describedby + form-field id pairing) is handled by ha-form
-// itself, and the value-changed handler is one line that splats the
-// merged config back into our reactive state.
-//
-// Custom widgets (connector / amenity / payment chip filters and the
-// pin picker) sit BELOW the ha-form as bespoke `.editor-section`
-// blocks — they have no clean ha-form selector equivalent and the
-// skill explicitly carves out the "keep-some-custom-rendering path"
-// for cases like this. Both layers use the same .editor-section /
-// .section-header styling so the editor reads as one coherent flow.
+// Visual editor for the list card. Typed fields flow through <ha-form>
+// with a declarative schema (HA gets a11y wiring + label/id pairing for
+// free). Custom widgets (connector / amenity / payment chip filters and
+// the pin picker) sit BELOW the ha-form as bespoke `.editor-section`
+// blocks — there's no ha-form selector that matches the chip-row UX.
+// Both layers share the same .editor-section / .section-header styling
+// so the editor reads as one coherent flow.
 
 import {
   LitElement,
@@ -22,29 +14,26 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import {
-  fireEvent,
-  type HomeAssistant,
-  type LovelaceCardEditor,
-} from "custom-card-helpers";
 
 import {
   AMENITY_FILTER_OPTIONS,
   CONNECTOR_FILTER_OPTIONS,
   PAYMENT_FILTER_OPTIONS,
+  fireEvent,
+  type HomeAssistant,
+  type LovelaceCardEditor,
   type LadestellenAustriaCardConfig,
   type Station,
 } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
 
-// ha-form schema. Each `name` is resolved via computeLabel into
-// `editor.<name>` so the localize namespace stays flat. Expandable
-// sections wrap the per-section schemas; HA renders them as collapsible
-// groups with the section title from `editor.section_<name>`.
+// Each `name` is resolved via computeLabel into `editor.<name>` so the
+// localize namespace stays flat. Expandable sections wrap per-section
+// schemas with title `editor.section_<name>`.
 //
-// `HaFormSchema` is the pragmatic shape — ha-form's TS types aren't
-// exported through custom-card-helpers, but the runtime accepts the
+// ha-form's TS types aren't shipped on a stable channel by HA core, so
+// HaFormSchema is a permissive shape; the runtime accepts the
 // declarative JSON shape directly.
 type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
 
