@@ -12,8 +12,8 @@
 //   from §3d of the ladestellen.at ToU. Single source of truth here.
 
 import { html, nothing, type TemplateResult } from "lit";
-import type { HomeAssistant } from "custom-card-helpers";
 
+import type { HomeAssistant } from "./types";
 import { CARD_VERSION } from "./const";
 import { localize } from "./localize/localize";
 

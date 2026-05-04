@@ -17,12 +17,10 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import {
-  type HomeAssistant,
-  type LovelaceCardEditor,
-} from "custom-card-helpers";
 
 import type {
+  HomeAssistant,
+  LovelaceCardEditor,
   ParkingLotCardConfig,
   Point,
   Station,

@@ -3,16 +3,16 @@
 Canonical pattern from the HA developer community guide:
 https://community.home-assistant.io/t/developer-guide-embedded-lovelace-card-in-a-home-assistant-integration/974909
 
-Storage-vs-yaml detection — ground truth verified against HA core:
+Storage-vs-yaml detection — the ``LovelaceData`` field that signals
+storage mode was renamed across HA versions:
 
   * HA ≤ 2026.1: ``LovelaceData.mode: str``
-    https://github.com/home-assistant/core/blob/2026.1.0/homeassistant/components/lovelace/__init__.py
-  * HA ≥ 2026.2: ``LovelaceData.resource_mode: str`` (clean rename)
-    https://github.com/home-assistant/core/blob/2026.2.0/homeassistant/components/lovelace/__init__.py
+  * HA ≥ 2026.2: ``LovelaceData.resource_mode: str``
 
-There is no version that ships both. ``_is_storage_mode`` reads
-whichever attribute is set so the same code works on either side
-of the rename. ``resources`` itself is a
+``_is_storage_mode`` reads whichever attribute is set, preferring
+``resource_mode`` when both happen to be defined — duck-typed by design
+so we don't have to track every micro-rename across HA versions.
+``resources`` itself is a
 ``ResourceYAMLCollection | ResourceStorageCollection`` union; the
 type-only import + ``cast`` below narrow it for the storage-only
 mutation calls without a runtime dependency on the typed class

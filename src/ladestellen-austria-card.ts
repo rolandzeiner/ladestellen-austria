@@ -16,19 +16,16 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+
 import {
   fireEvent,
   type HomeAssistant,
   type LovelaceCardEditor,
-} from "custom-card-helpers";
-
-import type {
-  LadestellenAustriaCardConfig,
-  OpeningHours,
-  Point,
-  Station,
+  type LadestellenAustriaCardConfig,
+  type OpeningHours,
+  type Point,
+  type Station,
 } from "./types";
-import { CARD_VERSION } from "./const";
 import { localize, setLanguage } from "./localize/localize";
 import {
   checkCardVersionWS,
@@ -54,12 +51,6 @@ import "./editor";
 // decorator registers on module load, its window.customCards push
 // runs, and Rollup rolls it into ladestellen-austria-card.js.
 import "./parking-card";
-
-console.info(
-  `%c  Ladestellen Austria Card  %c  ${localize("common.version")} ${CARD_VERSION}  `,
-  "color: white; font-weight: bold; background: #3FA535",
-  "color: white; font-weight: bold; background: dimgray",
-);
 
 window.customCards = window.customCards ?? [];
 window.customCards.push({

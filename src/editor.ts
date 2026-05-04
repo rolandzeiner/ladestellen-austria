@@ -22,16 +22,14 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import {
-  fireEvent,
-  type HomeAssistant,
-  type LovelaceCardEditor,
-} from "custom-card-helpers";
 
 import {
   AMENITY_FILTER_OPTIONS,
   CONNECTOR_FILTER_OPTIONS,
   PAYMENT_FILTER_OPTIONS,
+  fireEvent,
+  type HomeAssistant,
+  type LovelaceCardEditor,
   type LadestellenAustriaCardConfig,
   type Station,
 } from "./types";
@@ -44,7 +42,7 @@ import { localize, setLanguage } from "./localize/localize";
 // groups with the section title from `editor.section_<name>`.
 //
 // `HaFormSchema` is the pragmatic shape — ha-form's TS types aren't
-// exported through custom-card-helpers, but the runtime accepts the
+// shipped on a stable channel by HA core, but the runtime accepts the
 // declarative JSON shape directly.
 type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
 
