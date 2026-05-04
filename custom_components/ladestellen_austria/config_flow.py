@@ -265,16 +265,17 @@ async def _test_api_connection(
     params = {"latitude": str(latitude), "longitude": str(longitude)}
     timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SEC)
     try:
-        resp = await session.get(
+        async with session.get(
             f"{API_BASE_URL}{SEARCH_PATH}",
             headers=headers,
             params=params,
             timeout=timeout,
-        )
+        ) as resp:
+            status = resp.status
     except (aiohttp.ClientError, TimeoutError):
         return "cannot_connect"
 
-    return classify_probe_status(resp.status)
+    return classify_probe_status(status)
 
 
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -485,8 +486,8 @@ class LadestellenAustriaOptionsFlow(OptionsFlow):
                         ),
                     ): NumberSelector(
                         NumberSelectorConfig(
-                            min=5,
-                            max=720,
+                            min=MIN_POLL_MINUTES,
+                            max=MAX_POLL_MINUTES,
                             step=5,
                             unit_of_measurement="min",
                             mode=NumberSelectorMode.BOX,

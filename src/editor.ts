@@ -11,6 +11,7 @@ import {
   html,
   nothing,
   type CSSResultGroup,
+  type PropertyValues,
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -181,8 +182,17 @@ class LadestellenAustriaCardEditor
     fireEvent(this, "config-changed", { config: this._config });
   }
 
+  protected willUpdate(changedProps: PropertyValues): void {
+    super.willUpdate(changedProps);
+    // Lit forbids side-effects in render(); push hass.language into the
+    // localize() helper here whenever hass changes. Mirrors the cards'
+    // pattern in ladestellen-austria-card.ts / parking-card.ts.
+    if (changedProps.has("hass")) {
+      setLanguage(this.hass?.language);
+    }
+  }
+
   protected render(): TemplateResult {
-    setLanguage(this.hass?.language);
     if (!this.hass) {
       return html`<p>${localize("common.loading")}</p>`;
     }

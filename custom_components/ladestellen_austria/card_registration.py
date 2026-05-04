@@ -10,6 +10,7 @@ whichever attribute is set; ``_is_storage_mode`` carries the details.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -83,6 +84,12 @@ class JSModuleRegistration:
             self.lovelace = self.hass.data.get(LOVELACE_DATA)
         else:
             self.lovelace = self.hass.data.get("lovelace")
+        # Pending async_call_later handle for the resource-loaded retry
+        # loop. Captured so async_unregister can cancel it (otherwise
+        # HA's verify_cleanup fixture and prod tear-down both leak the
+        # scheduled callback). Reset before each schedule call so we
+        # never lose a previous handle to the GC.
+        self._retry_unsub: Callable[[], None] | None = None
 
     async def async_register(self) -> None:
         """Register frontend resources."""
@@ -138,6 +145,10 @@ class JSModuleRegistration:
 
         async def _check_loaded(_now: Any) -> None:
             nonlocal attempts
+            # The just-fired callback is no longer cancellable — drop
+            # the stale handle so async_unregister doesn't hold a
+            # pointer to a scheduler slot that has already drained.
+            self._retry_unsub = None
             assert self.lovelace is not None
             if self.lovelace.resources.loaded:
                 await self._async_register_modules()
@@ -159,7 +170,14 @@ class JSModuleRegistration:
                 attempts,
                 _LOVELACE_LOAD_RETRY_MAX,
             )
-            async_call_later(
+            # Capture the cancel handle so async_unregister can stop
+            # the scheduled retry. Cancel any previous handle defensively
+            # — _check_loaded should have nulled it on entry, but a
+            # caller racing async_register / async_unregister can
+            # otherwise leave a leaked slot behind.
+            if self._retry_unsub is not None:
+                self._retry_unsub()
+            self._retry_unsub = async_call_later(
                 self.hass, _LOVELACE_LOAD_RETRY_INTERVAL_S, _check_loaded
             )
 
@@ -235,6 +253,13 @@ class JSModuleRegistration:
 
     async def async_unregister(self) -> None:
         """Remove Lovelace resources owned by this integration."""
+        # Cancel any pending retry tick before tearing down — otherwise
+        # the next _check_loaded fires against a registrar whose hass
+        # bus is already shutting down and HA's verify_cleanup leaks
+        # the scheduler slot.
+        if self._retry_unsub is not None:
+            self._retry_unsub()
+            self._retry_unsub = None
         if self.lovelace is None or not self._is_storage_mode():
             return
         resources = cast("ResourceStorageCollection", self.lovelace.resources)

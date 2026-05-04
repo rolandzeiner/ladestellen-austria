@@ -6,7 +6,7 @@ the domain normaliser/validator pair.
 """
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import aiohttp
 import pytest
@@ -26,6 +26,8 @@ from custom_components.ladestellen_austria.const import (
     CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
 )
+
+from .conftest import make_response_cm
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +58,7 @@ async def test_probe_status_mapping(
 ) -> None:
     """Each upstream HTTP status maps to the documented error key."""
     session = MagicMock()
-    session.get = AsyncMock(return_value=_resp(status))
+    session.get = MagicMock(return_value=make_response_cm(_resp(status)))
     with patch(
         "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
         return_value=session,
@@ -80,7 +82,7 @@ async def test_probe_network_errors_map_to_cannot_connect(
 ) -> None:
     """All network-level failures collapse to cannot_connect."""
     session = MagicMock()
-    session.get = AsyncMock(side_effect=exc)
+    session.get = MagicMock(side_effect=exc)
     with patch(
         "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
         return_value=session,

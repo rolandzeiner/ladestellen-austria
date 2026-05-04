@@ -22,7 +22,7 @@ from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
 
-from .conftest import BASE_ENTRY_DATA
+from .conftest import BASE_ENTRY_DATA, make_response_cm
 
 
 def _json_resp(body: object, status: int = 200) -> MagicMock:
@@ -40,7 +40,7 @@ async def test_coordinator_sends_canonical_user_agent(hass: HomeAssistant) -> No
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 
     session = MagicMock()
-    session.get = AsyncMock(return_value=_json_resp([]))
+    session.get = MagicMock(return_value=make_response_cm(_json_resp([])))
     coordinator._session = session
 
     await coordinator._async_update_data()
@@ -56,7 +56,9 @@ async def test_config_flow_probe_sends_canonical_user_agent(
 ) -> None:
     """Config-flow trial probe carries the same headers as the coordinator."""
     session = MagicMock()
-    session.get = AsyncMock(return_value=_json_resp([], status=200))
+    session.get = MagicMock(
+        return_value=make_response_cm(_json_resp([], status=200))
+    )
     with patch(
         "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
         return_value=session,

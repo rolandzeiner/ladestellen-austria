@@ -181,17 +181,31 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  protected render(): TemplateResult {
-    // Fire the WS card-version probe once on first render where hass is
-    // available. Mismatch flips _versionMismatch which Lit treats as a
-    // reactive state property → next render shows the reload banner.
-    if (!this._versionCheckDone && this.hass) {
-      this._versionCheckDone = true;
-      void checkCardVersionWS(this.hass).then((mismatch) => {
-        if (mismatch) this._versionMismatch = mismatch;
-      });
-    }
+  protected firstUpdated(_changedProps: PropertyValues): void {
+    // Lit's textbook hook for one-shot init that needs the DOM. Fire
+    // the WS card-version probe once. _versionCheckDone is also
+    // checked in updated() in case `hass` arrives after the first
+    // update. isConnected guards the late .then() so the callback
+    // never writes _versionMismatch on a disconnected element.
+    this._maybeRunVersionCheck();
+  }
 
+  protected updated(changedProps: PropertyValues): void {
+    super.updated(changedProps);
+    if (changedProps.has("hass")) {
+      this._maybeRunVersionCheck();
+    }
+  }
+
+  private _maybeRunVersionCheck(): void {
+    if (this._versionCheckDone || !this.hass) return;
+    this._versionCheckDone = true;
+    void checkCardVersionWS(this.hass).then((mismatch) => {
+      if (this.isConnected && mismatch) this._versionMismatch = mismatch;
+    });
+  }
+
+  protected render(): TemplateResult {
     // Block on missing config (defensive — setConfig should have run).
     // Block on missing hass separately so the empty-state stays reactive:
     // when hass arrives, Lit re-renders and we proceed past this guard.

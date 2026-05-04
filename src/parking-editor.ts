@@ -9,6 +9,7 @@ import {
   html,
   nothing,
   type CSSResultGroup,
+  type PropertyValues,
   type TemplateResult,
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -23,10 +24,8 @@ import {
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
 
-// Schema is built inside render() so the car-colour dropdown labels
-// can pick up the user's current language without a schema rebuild
-// step. ha-form's TS types aren't shipped on a stable channel by HA
-// core, so we use a permissive shape; the runtime accepts the
+// ha-form's TS types aren't shipped on a stable channel by HA core, so
+// HaFormSchema is a permissive shape; the runtime accepts the
 // declarative JSON-shape directly.
 type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
 
@@ -36,6 +35,63 @@ const FORM_DEFAULTS: Record<string, unknown> = {
   logo_adapt_to_theme: false,
   car_color_mode: "random",
 };
+
+// Hoisted to module scope so the array identity stays stable across
+// renders; ha-form uses identity-based schema-skip and would otherwise
+// rebuild every form on every render.
+const TOP_SCHEMA: HaFormSchema = [
+  {
+    name: "entity",
+    required: true,
+    selector: {
+      entity: { domain: "sensor", integration: "ladestellen_austria" },
+    },
+  },
+  { name: "name", selector: { text: {} } },
+];
+
+// Same hoist rationale as TOP_SCHEMA. The localize() calls in
+// `select.options` are evaluated once at module load — that's
+// intentional, the option labels only need to track the language
+// captured by the localize cache when the bundle is parsed.
+const APPEARANCE_SCHEMA: HaFormSchema = [
+  {
+    type: "expandable",
+    name: "appearance",
+    // flatten: true keeps the inner fields at the top level of
+    // ev.detail.value (data.car_color_mode, not data.appearance.car_color_mode)
+    // so the card-side `_config.car_color_mode === "fixed"` check
+    // resolves correctly and the colour-swatch reveal works.
+    flatten: true,
+    schema: [
+      { name: "hide_header", selector: { boolean: {} } },
+      { name: "show_free_count", selector: { boolean: {} } },
+      { name: "logo_adapt_to_theme", selector: { boolean: {} } },
+      {
+        name: "car_color_mode",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              {
+                value: "random",
+                label: localize("editor.car_color_random"),
+              },
+              {
+                value: "theme",
+                label: localize("editor.car_color_theme"),
+              },
+              {
+                value: "fixed",
+                label: localize("editor.car_color_fixed"),
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+];
 
 @customElement("ladestellen-austria-parking-card-editor")
 class LadestellenAustriaParkingCardEditor
@@ -80,62 +136,9 @@ class LadestellenAustriaParkingCardEditor
   // BETWEEN them. Both ha-forms share the same `_formChanged` handler
   // and the same `data` prop (full _config); each form preserves the
   // fields it doesn't render and writes back the merged config.
-  private _topSchema(): HaFormSchema {
-    return [
-      {
-        name: "entity",
-        required: true,
-        selector: {
-          entity: { domain: "sensor", integration: "ladestellen_austria" },
-        },
-      },
-      { name: "name", selector: { text: {} } },
-    ];
-  }
-
-  private _appearanceSchema(): HaFormSchema {
-    // ha-form's `select` selector renders option `label` as the visible
-    // string. Resolving at render-time means language switches reflect
-    // immediately without a schema rebuild step.
-    return [
-      {
-        type: "expandable",
-        name: "appearance",
-        // flatten: true keeps the inner fields at the top level of
-        // ev.detail.value (data.car_color_mode, not data.appearance.car_color_mode)
-        // so the card-side `_config.car_color_mode === "fixed"` check
-        // resolves correctly and the colour-swatch reveal works.
-        flatten: true,
-        schema: [
-          { name: "hide_header", selector: { boolean: {} } },
-          { name: "show_free_count", selector: { boolean: {} } },
-          { name: "logo_adapt_to_theme", selector: { boolean: {} } },
-          {
-            name: "car_color_mode",
-            selector: {
-              select: {
-                mode: "dropdown",
-                options: [
-                  {
-                    value: "random",
-                    label: localize("editor.car_color_random"),
-                  },
-                  {
-                    value: "theme",
-                    label: localize("editor.car_color_theme"),
-                  },
-                  {
-                    value: "fixed",
-                    label: localize("editor.car_color_fixed"),
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      },
-    ];
-  }
+  // Schemas live at module scope (TOP_SCHEMA above, APPEARANCE_SCHEMA
+  // below) so ha-form's identity-based `.schema` skip works — fresh
+  // array literals on every render would defeat it.
 
   private _selectStation(stationId: string): void {
     const next = this._config.station_id === stationId ? "" : stationId;
@@ -152,8 +155,17 @@ class LadestellenAustriaParkingCardEditor
     fireEvent(this, "config-changed", { config: this._config });
   }
 
+  protected willUpdate(changedProps: PropertyValues): void {
+    super.willUpdate(changedProps);
+    // Lit forbids side-effects in render(); push hass.language into the
+    // localize() helper here whenever hass changes. Mirrors the cards'
+    // pattern in ladestellen-austria-card.ts / parking-card.ts.
+    if (changedProps.has("hass")) {
+      setLanguage(this.hass?.language);
+    }
+  }
+
   protected render(): TemplateResult {
-    setLanguage(this.hass?.language);
     if (!this.hass) {
       return html`<p>${localize("common.loading")}</p>`;
     }
@@ -173,7 +185,7 @@ class LadestellenAustriaParkingCardEditor
         <ha-form
           .hass=${this.hass}
           .data=${data}
-          .schema=${this._topSchema()}
+          .schema=${TOP_SCHEMA}
           .computeLabel=${this._computeLabel}
           @value-changed=${this._formChanged}
         ></ha-form>
@@ -234,7 +246,7 @@ class LadestellenAustriaParkingCardEditor
         <ha-form
           .hass=${this.hass}
           .data=${data}
-          .schema=${this._appearanceSchema()}
+          .schema=${APPEARANCE_SCHEMA}
           .computeLabel=${this._computeLabel}
           @value-changed=${this._formChanged}
         ></ha-form>
