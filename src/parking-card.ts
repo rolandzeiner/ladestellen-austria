@@ -57,7 +57,7 @@ window.customCards.push({
 });
 
 @customElement("ladestellen-austria-parking-card")
-class LadestellenAustriaParkingCard extends LitElement {
+export class LadestellenAustriaParkingCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
     return document.createElement(
       "ladestellen-austria-parking-card-editor",
@@ -106,7 +106,7 @@ class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
-  protected shouldUpdate(changedProps: PropertyValues): boolean {
+  protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // setConfig is called synchronously before mount; this.config is
     // non-null by the time any property change can fire shouldUpdate.
     if (changedProps.has("config") || changedProps.has("_revealedSlots")) {
@@ -139,14 +139,14 @@ class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
-  protected willUpdate(changedProps: PropertyValues): void {
+  protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     if (changedProps.has("hass")) {
       setLanguage(this.hass?.language);
     }
   }
 
-  protected firstUpdated(_changedProps: PropertyValues): void {
+  protected override firstUpdated(_changedProps: PropertyValues): void {
     // Lit's textbook hook for one-shot init that needs the DOM. Fire
     // the WS card-version probe once. _versionCheckDone is also
     // checked in updated() in case `hass` arrives after the first
@@ -155,7 +155,7 @@ class LadestellenAustriaParkingCard extends LitElement {
     this._maybeRunVersionCheck();
   }
 
-  protected updated(changedProps: PropertyValues): void {
+  protected override updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
     if (changedProps.has("hass")) {
       this._maybeRunVersionCheck();
@@ -170,7 +170,7 @@ class LadestellenAustriaParkingCard extends LitElement {
     });
   }
 
-  protected render(): TemplateResult {
+  protected override render(): TemplateResult {
     if (!this.hass || !this.config) {
       return html`<ha-card>
         <div class="card-content">
@@ -496,5 +496,5 @@ class LadestellenAustriaParkingCard extends LitElement {
 
   // Footer rendering lives in shared-render.ts; both cards share it.
 
-  static styles: CSSResultGroup = parkingLotStyles;
+  static override styles: CSSResultGroup = parkingLotStyles;
 }

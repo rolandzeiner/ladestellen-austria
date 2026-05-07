@@ -97,7 +97,7 @@ const FORM_DEFAULTS: Record<string, unknown> = {
 };
 
 @customElement("ladestellen-austria-card-editor")
-class LadestellenAustriaCardEditor
+export class LadestellenAustriaCardEditor
   extends LitElement
   implements LovelaceCardEditor
 {
@@ -182,7 +182,7 @@ class LadestellenAustriaCardEditor
     fireEvent(this, "config-changed", { config: this._config });
   }
 
-  protected willUpdate(changedProps: PropertyValues): void {
+  protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     // Lit forbids side-effects in render(); push hass.language into the
     // localize() helper here whenever hass changes. Mirrors the cards'
@@ -192,7 +192,7 @@ class LadestellenAustriaCardEditor
     }
   }
 
-  protected render(): TemplateResult {
+  protected override render(): TemplateResult {
     if (!this.hass) {
       return html`<p>${localize("common.loading")}</p>`;
     }
@@ -373,5 +373,5 @@ class LadestellenAustriaCardEditor
     `;
   }
 
-  static styles: CSSResultGroup = editorStyles;
+  static override styles: CSSResultGroup = editorStyles;
 }

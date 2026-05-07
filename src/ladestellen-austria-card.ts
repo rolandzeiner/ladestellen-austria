@@ -41,7 +41,6 @@ import {
   pointConnectorLabel,
   pointPowerType,
   pointStatusLabel,
-  rackSlotStatus,
   shortConnector,
   slotVariant,
 } from "./utils";
@@ -138,7 +137,7 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  protected shouldUpdate(changedProps: PropertyValues): boolean {
+  protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
@@ -171,7 +170,7 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  protected willUpdate(changedProps: PropertyValues): void {
+  protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     // Push hass.language into the localize() helper whenever hass
     // changes — keeps the card aligned with HA's user-profile language
@@ -181,7 +180,7 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  protected firstUpdated(_changedProps: PropertyValues): void {
+  protected override firstUpdated(_changedProps: PropertyValues): void {
     // Lit's textbook hook for one-shot init that needs the DOM. Fire
     // the WS card-version probe once. _versionCheckDone is also
     // checked in updated() in case `hass` arrives after the first
@@ -190,7 +189,7 @@ export class LadestellenAustriaCard extends LitElement {
     this._maybeRunVersionCheck();
   }
 
-  protected updated(changedProps: PropertyValues): void {
+  protected override updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
     if (changedProps.has("hass")) {
       this._maybeRunVersionCheck();
@@ -205,7 +204,7 @@ export class LadestellenAustriaCard extends LitElement {
     });
   }
 
-  protected render(): TemplateResult {
+  protected override render(): TemplateResult {
     // Block on missing config (defensive — setConfig should have run).
     // Block on missing hass separately so the empty-state stays reactive:
     // when hass arrives, Lit re-renders and we proceed past this guard.
@@ -1451,5 +1450,5 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  static styles: CSSResultGroup = cardStyles;
+  static override styles: CSSResultGroup = cardStyles;
 }

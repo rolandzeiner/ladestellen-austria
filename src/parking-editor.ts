@@ -94,7 +94,7 @@ const APPEARANCE_SCHEMA: HaFormSchema = [
 ];
 
 @customElement("ladestellen-austria-parking-card-editor")
-class LadestellenAustriaParkingCardEditor
+export class LadestellenAustriaParkingCardEditor
   extends LitElement
   implements LovelaceCardEditor
 {
@@ -155,7 +155,7 @@ class LadestellenAustriaParkingCardEditor
     fireEvent(this, "config-changed", { config: this._config });
   }
 
-  protected willUpdate(changedProps: PropertyValues): void {
+  protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     // Lit forbids side-effects in render(); push hass.language into the
     // localize() helper here whenever hass changes. Mirrors the cards'
@@ -165,7 +165,7 @@ class LadestellenAustriaParkingCardEditor
     }
   }
 
-  protected render(): TemplateResult {
+  protected override render(): TemplateResult {
     if (!this.hass) {
       return html`<p>${localize("common.loading")}</p>`;
     }
@@ -293,5 +293,5 @@ class LadestellenAustriaParkingCardEditor
     `;
   }
 
-  static styles: CSSResultGroup = editorStyles;
+  static override styles: CSSResultGroup = editorStyles;
 }
