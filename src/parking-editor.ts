@@ -166,11 +166,14 @@ export class LadestellenAustriaParkingCardEditor
   }
 
   protected override render(): TemplateResult {
-    if (!this.hass) {
+    // Gate only on `_config` — block render until setConfig has run, but
+    // never on hass. ha-form needs hass and is conditionally rendered;
+    // the static editor content (sections, hints) renders without it.
+    if (!this._config) {
       return html`<p>${localize("common.loading")}</p>`;
     }
     const entityId = this._config.entity;
-    const stateObj = entityId ? this.hass.states[entityId] : undefined;
+    const stateObj = entityId ? this.hass?.states[entityId] : undefined;
     const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
     const selectedId = this._config.station_id ?? "";
     const data: Record<string, unknown> = {
@@ -178,17 +181,19 @@ export class LadestellenAustriaParkingCardEditor
       ...this._config,
     };
     const entityInvalid =
-      !!entityId && !this.hass.states[entityId];
+      !!entityId && !!this.hass && !this.hass.states[entityId];
 
     return html`
       <div class="editor">
-        <ha-form
-          .hass=${this.hass}
-          .data=${data}
-          .schema=${TOP_SCHEMA}
-          .computeLabel=${this._computeLabel}
-          @value-changed=${this._formChanged}
-        ></ha-form>
+        ${this.hass
+          ? html`<ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${TOP_SCHEMA}
+              .computeLabel=${this._computeLabel}
+              @value-changed=${this._formChanged}
+            ></ha-form>`
+          : nothing}
         ${entityInvalid
           ? html`<ha-alert alert-type="error">
               ${localize("editor.entity_missing")}
@@ -243,13 +248,15 @@ export class LadestellenAustriaParkingCardEditor
             : nothing}
         </div>
 
-        <ha-form
-          .hass=${this.hass}
-          .data=${data}
-          .schema=${APPEARANCE_SCHEMA}
-          .computeLabel=${this._computeLabel}
-          @value-changed=${this._formChanged}
-        ></ha-form>
+        ${this.hass
+          ? html`<ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${APPEARANCE_SCHEMA}
+              .computeLabel=${this._computeLabel}
+              @value-changed=${this._formChanged}
+            ></ha-form>`
+          : nothing}
 
         ${this._config.car_color_mode === "fixed"
           ? html`<div class="editor-section">

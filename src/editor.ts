@@ -193,7 +193,12 @@ export class LadestellenAustriaCardEditor
   }
 
   protected override render(): TemplateResult {
-    if (!this.hass) {
+    // Gate only on `_config` — block render until setConfig has run, but
+    // never on hass. The ha-form below needs hass and is conditionally
+    // rendered; the chip filters and pin-section read from `_config`
+    // alone (the pin section also reads hass state, but already
+    // optional-chains and renders muted hints when absent).
+    if (!this._config) {
       return html`<p>${localize("common.loading")}</p>`;
     }
 
@@ -206,17 +211,21 @@ export class LadestellenAustriaCardEditor
     // selector shows its own validity styling but doesn't surface a
     // user-facing message; the alert below it does.
     const entityInvalid =
-      !!this._config.entity && !this.hass.states[this._config.entity];
+      !!this._config.entity &&
+      !!this.hass &&
+      !this.hass.states[this._config.entity];
 
     return html`
       <div class="editor">
-        <ha-form
-          .hass=${this.hass}
-          .data=${data}
-          .schema=${SCHEMA}
-          .computeLabel=${this._computeLabel}
-          @value-changed=${this._formChanged}
-        ></ha-form>
+        ${this.hass
+          ? html`<ha-form
+              .hass=${this.hass}
+              .data=${data}
+              .schema=${SCHEMA}
+              .computeLabel=${this._computeLabel}
+              @value-changed=${this._formChanged}
+            ></ha-form>`
+          : nothing}
         ${entityInvalid
           ? html`<ha-alert alert-type="error">
               ${localize("editor.entity_missing")}

@@ -85,7 +85,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
   private _versionCheckDone = false;
 
   public setConfig(config: ParkingLotCardConfig): void {
-    if (!config) {
+    if (!config || typeof config !== "object") {
       throw new Error(localize("common.invalid_configuration"));
     }
     if (config.entity !== undefined && typeof config.entity !== "string") {

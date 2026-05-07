@@ -109,7 +109,7 @@ export class LadestellenAustriaCard extends LitElement {
   private _versionCheckDone = false;
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
-    if (!config) {
+    if (!config || typeof config !== "object") {
       throw new Error(localize("common.invalid_configuration"));
     }
     // Shape validation — raise a real HA error card with a localized
