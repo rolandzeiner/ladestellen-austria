@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
@@ -49,6 +49,24 @@ BASE_ENTRY_DATA: dict[str, object] = {
     CONF_LONGITUDE: 16.37,
     CONF_SCAN_INTERVAL: 30,
 }
+
+
+def make_response_cm(resp: object) -> MagicMock:
+    """Wrap a mock response in an async-context-manager mock.
+
+    Production code now uses ``async with session.get(...) as resp`` so
+    the response body is always released. Tests that mock ``session.get``
+    have to return a context manager whose ``__aenter__`` yields the
+    response. Use::
+
+        session.get = MagicMock(return_value=make_response_cm(resp))
+
+    instead of the older ``AsyncMock(return_value=resp)`` pattern.
+    """
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=resp)
+    cm.__aexit__ = AsyncMock(return_value=None)
+    return cm
 
 
 def make_entry(

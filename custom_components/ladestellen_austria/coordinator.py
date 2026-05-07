@@ -388,10 +388,25 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SEC)
         try:
-            resp = await self._session.get(
-                url, headers=self._build_headers(), params=params, timeout=timeout,
-            )
-            resp.raise_for_status()
+            async with self._session.get(
+                url,
+                headers=self._build_headers(),
+                params=params,
+                timeout=timeout,
+            ) as resp:
+                resp.raise_for_status()
+                status = resp.status
+                try:
+                    payload = await resp.json()
+                except (aiohttp.ContentTypeError, ValueError) as err:
+                    raise UpdateFailed(
+                        translation_domain=DOMAIN,
+                        translation_key="api_invalid_response",
+                        translation_placeholders={
+                            "status": str(status),
+                            "error": str(err),
+                        },
+                    ) from err
         except asyncio.TimeoutError as err:
             raise UpdateFailed(
                 translation_domain=DOMAIN,
@@ -427,24 +442,12 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 },
             ) from err
 
-        try:
-            payload = await resp.json()
-        except (aiohttp.ContentTypeError, ValueError) as err:
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="api_invalid_response",
-                translation_placeholders={
-                    "status": str(resp.status),
-                    "error": str(err),
-                },
-            ) from err
-
         if not isinstance(payload, list):
             raise UpdateFailed(
                 translation_domain=DOMAIN,
                 translation_key="api_invalid_response",
                 translation_placeholders={
-                    "status": str(resp.status),
+                    "status": str(status),
                     "error": f"expected list, got {type(payload).__name__}",
                 },
             )

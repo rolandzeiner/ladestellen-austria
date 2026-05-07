@@ -41,7 +41,6 @@ import {
   pointConnectorLabel,
   pointPowerType,
   pointStatusLabel,
-  rackSlotStatus,
   shortConnector,
   slotVariant,
 } from "./utils";
@@ -110,7 +109,7 @@ export class LadestellenAustriaCard extends LitElement {
   private _versionCheckDone = false;
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
-    if (!config) {
+    if (!config || typeof config !== "object") {
       throw new Error(localize("common.invalid_configuration"));
     }
     // Shape validation — raise a real HA error card with a localized
@@ -138,7 +137,7 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  protected shouldUpdate(changedProps: PropertyValues): boolean {
+  protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
@@ -171,7 +170,7 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
-  protected willUpdate(changedProps: PropertyValues): void {
+  protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     // Push hass.language into the localize() helper whenever hass
     // changes — keeps the card aligned with HA's user-profile language
@@ -181,17 +180,31 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  protected render(): TemplateResult {
-    // Fire the WS card-version probe once on first render where hass is
-    // available. Mismatch flips _versionMismatch which Lit treats as a
-    // reactive state property → next render shows the reload banner.
-    if (!this._versionCheckDone && this.hass) {
-      this._versionCheckDone = true;
-      void checkCardVersionWS(this.hass).then((mismatch) => {
-        if (mismatch) this._versionMismatch = mismatch;
-      });
-    }
+  protected override firstUpdated(_changedProps: PropertyValues): void {
+    // Lit's textbook hook for one-shot init that needs the DOM. Fire
+    // the WS card-version probe once. _versionCheckDone is also
+    // checked in updated() in case `hass` arrives after the first
+    // update. isConnected guards the late .then() so the callback
+    // never writes _versionMismatch on a disconnected element.
+    this._maybeRunVersionCheck();
+  }
 
+  protected override updated(changedProps: PropertyValues): void {
+    super.updated(changedProps);
+    if (changedProps.has("hass")) {
+      this._maybeRunVersionCheck();
+    }
+  }
+
+  private _maybeRunVersionCheck(): void {
+    if (this._versionCheckDone || !this.hass) return;
+    this._versionCheckDone = true;
+    void checkCardVersionWS(this.hass).then((mismatch) => {
+      if (this.isConnected && mismatch) this._versionMismatch = mismatch;
+    });
+  }
+
+  protected override render(): TemplateResult {
     // Block on missing config (defensive — setConfig should have run).
     // Block on missing hass separately so the empty-state stays reactive:
     // when hass arrives, Lit re-renders and we proceed past this guard.
@@ -1437,5 +1450,5 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  static styles: CSSResultGroup = cardStyles;
+  static override styles: CSSResultGroup = cardStyles;
 }

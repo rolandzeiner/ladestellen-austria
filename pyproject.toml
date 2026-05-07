@@ -4,10 +4,10 @@
 
 [tool.ruff]
 # Aligned with the CI Python pin (.github/workflows/validate.yml). HA
-# core targets 3.13.x today; bumping this is a breaking change for
-# downstream contributors building on older interpreters — keep it
-# explicit. (3.14 attempted 2026-05-01, rolled back — see validate.yml.)
-target-version = "py313"
+# core 2026.5+ supports 3.14 across its transitive deps (pyo3 0.24
+# blocker resolved 2026-05-07). Keep this in lockstep with the workflow
+# `python-version` so ruff's lint set matches the interpreter CI runs on.
+target-version = "py314"
 line-length = 88
 
 [tool.mypy]

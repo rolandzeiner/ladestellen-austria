@@ -24,7 +24,7 @@ from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
 
-from .conftest import EXAMPLE_COORDINATOR_DATA, make_entry
+from .conftest import EXAMPLE_COORDINATOR_DATA, make_entry, make_response_cm
 
 
 def _make_entry(data: dict[str, object] | None = None) -> MockConfigEntry:
@@ -64,14 +64,18 @@ async def test_fetch_success(hass: HomeAssistant, mock_fetch: AsyncMock) -> None
 def _attach_session(coordinator: LadestellenAustriaCoordinator, response_or_exc):
     """Wire a fake aiohttp session onto the coordinator.
 
-    `response_or_exc` is either a mock response (returned from session.get)
-    or an exception instance to raise from session.get.
+    `response_or_exc` is either a mock response (which gets wrapped in
+    an async-context-manager via make_response_cm — production code
+    uses ``async with session.get(...) as resp``) or an exception
+    instance to raise from session.get.
     """
     session = MagicMock()
     if isinstance(response_or_exc, BaseException):
-        session.get = AsyncMock(side_effect=response_or_exc)
+        session.get = MagicMock(side_effect=response_or_exc)
     else:
-        session.get = AsyncMock(return_value=response_or_exc)
+        session.get = MagicMock(
+            return_value=make_response_cm(response_or_exc)
+        )
     coordinator._session = session
     return session
 
