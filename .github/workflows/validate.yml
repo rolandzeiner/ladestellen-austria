@@ -53,15 +53,12 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          # Pinned to 3.13 — HA core's transitive deps (pydantic-core /
-          # orjson / Pillow) still ship pyo3 0.24 which refuses to build
-          # against Python ≥3.14, and these deps don't enable pyo3's
-          # `abi3` feature so PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 is
-          # a no-op for them. Tried 3.14 (CI failure verified
-          # 2026-05-01) and rolled back; bump again once
-          # `pip show pydantic_core orjson Pillow` shows pyo3 0.25+ on
-          # a fresh HA release.
-          python-version: "3.13"
+          # Bumped to 3.14 — pyo3 0.24 blocker resolved upstream:
+          # orjson 3.11.8, Pillow 12.2.0, pydantic-core 2.46.2 all ship
+          # cp314 wheels (verified 2026-05-07). HA core 2026.5+ pins
+          # aiodns 4.x natively against pycares 5, so the previous
+          # pycares cap is no longer needed in requirements_test.txt.
+          python-version: "3.14"
       - name: Upgrade pip
         # pip 26.1 ships the resolver fix for hard-pinned transitive
         # constraints in pytest-homeassistant-custom-component. Older
