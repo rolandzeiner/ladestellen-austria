@@ -41,6 +41,7 @@ import {
   pointConnectorLabel,
   pointPowerType,
   pointStatusLabel,
+  safeHttpsUri,
   shortConnector,
   slotVariant,
 } from "./utils";
@@ -678,7 +679,12 @@ export class LadestellenAustriaCard extends LitElement {
     );
 
     const expanded = this._expanded.has(station.stationId);
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`;
+    // Self-built URL — pass through `safeHttpsUri` defensively so a future
+    // contributor can't wire an upstream attribute through this binding
+    // and silently bypass the allowlist (item 42).
+    const mapsUrl = safeHttpsUri(
+      `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`,
+    );
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
@@ -897,18 +903,21 @@ export class LadestellenAustriaCard extends LitElement {
             ></ha-icon>
             <span>${localize("card.open_in_maps")}</span>
           </a>
-          ${station.website
-            ? html`<a
-                class="btn-secondary"
-                href=${station.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
-                <span>${localize("card.website")}</span>
-              </a>`
-            : nothing}
+          ${(() => {
+            const websiteUrl = safeHttpsUri(station.website);
+            return websiteUrl
+              ? html`<a
+                  class="btn-secondary"
+                  href=${websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  @click=${(ev: Event) => ev.stopPropagation()}
+                >
+                  <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
+                  <span>${localize("card.website")}</span>
+                </a>`
+              : nothing;
+          })()}
           ${station.phoneNumber
             ? html`<a
                 class="btn-secondary"
@@ -919,21 +928,24 @@ export class LadestellenAustriaCard extends LitElement {
                 <span>${localize("card.call")}</span>
               </a>`
             : nothing}
-          ${station.priceUrl
-            ? html`<a
-                class="btn-secondary"
-                href=${station.priceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon
-                  icon="mdi:cash-multiple"
-                  aria-hidden="true"
-                ></ha-icon>
-                <span>${localize("card.tariff")}</span>
-              </a>`
-            : nothing}
+          ${(() => {
+            const priceUrl = safeHttpsUri(station.priceUrl);
+            return priceUrl
+              ? html`<a
+                  class="btn-secondary"
+                  href=${priceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  @click=${(ev: Event) => ev.stopPropagation()}
+                >
+                  <ha-icon
+                    icon="mdi:cash-multiple"
+                    aria-hidden="true"
+                  ></ha-icon>
+                  <span>${localize("card.tariff")}</span>
+                </a>`
+              : nothing;
+          })()}
         </div>
         </div>
       </div>

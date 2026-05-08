@@ -187,6 +187,65 @@ async def test_fetch_invalid_json_raises_update_failed(
     assert exc.value.translation_key == "api_invalid_response"
 
 
+async def test_consecutive_failures_apply_exponential_backoff(
+    hass: HomeAssistant,
+) -> None:
+    """Sustained outages double update_interval each tick, capped, then reset.
+
+    First failure stays at the user-configured cadence; from the second
+    onwards interval doubles and is capped at BACKOFF_CAP_SECONDS. A
+    success resets back to normal. Without this gate, an extended
+    /search outage would burn 60 retries/h at the 10-min default.
+    """
+    from custom_components.ladestellen_austria.const import BACKOFF_CAP_SECONDS
+
+    entry = _make_entry({CONF_SCAN_INTERVAL: 10})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    normal = coordinator._normal_interval
+    assert normal == timedelta(minutes=10)
+    assert coordinator.update_interval == normal
+
+    with patch.object(
+        coordinator,
+        "_fetch_search",
+        side_effect=UpdateFailed("boom"),
+    ):
+        # 1st failure: still at normal cadence (transient hiccup)
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+        assert coordinator._consecutive_failures == 1
+        assert coordinator.update_interval == normal
+
+        # 2nd failure: 20 min (×2)
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+        assert coordinator._consecutive_failures == 2
+        assert coordinator.update_interval == timedelta(minutes=20)
+
+        # 3rd failure: 40 min (×4)
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+        assert coordinator.update_interval == timedelta(minutes=40)
+
+    # Recovery: a single success snaps back to normal
+    with patch.object(coordinator, "_fetch_search", return_value=[]):
+        await coordinator._async_update_data()
+    assert coordinator._consecutive_failures == 0
+    assert coordinator.update_interval == normal
+
+    # Cap exercise: drive the counter high enough to clamp
+    with patch.object(
+        coordinator,
+        "_fetch_search",
+        side_effect=UpdateFailed("still down"),
+    ):
+        for _ in range(20):
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+    assert coordinator.update_interval.total_seconds() == BACKOFF_CAP_SECONDS
+
+
 async def test_fetch_filters_non_dict_entries(hass: HomeAssistant) -> None:
     """Stray non-dict items in the array are silently dropped."""
     entry = _make_entry()

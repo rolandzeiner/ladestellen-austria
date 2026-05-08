@@ -129,10 +129,10 @@ const cardOwnStyles = css`
     /* Semantic state tokens layered over HA's official semantic palette
        so theme authors can recolour the whole portfolio in one place;
        hard-coded fallbacks for older HA versions without these vars. */
-    --lade-rt:      var(--ha-color-success, #22c55e);
-    --lade-warning: var(--ha-color-warning, #f57c00);
-    --lade-error:   var(--ha-color-error,   #ef4444);
-    --lade-info:    var(--ha-color-info,    #1565c0);
+    --lade-rt:      var(--success-color, #22c55e);
+    --lade-warning: var(--warning-color, #f57c00);
+    --lade-error:   var(--error-color,   #ef4444);
+    --lade-info:    var(--info-color,    #1565c0);
 
     /* Spacing / radius / sizing — layered over the HA Design System
        so the card moves with HA when tokens evolve. Hard-coded values
@@ -1276,10 +1276,10 @@ const parkingOwnStyles = css`
        and the state-colour cue is lost. Layered over HA's official
        semantic palette with the same fallback hex values used in the
        main cardStyles block. */
-    --lade-rt:      var(--ha-color-success, #22c55e);
-    --lade-warning: var(--ha-color-warning, #f57c00);
-    --lade-error:   var(--ha-color-error,   #ef4444);
-    --lade-info:    var(--ha-color-info,    #1565c0);
+    --lade-rt:      var(--success-color, #22c55e);
+    --lade-warning: var(--warning-color, #f57c00);
+    --lade-error:   var(--error-color,   #ef4444);
+    --lade-info:    var(--info-color,    #1565c0);
 
     /* Spacing / radius / sizing — layered over the HA Design System. */
     --lade-radius-sm: var(--ha-radius-sm, 6px);

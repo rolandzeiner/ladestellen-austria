@@ -6,7 +6,8 @@
     "invalid_station_id": "Kartenkonfiguration: „station_id“ muss ein String sein.",
     "loading": "Lade…",
     "version_update": "Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",
-    "version_reload": "Neu laden"
+    "version_reload": "Neu laden",
+    "version_reload_stuck": "Neu laden hat die neue Version nicht übernommen. Schließen Sie diesen Browser-Tab und öffnen Sie das Dashboard erneut, oder löschen Sie die Website-Daten für Home Assistant in den Browser-Einstellungen."
   },
   "card": {
     "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
