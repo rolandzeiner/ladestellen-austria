@@ -148,6 +148,20 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   car_color_mode?: "random" | "theme" | "fixed";
   // Hex colour used when car_color_mode === "fixed". Plain "#rrggbb".
   car_color_fixed?: string;
+  // Surface treatment of the parking lot.
+  //   "default"  — flat theme-tinted grey (rollback look)
+  //   "textured" — fixed dark asphalt + CSS-only radial-gradient speckle
+  asphalt_style?: "default" | "textured";
+  // Painted lane-line width preset.
+  //   "thin"   — 2px (subtle)
+  //   "medium" — 3px (default, matches the rollback look)
+  //   "wide"   — 5px (more realistic / visible)
+  paint_width?: "thin" | "medium" | "wide";
+  // Colour of slot info elements (overlay icon, AC/DC badge, kW number,
+  // connector, status word).
+  //   "default" — semantic theme colours (rollback look)
+  //   "white"   — flat white, reads as "painted on the asphalt"
+  icon_paint_mode?: "default" | "white";
   // Hide the parking-card header (icon-tile + station title + free
   // count). Defaults to false (header shown).
   hide_header?: boolean;

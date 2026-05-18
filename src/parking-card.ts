@@ -102,6 +102,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
       show_free_count: true,
       logo_adapt_to_theme: false,
       car_color_mode: "random",
+      asphalt_style: "default",
+      paint_width: "medium",
+      icon_paint_mode: "default",
       ...config,
     };
   }
@@ -174,7 +177,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
     if (!this.hass || !this.config) {
       return html`<ha-card>
         <div class="card-content">
-          <div class="wrap">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config?.asphalt_style ?? "default"}
+            data-paint-width=${this.config?.paint_width ?? "medium"}
+            data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
+          >
             ${renderVersionBanner(this._versionMismatch)}
             <div class="empty-state">${localize("common.loading")}</div>
           </div>
@@ -189,7 +197,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
     if (!stateObj) {
       return html`<ha-card>
         <div class="card-content">
-          <div class="wrap">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config.asphalt_style ?? "default"}
+            data-paint-width=${this.config.paint_width ?? "medium"}
+            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
+          >
             ${renderVersionBanner(this._versionMismatch)}
             <div class="empty-state">${localize("card.no_entity")}</div>
           </div>
@@ -211,7 +224,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
     if (!stationId || !station) {
       return html`<ha-card>
         <div class="card-content">
-          <div class="wrap">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config.asphalt_style ?? "default"}
+            data-paint-width=${this.config.paint_width ?? "medium"}
+            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
+          >
             ${renderVersionBanner(this._versionMismatch)}
             ${customTitle && !this.config.hide_header
               ? html`<header class="header">
@@ -259,6 +277,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
           <div
             class="wrap"
             style="--lade-accent: var(--primary-color);"
+            data-asphalt-style=${this.config.asphalt_style ?? "default"}
+            data-paint-width=${this.config.paint_width ?? "medium"}
+            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
           >
             ${renderVersionBanner(this._versionMismatch)}
             ${this.config.hide_header
