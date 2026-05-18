@@ -129,10 +129,10 @@ const cardOwnStyles = css`
     /* Semantic state tokens layered over HA's official semantic palette
        so theme authors can recolour the whole portfolio in one place;
        hard-coded fallbacks for older HA versions without these vars. */
-    --lade-rt:      var(--ha-color-success, #22c55e);
-    --lade-warning: var(--ha-color-warning, #f57c00);
-    --lade-error:   var(--ha-color-error,   #ef4444);
-    --lade-info:    var(--ha-color-info,    #1565c0);
+    --lade-rt:      var(--success-color, #22c55e);
+    --lade-warning: var(--warning-color, #f57c00);
+    --lade-error:   var(--error-color,   #ef4444);
+    --lade-info:    var(--info-color,    #1565c0);
 
     /* Spacing / radius / sizing — layered over the HA Design System
        so the card moves with HA when tokens evolve. Hard-coded values
@@ -148,6 +148,34 @@ const cardOwnStyles = css`
     --lade-slot-height: 64px;
     --lade-slot-radius: var(--ha-radius-md, 10px);
     --lade-slot-gap: 8px;
+
+    /* Parking-card surface tokens — defaults match the rollback look
+       so cards with no asphalt/paint config render unchanged. The
+       data-* attributes on .wrap (driven by parking-card.ts config)
+       override these per-card when the user opts into the asphalt
+       presets. */
+    --lade-paint: rgba(255, 255, 255, 0.92);
+    --lade-paint-width: 3px;
+
+    /* Asphalt color + noise for the textured preset. The grain is an
+       inline SVG fractalNoise filter (vector-based, randomly
+       distributed by construction — no visible tile grid like
+       layered radial-gradients produce). The CSS-Tricks "grainy
+       gradients" recipe is the canonical reference for this
+       technique. baseFrequency='4' gives a fine asphalt-grade grain
+       (lower values give coarser, cloud-like noise; '0.65' is
+       gradient-grain, '4' is asphalt-grain). numOctaves='3' adds
+       fractal detail. stitchTiles='stitch' makes the 200×200 SVG
+       tile seamlessly when the slot exceeds it. feColorMatrix zeros
+       RGB and rescales alpha (×0.55) so the overlay reads as soft
+       black grain instead of feTurbulence's default rainbow noise. */
+    --lade-asphalt-color: #3a3d42;
+    /* (Asphalt noise URL is inlined in each .parking-slot rule below
+       rather than stored on this var — Lit's static styles + CSS
+       custom-property var() substitution into background-image with
+       a base64 data URI did not resolve in our testing, even though
+       the same URL inlined directly works. We accept the duplication
+       to keep the noise visible.) */
   }
   ha-card {
     overflow: hidden;
@@ -1276,10 +1304,10 @@ const parkingOwnStyles = css`
        and the state-colour cue is lost. Layered over HA's official
        semantic palette with the same fallback hex values used in the
        main cardStyles block. */
-    --lade-rt:      var(--ha-color-success, #22c55e);
-    --lade-warning: var(--ha-color-warning, #f57c00);
-    --lade-error:   var(--ha-color-error,   #ef4444);
-    --lade-info:    var(--ha-color-info,    #1565c0);
+    --lade-rt:      var(--success-color, #22c55e);
+    --lade-warning: var(--warning-color, #f57c00);
+    --lade-error:   var(--error-color,   #ef4444);
+    --lade-info:    var(--info-color,    #1565c0);
 
     /* Spacing / radius / sizing — layered over the HA Design System. */
     --lade-radius-sm: var(--ha-radius-sm, 6px);
@@ -1435,8 +1463,8 @@ const parkingOwnStyles = css`
     top: 0;
     bottom: 0;
     left: 0;
-    width: 3px;
-    background: rgba(255, 255, 255, 0.92);
+    width: var(--lade-paint-width, 3px);
+    background: var(--lade-paint, rgba(255, 255, 255, 0.92));
     pointer-events: none;
     z-index: 1;
   }
@@ -1463,7 +1491,7 @@ const parkingOwnStyles = css`
        border-right with NO special-case logic, regardless of whether
        the row is full or partial. The lot's inset-left shadow handles
        the row-opening line. */
-    border-right: 3px solid rgba(255, 255, 255, 0.92);
+    border-right: var(--lade-paint-width, 3px) solid var(--lade-paint, rgba(255, 255, 255, 0.92));
     background: color-mix(
       in srgb,
       var(--primary-text-color) 6%,
@@ -1663,6 +1691,120 @@ const parkingOwnStyles = css`
      "Datenquelle: E-Control" next to the data). The CSS lives in
      sharedFooter; the markup lives in shared-render.ts. Non-negotiable
      in both places — do not restyle the logo path or attribution string. */
+
+  /* ── Parking-card appearance presets ─────────────────────────────────
+     Card-config controls (asphalt_style / paint_width / icon_paint_mode)
+     are applied as data-* attributes on .wrap by parking-card.ts. These
+     rules cascade --lade-paint-width / --lade-paint on .wrap (so every
+     descendant lot/slot picks them up) or override the surface paint of
+     the lot itself. Defaults set on :host above keep the rollback look
+     when no preset is chosen. */
+  .wrap[data-paint-width="thin"]   { --lade-paint-width: 2px; }
+  .wrap[data-paint-width="medium"] { --lade-paint-width: 3px; }
+  .wrap[data-paint-width="wide"]   { --lade-paint-width: 5px; }
+
+  /* Asphalt: textured — paint the asphalt + grain on each .parking-
+     slot rather than the .parking-lot, so empty grid cells (where no
+     point exists; e.g. last partial row) keep the lot's default
+     tinted bg instead of bleeding asphalt under nothing. Status tints
+     for .is-available / .is-warn / .slot-tint-info / .slot-tint-error
+     are blended into the asphalt color via color-mix so the grain
+     stays visible on top, instead of laying a translucent fill ABOVE
+     the grain (which would mute it). Specificity (0,3,0) wins over
+     the base status rules at (0,2,0). The grain itself comes from
+     --lade-asphalt-noise (a single SVG data URI; var substitution
+     for one image works reliably, unlike multi-gradient lists). */
+  .wrap[data-asphalt-style="textured"] .parking-slot {
+    background-color: var(--lade-asphalt-color);
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+  }
+  .wrap[data-asphalt-style="textured"] .parking-slot.is-available {
+    background-color: color-mix(in srgb, var(--lade-rt) 22%, var(--lade-asphalt-color));
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+  }
+  .wrap[data-asphalt-style="textured"] .parking-slot.is-warn {
+    background-color: color-mix(in srgb, var(--lade-warning) 22%, var(--lade-asphalt-color));
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+  }
+  .wrap[data-asphalt-style="textured"] .parking-slot.slot-tint-info {
+    background-color: color-mix(in srgb, var(--lade-info) 22%, var(--lade-asphalt-color));
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+  }
+  .wrap[data-asphalt-style="textured"] .parking-slot.slot-tint-error {
+    background-color: color-mix(in srgb, var(--lade-error) 22%, var(--lade-asphalt-color));
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
+    background-size: 200px 200px;
+    background-repeat: repeat;
+  }
+  /* Per-slot background-position offsets so adjacent slots show
+     different windows onto the noise. Seven nth-child buckets cycle
+     through coprime offsets — slots in a 4-column grid almost never
+     land on the same bucket as their immediate neighbour or the slot
+     above. Last selector in source order wins for slots that match
+     multiple buckets, which is fine — the goal is variety, not
+     coverage. */
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+1) { background-position:   0px   0px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+2) { background-position:  47px  31px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+3) { background-position:  89px  17px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+4) { background-position:  23px  73px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+5) { background-position: 113px  53px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n+6) { background-position:  61px 101px; }
+  .wrap[data-asphalt-style="textured"] .parking-slot:nth-child(7n)   { background-position: 137px  79px; }
+
+  /* Icon-paint: white — flips slot info colour to a near-white so it
+     reads as "painted on the asphalt". Targets the overlay icon,
+     AC/DC badge, kW number/unit, connector text, and status word.
+     Cars keep their own car_color_mode — they're vehicles, not paint.
+     Equal specificity to the per-tone / per-status rules above; this
+     block lives later in the cascade so source order wins. */
+  .wrap[data-icon-paint="white"] .slot-overlay-icon,
+  .wrap[data-icon-paint="white"] .slot-overlay-icon.tone-warning,
+  .wrap[data-icon-paint="white"] .slot-overlay-icon.tone-error,
+  .wrap[data-icon-paint="white"] .slot-overlay-icon.tone-info,
+  .wrap[data-icon-paint="white"] .slot-overlay-icon.tone-muted,
+  .wrap[data-icon-paint="white"] .slot-power-badge,
+  .wrap[data-icon-paint="white"] .slot-power-badge[data-type="dc"],
+  .wrap[data-icon-paint="white"] .slot-power-badge[data-type="ac"],
+  .wrap[data-icon-paint="white"] .slot-kw,
+  .wrap[data-icon-paint="white"] .slot-connector,
+  .wrap[data-icon-paint="white"] .slot-status-word,
+  .wrap[data-icon-paint="white"] .slot-status-free,
+  .wrap[data-icon-paint="white"] .slot-status-busy,
+  .wrap[data-icon-paint="white"] .slot-status-warn,
+  .wrap[data-icon-paint="white"] .slot-status-unknown {
+    /* Force full opacity so .tone-muted (which sets opacity:0.7 in
+       its base rule) reads as proper white paint and not faded grey.
+       The hover-fade rule that sets opacity:0 is re-declared below
+       with higher specificity so it still wins on hover/focus.
+       No mix-blend-mode here — soft-light/overlay both dragged the
+       white toward grey unevenly across icons (the inner ha-icon
+       drop-shadow filter establishes a stacking context that made
+       blend application inconsistent). Pure white reads more
+       cleanly as paint; the painted-on feel comes from the visible
+       grain AROUND the icons. */
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 1;
+  }
+  /* Re-declare the hover/focus/revealed fade with higher specificity
+     than the white-paint block above (which sets opacity:1). Without
+     this, opacity:1 wins by source order + equal specificity and the
+     icon never fades. */
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:hover .slot-car,
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:hover .slot-overlay-icon,
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:focus-visible .slot-car,
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:focus-visible .slot-overlay-icon,
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay.is-revealed .slot-car,
+  .wrap[data-icon-paint="white"] .parking-slot.has-overlay.is-revealed .slot-overlay-icon {
+    opacity: 0;
+  }
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container plcard (inline-size < 360px) {

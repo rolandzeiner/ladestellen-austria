@@ -6,7 +6,8 @@
     "invalid_station_id": "Kartenkonfiguration: „station_id“ muss ein String sein.",
     "loading": "Lade…",
     "version_update": "Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",
-    "version_reload": "Neu laden"
+    "version_reload": "Neu laden",
+    "version_reload_stuck": "Neu laden hat die neue Version nicht übernommen. Schließen Sie diesen Browser-Tab und öffnen Sie das Dashboard erneut, oder löschen Sie die Website-Daten für Home Assistant in den Browser-Einstellungen."
   },
   "card": {
     "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
@@ -124,6 +125,16 @@
     "car_color_fixed": "Eigene Farbe",
     "car_color_theme": "Akzentfarbe des Designs",
     "car_color_pick": "Auto-Farbe wählen",
+    "asphalt_style": "Asphalt-Stil",
+    "asphalt_style_default": "Standard (flaches Grau)",
+    "asphalt_style_textured": "Strukturierter Asphalt",
+    "paint_width": "Linienbreite",
+    "paint_width_thin": "Schmal",
+    "paint_width_medium": "Mittel",
+    "paint_width_wide": "Breit",
+    "icon_paint_mode": "Symbol-Farbe",
+    "icon_paint_default": "Standard (Statusfarben)",
+    "icon_paint_white": "Weiß (auf Asphalt gemalt)",
     "only_available": "Nur aktuell verfügbare Ladestellen",
     "only_free": "Nur Ladestellen mit Gratis-Laden",
     "only_open": "Nur aktuell geöffnete Ladestellen",

@@ -299,3 +299,24 @@ export function pointConnectorLabel(point: Point): string {
   if (!first) return "–";
   return shortConnector(first.consumerName, first.key);
 }
+
+/**
+ * Trust-boundary guard for URIs that the card renders into ``href``
+ * attributes. Lit's ``${}`` interpolation is safe against tag /
+ * attribute injection but does NOT block ``javascript:`` or ``data:``
+ * URIs — a compromised upstream feed could otherwise execute arbitrary
+ * JS in HA's frontend origin when the user clicks the link.
+ *
+ * Allowlist HTTP/HTTPS only; everything else collapses to an empty
+ * string and the call site's nullish-or-empty gate keeps the link off.
+ *
+ * Apply to upstream-supplied URIs (operator websites, price-detail
+ * URLs) AND to self-built URLs (maps deeplink) — defensive against a
+ * future contributor wiring an upstream attribute through a previously
+ * literal-only path. Accepts ``unknown`` so the helper doubles as a
+ * runtime type-narrow for the upstream payload shape.
+ */
+export function safeHttpsUri(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return /^https?:\/\//i.test(raw) ? raw : "";
+}

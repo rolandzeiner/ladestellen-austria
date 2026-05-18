@@ -36,6 +36,7 @@ from homeassistant.util.location import distance
 
 from .const import (
     API_BASE_URL,
+    BACKOFF_CAP_SECONDS,
     CONF_API_KEY,
     CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
@@ -150,6 +151,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             )
             interval = timedelta(minutes=scan)
+
+        # Exponential-backoff state. `_normal_interval` is immutable as
+        # the user-configured cadence; `self.update_interval` is what HA
+        # actually reads on each tick, and we mutate that one to slow
+        # down during sustained outages. See `_note_failure` /
+        # `_note_success` below.
+        self._consecutive_failures = 0
+        self._normal_interval = interval
+
         super().__init__(
             hass,
             _LOGGER,
@@ -366,6 +376,36 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.hass, DOMAIN, f"{translation_key}_{self._entry.entry_id}"
         )
 
+    def _note_success(self) -> None:
+        """Reset the consecutive-failure counter and restore normal cadence."""
+        if self._consecutive_failures == 0:
+            return
+        self._consecutive_failures = 0
+        if self.update_interval != self._normal_interval:
+            self.update_interval = self._normal_interval
+
+    def _note_failure(self) -> None:
+        """Bump the consecutive-failure counter and apply exponential backoff.
+
+        First failure stays at the user-configured cadence (transient
+        hiccups shouldn't slow down the loop). From the second failure
+        onwards the update interval doubles each tick, capped at
+        BACKOFF_CAP_SECONDS so a sustained outage settles into a slow
+        poll instead of hammering /search every interval. The next
+        successful tick resets it.
+        """
+        self._consecutive_failures += 1
+        if self._consecutive_failures < 2:
+            return
+        normal_secs = self._normal_interval.total_seconds()
+        backoff_secs = min(
+            normal_secs * (2 ** (self._consecutive_failures - 1)),
+            BACKOFF_CAP_SECONDS,
+        )
+        new_interval = timedelta(seconds=backoff_secs)
+        if self.update_interval != new_interval:
+            self.update_interval = new_interval
+
     def _build_headers(self) -> dict[str, str]:
         """Build outbound request headers via the shared helper."""
         return build_default_headers(self._api_key, self._domain)
@@ -475,7 +515,11 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lat = self._latitude
             lng = self._longitude
 
-        stations = await self._fetch_search(lat, lng)
+        try:
+            stations = await self._fetch_search(lat, lng)
+        except UpdateFailed:
+            self._note_failure()
+            raise
         # Local-only dev hook: contributors export
         # `LADESTELLEN_AUSTRIA_DEV_FIXTURE=1` and drop a (gitignored)
         # `_dev_fixture.py` next to this file to prepend a synthetic
@@ -517,6 +561,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # refresh because `self.data` is None — there's nothing to diff.
         self._fire_status_transition_events(truncated)
 
+        self._note_success()
         return {
             "stations": truncated,
             "count": len(truncated),
@@ -539,6 +584,23 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         Event data is documented for users in README; the schema is
         considered stable. Bumping it requires either a new event name
         or a versioned `version` field in the payload.
+
+        ⚠ Discoverability note: HA's canonical mechanisms for
+        state-transition automations are **entity triggers** and
+        **device triggers** (``device_trigger.py``). This custom
+        ``hass.bus`` event does **not** appear in the automation UI's
+        trigger picker — power users have to hand-write a
+        ``trigger: event`` YAML block. We chose this pattern because
+        EVSE row cardinality (often dozens per station, with frequent
+        churn) doesn't fit cleanly as per-row entities.
+
+        For new sibling integrations with lower row cardinality (a
+        handful of items per entry), prefer ``device_trigger.py`` with
+        ``async_get_triggers`` returning per-row triggers — that
+        surfaces them in the UI picker, fires them via
+        ``async_attach_trigger``, and integrates with the automation
+        editor's natural-language description. See
+        PORTFOLIO_LIFTABLES.md item 18.
         """
         if not isinstance(self.data, dict):
             return

@@ -34,6 +34,9 @@ const FORM_DEFAULTS: Record<string, unknown> = {
   show_free_count: true,
   logo_adapt_to_theme: false,
   car_color_mode: "random",
+  asphalt_style: "default",
+  paint_width: "medium",
+  icon_paint_mode: "default",
 };
 
 // Hoisted to module scope so the array identity stays stable across
@@ -84,6 +87,64 @@ const APPEARANCE_SCHEMA: HaFormSchema = [
               {
                 value: "fixed",
                 label: localize("editor.car_color_fixed"),
+              },
+            ],
+          },
+        },
+      },
+      {
+        name: "asphalt_style",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              {
+                value: "default",
+                label: localize("editor.asphalt_style_default"),
+              },
+              {
+                value: "textured",
+                label: localize("editor.asphalt_style_textured"),
+              },
+            ],
+          },
+        },
+      },
+      {
+        name: "paint_width",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              {
+                value: "thin",
+                label: localize("editor.paint_width_thin"),
+              },
+              {
+                value: "medium",
+                label: localize("editor.paint_width_medium"),
+              },
+              {
+                value: "wide",
+                label: localize("editor.paint_width_wide"),
+              },
+            ],
+          },
+        },
+      },
+      {
+        name: "icon_paint_mode",
+        selector: {
+          select: {
+            mode: "dropdown",
+            options: [
+              {
+                value: "default",
+                label: localize("editor.icon_paint_default"),
+              },
+              {
+                value: "white",
+                label: localize("editor.icon_paint_white"),
               },
             ],
           },

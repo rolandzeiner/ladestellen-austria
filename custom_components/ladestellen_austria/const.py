@@ -64,6 +64,15 @@ DEFAULT_SCAN_INTERVAL: Final = 10
 MIN_POLL_MINUTES: Final = 5
 MAX_POLL_MINUTES: Final = 720
 
+# Exponential-backoff cap for consecutive `_async_update_data` failures.
+# Bound to MAX_POLL_MINUTES (12 h) so a sustained ladestellen.at /search
+# outage settles into a slow poll instead of hammering the API every
+# 10 min × 6 = 60 retries/h. First failure stays at the user-configured
+# cadence (transient hiccups shouldn't slow down the loop); from the
+# second failure onwards the interval doubles each tick, capped here,
+# until the next success resets it.
+BACKOFF_CAP_SECONDS: Final = MAX_POLL_MINUTES * 60
+
 # ------------------------------------------------------------------
 # Sensor-attribute size discipline (recorder budget).
 # Each station carries label, address, points[], connectors[], pricing,
