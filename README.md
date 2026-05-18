@@ -31,6 +31,7 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - **Dynamic location mode** — point the entry at a `device_tracker` and the search origin follows live GPS, with rate-limit guards (see [Dynamic location mode](#dynamic-location-mode)).
 - **Two Lovelace cards** — a list view (kW-led tile rows, expandable per-station detail) and a parking-lot view (top-down vector cars on occupied spots, wrench overlay on out-of-order, hover or tap reveals the slot's spec).
 - WCAG 2.2 A+AA accessibility across both cards and editors.
+- **Robust polling.** Exponential backoff on consecutive coordinator failures (10 → 20 → 40 min doubling, 12 h cap, snap-back to the configured interval on first success) so a sustained upstream outage settles into a slow poll instead of hammering. *(0.4.0)*
 - Strict-typed, async-only.
 
 ## Requirements
@@ -75,7 +76,7 @@ Header icon-tile + a distance-to-nearest hero, then an expandable list of nearby
 
 ### Parking card — `ladestellen-austria-parking-card`
 
-Single-station, top-down view: dark asphalt, sharp-cornered slots separated by solid white painted lane-lines, a free / total counter pinned to the header. Free spots glow green; charging / occupied / reserved / blocked spots show a top-down vector car (deterministic per-EVSE colour by default, or theme accent / single picked colour); out-of-order / empty / planned / removed / unknown spots show a tone-tinted MDI overlay (wrench, battery-off, progress-wrench, close-circle, help-circle) keyed to the upstream status, with a state-coloured radial-glow background — orange for faults / empty, blue for planned, red for removed. Hover or tap fades the overlay to reveal the slot's spec. Slots render in the operator-issued EVSE-ID order. Editor exposes a free-count toggle, a car-colour mode picker, and the same logo-adapt-to-theme switch the main card has.
+Single-station, top-down view: dark asphalt, sharp-cornered slots separated by solid white painted lane-lines, a free / total counter pinned to the header. Free spots glow green; charging / occupied / reserved / blocked spots show a top-down vector car (deterministic per-EVSE colour by default, or theme accent / single picked colour); out-of-order / empty / planned / removed / unknown spots show a tone-tinted MDI overlay (wrench, battery-off, progress-wrench, close-circle, help-circle) keyed to the upstream status, with a state-coloured radial-glow background — orange for faults / empty, blue for planned, red for removed. Hover or tap fades the overlay to reveal the slot's spec. Slots render in the operator-issued EVSE-ID order. Editor exposes a free-count toggle, a car-colour mode picker, the same logo-adapt-to-theme switch the main card has, and three styling presets *(0.4.0)*: **asphalt style** (flat theme-tinted grey vs textured dark asphalt with CSS-only speckle), **painted lane-line width** (thin 2 px / medium 3 px / wide 5 px), and **slot-info icon paint mode** (semantic theme colours vs flat white "painted on the asphalt"). All three default to the current visual.
 
 Both cards always show the E-Control logo-link and *Datenquelle: E-Control* attribution footer (§3c/§3d) — these cannot be hidden.
 
