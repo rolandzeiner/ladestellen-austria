@@ -11,4 +11,4 @@ pytest-cov>=7.1.0,<8
 # floor here either matches PHACC (redundant) or contradicts it (unresolvable).
 # Let PHACC's transitive pin govern; dependabot bumps of syrupy can't apply.
 mypy>=2.1.0,<3
-ruff>=0.15.13,<1
+ruff>=0.15.14,<1
