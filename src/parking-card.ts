@@ -112,7 +112,11 @@ export class LadestellenAustriaParkingCard extends LitElement {
   protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // setConfig is called synchronously before mount; this.config is
     // non-null by the time any property change can fire shouldUpdate.
-    if (changedProps.has("config") || changedProps.has("_revealedSlots")) {
+    if (
+      changedProps.has("config") ||
+      changedProps.has("_revealedSlots") ||
+      changedProps.has("_versionMismatch")
+    ) {
       return true;
     }
     const prev = changedProps.get("hass") as HomeAssistant | undefined;
@@ -123,8 +127,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   public getCardSize(): number {
-    // Rough: header row (1) + slot grid (~2-4 rows depending on point
-    // count). Most stations have 2-4 points → 1-2 slot rows.
+    // Fixed estimate: header + a small slot grid. Most stations have only
+    // a handful of points, so 3 is a reasonable constant — getCardSize is
+    // a layout hint, not a measured value.
     return 3;
   }
 
@@ -249,7 +254,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
           </div>
           ${renderFooter(
             this.hass,
-            stateObj.attributes["attribution"] as string | undefined,
+            stateObj.attributes.attribution,
             this.config.logo_adapt_to_theme === true,
           )}
         </div>
@@ -265,8 +270,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
     ).length;
     const totalCount = points.length;
     const countText = localize("parking.available_count")
-      .replace("{avail}", String(availCount))
-      .replace("{total}", String(totalCount));
+      .replaceAll("{avail}", String(availCount))
+      .replaceAll("{total}", String(totalCount));
 
     const headerTitle = customTitle ?? station.label;
     const headerSubtitle = customTitle ? station.label : "";
@@ -332,7 +337,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
           </div>
           ${renderFooter(
             this.hass,
-            stateObj.attributes["attribution"] as string | undefined,
+            stateObj.attributes.attribution,
             this.config.logo_adapt_to_theme === true,
           )}
         </div>

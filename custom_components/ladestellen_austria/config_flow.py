@@ -239,7 +239,7 @@ def _compute_unique_id(cleaned: dict[str, Any]) -> str:
     location doesn't collide, coarse enough that micro-adjustments in the map
     picker don't create duplicates.
 
-    Dynamic mode (beta-50): `{domain}:dynamic:{entity_id}`. A dynamic
+    Dynamic mode — FROZEN: `{domain}:dynamic:{entity_id}`. A dynamic
     entry's live position changes constantly, so tying the unique_id to
     lat/lng would make the ID unstable. The tracker entity_id is the
     user's intended identity for the entry and stays fixed across moves.
@@ -271,11 +271,18 @@ async def _test_api_connection(
             params=params,
             timeout=timeout,
         ) as resp:
-            status = resp.status
-    except (aiohttp.ClientError, TimeoutError):
+            outcome = classify_probe_status(resp.status)
+            if outcome is not None:
+                return outcome
+            # 2xx — confirm the body is the JSON list /search must return.
+            # A misconfigured gateway answering 200 with an HTML error page
+            # would otherwise pass the probe and only fail on the first
+            # coordinator refresh; mirror _fetch_search's shape contract so
+            # the probe validates the API the same way the coordinator uses it.
+            payload = await resp.json()
+            return None if isinstance(payload, list) else "cannot_connect"
+    except (aiohttp.ClientError, ValueError, TimeoutError):
         return "cannot_connect"
-
-    return classify_probe_status(status)
 
 
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):

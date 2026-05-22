@@ -57,7 +57,7 @@ export function localize(
   }
   if (translated === undefined) translated = string;
   if (search !== "" && replace !== "") {
-    translated = translated.replace(search, replace);
+    translated = translated.replaceAll(search, replace);
   }
   return translated;
 }

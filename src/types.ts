@@ -168,7 +168,7 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
 }
 
 // Short-label tokens used in the connector filter. These are the UI
-// labels as rendered by `_shortConnector` in the card — matching them
+// labels as rendered by `shortConnector()` (src/utils.ts) — matching them
 // here keeps the filter config human-readable and stable across API
 // changes (consumerName values on the wire occasionally shift).
 export const CONNECTOR_FILTER_OPTIONS: string[] = [
@@ -251,6 +251,11 @@ export interface OpeningHours {
   toTime: string;
 }
 
+// Mirrors the upstream ProximitySearchLocationDTO. A few fields
+// (countryId, operatorId, contactName, email, parkingPlaces) are kept
+// for shape-completeness against the wire payload but are not currently
+// read by either card — leave them so a future feature has the typing
+// ready rather than re-deriving it from the API spec.
 export interface Station {
   stationId: string;
   label: string;

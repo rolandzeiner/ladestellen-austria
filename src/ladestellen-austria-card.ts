@@ -142,7 +142,11 @@ export class LadestellenAustriaCard extends LitElement {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
-    if (changedProps.has("config") || changedProps.has("_expanded")) {
+    if (
+      changedProps.has("config") ||
+      changedProps.has("_expanded") ||
+      changedProps.has("_versionMismatch")
+    ) {
       return true;
     }
     const prev = changedProps.get("hass") as HomeAssistant | undefined;
@@ -241,18 +245,15 @@ export class LadestellenAustriaCard extends LitElement {
     }
 
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
-    const liveAvailable =
-      (stateObj.attributes["live_status_available"] as boolean) === true;
+    const liveAvailable = stateObj.attributes.live_status_available === true;
     // Dynamic-tracker mode signals: the sensor follows a device_tracker's
     // GPS instead of the fixed config coords. Pinning is meaningless in
     // this mode (the list of nearby stations changes as the user moves),
     // so we short-circuit any configured pins to an empty list. The
     // config itself is preserved untouched, so switching back to static
     // mode restores the previously-pinned stations.
-    const dynamicMode =
-      (stateObj.attributes["dynamic_mode"] as boolean) === true;
-    const dynamicEntity =
-      (stateObj.attributes["dynamic_entity"] as string | undefined) ?? null;
+    const dynamicMode = stateObj.attributes.dynamic_mode === true;
+    const dynamicEntity = stateObj.attributes.dynamic_entity ?? null;
 
     // Partition by pin status. Pinned first in user-defined order,
     // bypassing filters + sort. Orphan pins (IDs not found in the API
@@ -367,7 +368,7 @@ export class LadestellenAustriaCard extends LitElement {
           </div>
           ${renderFooter(
             this.hass,
-            stateObj.attributes["attribution"] as string | undefined,
+            stateObj.attributes.attribution,
             this.config.logo_adapt_to_theme === true,
           )}
         </div>
@@ -610,14 +611,17 @@ export class LadestellenAustriaCard extends LitElement {
     const cityLabel = this._heroCity(nearest);
     const farKm = farthest ? this._formatKm(farthest.distance) : km;
     const rangeText = localize("card.hero_range")
-      .replace("{min}", this._formatKm(nearest.distance))
-      .replace("{max}", farKm);
+      .replaceAll("{min}", this._formatKm(nearest.distance))
+      .replaceAll("{max}", farKm);
     const countText =
       filteredTotal === rawTotal
-        ? localize("card.hero_count").replace("{count}", String(filteredTotal))
+        ? localize("card.hero_count").replaceAll(
+            "{count}",
+            String(filteredTotal),
+          )
         : localize("card.hero_count_filtered")
-            .replace("{filtered}", String(filteredTotal))
-            .replace("{total}", String(rawTotal));
+            .replaceAll("{filtered}", String(filteredTotal))
+            .replaceAll("{total}", String(rawTotal));
     return html`
       <section class="hero">
         <div class="metric">
@@ -1045,7 +1049,7 @@ export class LadestellenAustriaCard extends LitElement {
     const blockFrom = point.blockingFeeFromMinute ?? 0;
     if (blockCent > 0 && blockFrom > 0) {
       lines.push(
-        `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
+        `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replaceAll("{from}", String(blockFrom))}`,
       );
     }
     // `\n` collapses to a single space in HTML `title=` attributes, which
@@ -1295,7 +1299,7 @@ export class LadestellenAustriaCard extends LitElement {
       parts.push(
         `${formatCent(maxRate)} ${localize(
           "card.blocking_fee_label",
-        ).replace("{from}", String(minFrom))}`,
+        ).replaceAll("{from}", String(minFrom))}`,
       );
     }
     return parts.length > 0 ? parts.join(", ") : null;

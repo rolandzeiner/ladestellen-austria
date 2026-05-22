@@ -117,7 +117,7 @@ export function renderVersionBanner(
   return html`
     <div class="version-notice" role="alert" aria-live="assertive">
       <span
-        >${localize("common.version_update").replace("{v}", mismatch)}</span
+        >${localize("common.version_update").replaceAll("{v}", mismatch)}</span
       >
       <button
         class="version-reload-btn"

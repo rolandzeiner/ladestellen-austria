@@ -6,7 +6,7 @@ the domain normaliser/validator pair.
 """
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
@@ -38,6 +38,9 @@ from .conftest import make_response_cm
 def _resp(status: int) -> MagicMock:
     resp = MagicMock()
     resp.status = status
+    # On a 2xx the probe reads the body to confirm /search returned the
+    # JSON list it expects; the non-2xx paths return before touching it.
+    resp.json = AsyncMock(return_value=[])
     return resp
 
 
@@ -67,6 +70,27 @@ async def test_probe_status_mapping(
             hass, "key", "www.meineseite.at", 48.21, 16.37
         )
     assert result == expected
+
+
+async def test_probe_rejects_non_list_body(hass: HomeAssistant) -> None:
+    """A 2xx whose body isn't the JSON list /search returns is rejected.
+
+    Guards against a misconfigured gateway answering 200 with an HTML
+    error page — the probe would otherwise green-light credentials that
+    fail on the first coordinator refresh.
+    """
+    resp = _resp(200)
+    resp.json = AsyncMock(return_value={"error": "not a list"})
+    session = MagicMock()
+    session.get = MagicMock(return_value=make_response_cm(resp))
+    with patch(
+        "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
+        return_value=session,
+    ):
+        result = await _test_api_connection(
+            hass, "key", "www.meineseite.at", 48.21, 16.37
+        )
+    assert result == "cannot_connect"
 
 
 @pytest.mark.parametrize(

@@ -98,9 +98,9 @@ def _evse_sort_key(point: dict[str, Any]) -> tuple[int, int, str]:
 
 class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Poll E-Control's Ladestellenverzeichnis. The /search endpoint returns
-    live per-point status inline (AVAILABLE / CHARGING / OCCUPIED / OUTOFORDER
-    / BLOCKED / INOPERATIVE / UNKNOWN), so no separate live-status fetch is
-    needed — the field is already live."""
+    live per-point status inline (the full RefillPointStatusEnum — e.g.
+    AVAILABLE / CHARGING / OCCUPIED / OUTOFORDER / UNKNOWN), so no separate
+    live-status fetch is needed — the field is already live."""
 
     config_entry: LadestellenAustriaConfigEntry
 
@@ -496,10 +496,11 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch nearest stations from /search and return.
 
-        /search already carries live per-point status (AVAILABLE / CHARGING /
-        OCCUPIED / OUTOFORDER / BLOCKED / INOPERATIVE / UNKNOWN), so there's
-        no separate live-status fetch. `live_status_available` stays True as
-        long as /search succeeded — the field is live by the time we see it.
+        /search already carries live per-point status inline (the full
+        RefillPointStatusEnum — e.g. AVAILABLE / CHARGING / OCCUPIED /
+        OUTOFORDER / UNKNOWN), so there's no separate live-status fetch.
+        `live_status_available` stays True as long as /search succeeded —
+        the field is live by the time we see it.
         """
         # Resolve the request location — dynamic mode pulls live coords
         # from the tracker state; static mode uses the entry's configured
