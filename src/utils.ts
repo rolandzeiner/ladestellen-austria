@@ -320,3 +320,21 @@ export function safeHttpsUri(raw: unknown): string {
   if (typeof raw !== "string") return "";
   return /^https?:\/\//i.test(raw) ? raw : "";
 }
+
+/**
+ * ha-form `computeLabel` callback shared by both card editors. Resolves
+ * `editor.<name>` for plain fields and `editor.section_<name>` for
+ * expandable section titles, falling back to the raw key when a
+ * translation is missing so debugging surfaces the gap visibly.
+ */
+export function computeFormLabel(schema: {
+  name: string;
+  type?: string;
+}): string {
+  const key =
+    schema.type === "expandable"
+      ? `editor.section_${schema.name}`
+      : `editor.${schema.name}`;
+  const resolved = localize(key);
+  return resolved === key ? schema.name : resolved;
+}

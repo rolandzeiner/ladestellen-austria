@@ -23,6 +23,7 @@ import {
 } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
+import { computeFormLabel } from "./utils";
 
 // ha-form's TS types aren't shipped on a stable channel by HA core, so
 // HaFormSchema is a permissive shape; the runtime accepts the
@@ -190,17 +191,6 @@ export class LadestellenAustriaParkingCardEditor
     fireEvent(this, "config-changed", { config: next });
   }
 
-  private _computeLabel = (schema: {
-    name: string;
-    type?: string;
-  }): string => {
-    const key = schema.type === "expandable"
-      ? `editor.section_${schema.name}`
-      : `editor.${schema.name}`;
-    const resolved = localize(key);
-    return resolved === key ? schema.name : resolved;
-  };
-
   // Two schemas — split so the station-picker section can render
   // BETWEEN them. Both ha-forms share the same `_formChanged` handler
   // and the same `data` prop (full _config); each form preserves the
@@ -274,7 +264,7 @@ export class LadestellenAustriaParkingCardEditor
               .hass=${this.hass}
               .data=${data}
               .schema=${TOP_SCHEMA}
-              .computeLabel=${this._computeLabel}
+              .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
           : nothing}
@@ -337,7 +327,7 @@ export class LadestellenAustriaParkingCardEditor
               .hass=${this.hass}
               .data=${data}
               .schema=${this._appearanceSchema()}
-              .computeLabel=${this._computeLabel}
+              .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
           : nothing}

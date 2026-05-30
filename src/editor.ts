@@ -28,6 +28,7 @@ import {
 } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
+import { computeFormLabel } from "./utils";
 
 // Each `name` is resolved via computeLabel into `editor.<name>` so the
 // localize namespace stays flat. Expandable sections wrap per-section
@@ -135,17 +136,6 @@ export class LadestellenAustriaCardEditor
     fireEvent(this, "config-changed", { config: next });
   }
 
-  // `editor.<name>` for plain fields, `editor.section_<name>` for
-  // expandable section titles. Falls back to the raw key when a
-  // translation is missing so debugging surfaces the gap visibly.
-  private _computeLabel = (schema: { name: string; type?: string }): string => {
-    const key = schema.type === "expandable"
-      ? `editor.section_${schema.name}`
-      : `editor.${schema.name}`;
-    const resolved = localize(key);
-    return resolved === key ? schema.name : resolved;
-  };
-
   private _toggleConnector(token: string): void {
     const current = this._config.connector_types ?? [];
     const next = current.includes(token)
@@ -222,7 +212,7 @@ export class LadestellenAustriaCardEditor
               .hass=${this.hass}
               .data=${data}
               .schema=${SCHEMA}
-              .computeLabel=${this._computeLabel}
+              .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
           : nothing}

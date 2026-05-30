@@ -416,7 +416,7 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _stationHasFree(s: Station): boolean {
     if (s.stationStatus !== "ACTIVE") return false;
-    return (s.points ?? []).some((p) => p.status === "AVAILABLE");
+    return (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
   }
 
   // Build the pinned section, preserving config order. Each item is
@@ -521,7 +521,7 @@ export class LadestellenAustriaCard extends LitElement {
       if (onlyAvailable) {
         const hasActive =
           s.stationStatus === "ACTIVE" &&
-          (s.points ?? []).some((p) => p.status === "AVAILABLE");
+          (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
         if (!hasActive) return false;
       }
       if (onlyFree) {
@@ -683,12 +683,18 @@ export class LadestellenAustriaCard extends LitElement {
     );
 
     const expanded = this._expanded.has(station.stationId);
-    // Self-built URL — pass through `safeHttpsUri` defensively so a future
-    // contributor can't wire an upstream attribute through this binding
-    // and silently bypass the allowlist (item 42).
-    const mapsUrl = safeHttpsUri(
-      `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`,
-    );
+    // `stations` arrives from an unvalidated state attribute, so a station
+    // can reach here without `location` despite the type. Read it once and
+    // only build the deeplink when present — a missing field must not throw
+    // and blank the whole card. Self-built URL still passes through
+    // `safeHttpsUri` defensively so a future contributor can't wire an
+    // upstream attribute through this binding and bypass the allowlist.
+    const loc = station.location;
+    const mapsUrl = loc
+      ? safeHttpsUri(
+          `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`,
+        )
+      : "";
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
@@ -762,20 +768,22 @@ export class LadestellenAustriaCard extends LitElement {
             </div>
           </div>
           <div class="station-actions">
-            <a
-              class="icon-action"
-              href=${mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label=${`${localize("card.open_in_maps")}: ${station.label}`}
-              title=${localize("card.open_in_maps")}
-              @click=${(ev: Event) => ev.stopPropagation()}
-            >
-              <ha-icon
-                icon="mdi:map-marker-outline"
-                aria-hidden="true"
-              ></ha-icon>
-            </a>
+            ${mapsUrl
+              ? html`<a
+                  class="icon-action"
+                  href=${mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label=${`${localize("card.open_in_maps")}: ${station.label}`}
+                  title=${localize("card.open_in_maps")}
+                  @click=${(ev: Event) => ev.stopPropagation()}
+                >
+                  <ha-icon
+                    icon="mdi:map-marker-outline"
+                    aria-hidden="true"
+                  ></ha-icon>
+                </a>`
+              : nothing}
             <ha-icon
               class="chevron"
               icon="mdi:chevron-down"
@@ -894,19 +902,21 @@ export class LadestellenAustriaCard extends LitElement {
             </div>`
           : nothing}
         <div class="actions">
-          <a
-            class="btn-primary"
-            href=${mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            @click=${(ev: Event) => ev.stopPropagation()}
-          >
-            <ha-icon
-              icon="mdi:map-marker-radius-outline"
-              aria-hidden="true"
-            ></ha-icon>
-            <span>${localize("card.open_in_maps")}</span>
-          </a>
+          ${mapsUrl
+            ? html`<a
+                class="btn-primary"
+                href=${mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon
+                  icon="mdi:map-marker-radius-outline"
+                  aria-hidden="true"
+                ></ha-icon>
+                <span>${localize("card.open_in_maps")}</span>
+              </a>`
+            : nothing}
           ${(() => {
             const websiteUrl = safeHttpsUri(station.website);
             return websiteUrl
