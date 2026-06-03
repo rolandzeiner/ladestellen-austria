@@ -29,6 +29,11 @@ export interface HassEntity {
  *  cast at the call site. */
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  // Entity-registry slice. The 2026.6 entity-first card picker calls each
+  // card's getEntitySuggestion with an entityId; we gate on the registry
+  // `platform` to only suggest our own integration's sensors. Open-ended
+  // bag — we read just `platform`.
+  entities?: Record<string, { platform?: string } & Record<string, unknown>>;
   language?: string;
   themes?: { darkMode?: boolean } & Record<string, unknown>;
   config?: { time_zone?: string } & Record<string, unknown>;
@@ -88,6 +93,16 @@ declare global {
       description: string;
       preview?: boolean;
       documentationURL?: string;
+      // 2026.6 entity-first card picker hook. Additive key older HA
+      // ignores; when present, HA asks the card whether it wants to
+      // suggest itself for a given entity. Backward-compatible.
+      getEntitySuggestion?: (
+        hass: HomeAssistant,
+        entityId: string,
+      ) =>
+        | { config: LovelaceCardConfig }
+        | Array<{ config: LovelaceCardConfig }>
+        | null;
     }>;
   }
 }

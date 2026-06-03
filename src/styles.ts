@@ -1091,13 +1091,6 @@ export const editorStyles = css`
     flex-direction: column;
     gap: var(--ha-spacing-2, 10px);
   }
-  /* ha-formfield wraps each <ha-switch> with a label-bound row that
-     respects HA's compact rhythm; no extra gap override needed. */
-  .editor-section ha-formfield {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
   .section-header {
     font-size: var(--ha-font-size-xs, 11px);
     font-weight: 600;

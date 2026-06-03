@@ -59,6 +59,17 @@ window.customCards.push({
   description: "Nearby EV charging stations, powered by E-Control Austria",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
+  // 2026.6 entity-first picker: suggest this card only for our own
+  // integration's sensor entities (registry platform === domain).
+  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
+    if (!entityId.startsWith("sensor.")) return null;
+    if (hass?.entities?.[entityId]?.platform !== "ladestellen_austria") {
+      return null;
+    }
+    return {
+      config: { type: "custom:ladestellen-austria-card", entity: entityId },
+    };
+  },
 });
 
 const DEFAULT_MAX_STATIONS = 10;
