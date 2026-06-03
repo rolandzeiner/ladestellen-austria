@@ -323,7 +323,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = probe_err
                 else:
                     await self.async_set_unique_id(_compute_unique_id(cleaned))
-                    self._abort_if_unique_id_configured()
+                    self._abort_if_unique_id_configured(reload_on_update=False)
                     title = user_input.get("name", "Ladestellen Austria")
                     return self.async_create_entry(
                         title=title, data=_build_entry_data(cleaned)
@@ -384,7 +384,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                             and other.unique_id == new_unique_id
                         ):
                             return self.async_abort(reason="already_configured")
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         entry,
                         data=_build_entry_data(cleaned),
                         unique_id=new_unique_id,
@@ -438,7 +438,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 if probe_err:
                     errors["base"] = probe_err
                 else:
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         entry,
                         data={
                             **entry.data,
