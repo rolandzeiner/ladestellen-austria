@@ -19,7 +19,7 @@ jobs:
     # `git add -f` or the rule being deleted. Loud, fast, first job.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Verify _dev_fixture.py is not committed
         run: |
           if [ -f custom_components/ladestellen_austria/_dev_fixture.py ]; then
@@ -30,7 +30,7 @@ jobs:
   validate-hacs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: hacs/action@main
         with:
           category: integration
@@ -38,7 +38,7 @@ jobs:
   validate-hassfest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Login to ghcr.io
         uses: docker/login-action@v4
         with:
@@ -50,7 +50,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           # Bumped to 3.14 — pyo3 0.24 blocker resolved upstream:
@@ -83,7 +83,7 @@ jobs:
     # served www/ladestellen-austria-card.js.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Guard against backticks inside Lit css/html templates
         # The `css\`...\`` and `html\`...\`` tagged templates are
         # backtick-delimited; a stray backtick inside a comment or a
