@@ -1,4 +1,5 @@
 """Config flow for Ladestellen Austria."""
+
 from __future__ import annotations
 
 import logging
@@ -199,9 +200,14 @@ def _validate_user_input(
     try:
         lat_f = float(latitude) if latitude is not None else None
         lng_f = float(longitude) if longitude is not None else None
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         lat_f = lng_f = None
-    if lat_f is None or lng_f is None or not (-90 <= lat_f <= 90) or not (-180 <= lng_f <= 180):
+    if (
+        lat_f is None
+        or lng_f is None
+        or not (-90 <= lat_f <= 90)
+        or not (-180 <= lng_f <= 180)
+    ):
         errors["location"] = "invalid_location"
 
     cleaned = {
@@ -281,7 +287,7 @@ async def _test_api_connection(
             # the probe validates the API the same way the coordinator uses it.
             payload = await resp.json()
             return None if isinstance(payload, list) else "cannot_connect"
-    except (aiohttp.ClientError, ValueError, TimeoutError):
+    except aiohttp.ClientError, ValueError, TimeoutError:
         return "cannot_connect"
 
 
@@ -376,9 +382,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                     # Allow THIS entry to change its unique_id (mode
                     # switch / location move) but abort if another
                     # entry already holds the new unique_id.
-                    for other in self._async_current_entries(
-                        include_ignore=True
-                    ):
+                    for other in self._async_current_entries(include_ignore=True):
                         if (
                             other.entry_id != entry.entry_id
                             and other.unique_id == new_unique_id
@@ -453,9 +457,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_API_KEY, default=entry.data.get(CONF_API_KEY, "")
-                    ): TextSelector(
-                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                    ),
+                    ): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
                     vol.Required(
                         CONF_DOMAIN, default=entry.data.get(CONF_DOMAIN, "")
                     ): TextSelector(),
@@ -488,9 +490,7 @@ class LadestellenAustriaOptionsFlow(OptionsFlow):
                 {
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=current.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                        ),
+                        default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): NumberSelector(
                         NumberSelectorConfig(
                             min=MIN_POLL_MINUTES,

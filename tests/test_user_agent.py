@@ -4,6 +4,7 @@ A malformed User-Agent is silent failure (the integration still works, only
 upstream log parsers break). This test guards both the coordinator and the
 config-flow trial probe independently since they're separate call sites.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -56,9 +57,7 @@ async def test_config_flow_probe_sends_canonical_user_agent(
 ) -> None:
     """Config-flow trial probe carries the same headers as the coordinator."""
     session = MagicMock()
-    session.get = MagicMock(
-        return_value=make_response_cm(_json_resp([], status=200))
-    )
+    session.get = MagicMock(return_value=make_response_cm(_json_resp([], status=200)))
     with patch(
         "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
         return_value=session,

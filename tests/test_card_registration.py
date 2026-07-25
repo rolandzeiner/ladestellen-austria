@@ -4,6 +4,7 @@ Covers all branches of `JSModuleRegistration` that the integration
 lifecycle does not exercise on its own (yaml-mode skip, version
 mismatch update, already-registered RuntimeError, unregister paths).
 """
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -299,7 +300,9 @@ async def test_unregister_skips_when_no_lovelace(hass: HomeAssistant) -> None:
 
 async def test_unregister_skips_yaml_mode(hass: HomeAssistant) -> None:
     """YAML mode owns its resources via files; we must not touch them."""
-    lovelace = _make_lovelace(resource_mode="yaml", items=[{"id": "x", "url": URL_BASE + "/foo.js"}])
+    lovelace = _make_lovelace(
+        resource_mode="yaml", items=[{"id": "x", "url": URL_BASE + "/foo.js"}]
+    )
     _install_lovelace(hass, lovelace)
     reg = JSModuleRegistration(hass)
 

@@ -1,4 +1,5 @@
 """Tests for the Ladestellen Austria NearestStationSensor."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -61,7 +62,12 @@ def test_native_value_none_when_nearest_not_dict(hass: HomeAssistant) -> None:
     """Defensive: a non-dict 'nearest' (corrupted state) yields None."""
     sensor = _build_sensor(
         hass,
-        {"stations": [], "count": 0, "nearest": "garbage", "live_status_available": True},
+        {
+            "stations": [],
+            "count": 0,
+            "nearest": "garbage",
+            "live_status_available": True,
+        },
     )
     assert sensor.native_value is None
 

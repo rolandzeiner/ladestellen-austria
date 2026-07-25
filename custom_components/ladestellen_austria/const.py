@@ -1,4 +1,5 @@
 """Constants for Ladestellen Austria."""
+
 from __future__ import annotations
 
 import json

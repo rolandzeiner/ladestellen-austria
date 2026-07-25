@@ -1,4 +1,5 @@
 """Tests for the Ladestellen Austria config flow."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -130,9 +131,7 @@ async def test_form_domain_mismatch(hass: HomeAssistant) -> None:
     assert result["errors"].get("base") == "domain_mismatch"
 
 
-async def test_form_invalid_domain(
-    hass: HomeAssistant, mock_fetch: AsyncMock
-) -> None:
+async def test_form_invalid_domain(hass: HomeAssistant, mock_fetch: AsyncMock) -> None:
     """Garbage domain input is rejected before the API probe runs."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -151,9 +150,7 @@ async def test_reconfigure_updates_entry(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    await hass.config_entries.flow.async_configure(
-        result["flow_id"], VALID_USER_INPUT
-    )
+    await hass.config_entries.flow.async_configure(result["flow_id"], VALID_USER_INPUT)
     entry = hass.config_entries.async_entries(DOMAIN)[0]
     original_unique_id = entry.unique_id
 
@@ -211,9 +208,7 @@ async def test_reconfigure_switches_static_to_dynamic(
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    await hass.config_entries.flow.async_configure(
-        result["flow_id"], VALID_USER_INPUT
-    )
+    await hass.config_entries.flow.async_configure(result["flow_id"], VALID_USER_INPUT)
     entry = hass.config_entries.async_entries(DOMAIN)[0]
     assert entry.unique_id == "www.meineseite.at:48.21:16.37"
 
@@ -225,9 +220,7 @@ async def test_reconfigure_switches_static_to_dynamic(
             "entry_id": entry.entry_id,
         },
     )
-    reconfigure_input = {
-        k: v for k, v in VALID_USER_INPUT.items() if k != "name"
-    }
+    reconfigure_input = {k: v for k, v in VALID_USER_INPUT.items() if k != "name"}
     reconfigure_input[CONF_DYNAMIC_ENTITY] = "device_tracker.phone"
     result = await hass.config_entries.flow.async_configure(
         flow["flow_id"], reconfigure_input

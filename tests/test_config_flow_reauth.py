@@ -1,4 +1,5 @@
 """Tests for the Ladestellen Austria reauth flow."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch

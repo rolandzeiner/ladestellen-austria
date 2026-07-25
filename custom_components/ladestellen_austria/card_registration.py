@@ -7,6 +7,7 @@ The ``LovelaceData`` field that signals storage-vs-yaml mode was
 renamed across HA versions (``mode`` → ``resource_mode``). We read
 whichever attribute is set; ``_is_storage_mode`` carries the details.
 """
+
 from __future__ import annotations
 
 import logging
@@ -98,9 +99,7 @@ class JSModuleRegistration:
         # component does not bootstrap `http` automatically). Skip instead of
         # crashing when absent — production installs always have it loaded.
         if getattr(self.hass, "http", None) is None:
-            _LOGGER.debug(
-                "http component not available; skipping card registration"
-            )
+            _LOGGER.debug("http component not available; skipping card registration")
             return
         await self._async_register_path()
         if self.lovelace is not None and self._is_storage_mode():
@@ -265,8 +264,6 @@ class JSModuleRegistration:
         resources = cast("ResourceStorageCollection", self.lovelace.resources)
         for module in JSMODULES:
             url = f"{URL_BASE}/{module['filename']}"
-            existing = [
-                r for r in resources.async_items() if r["url"].startswith(url)
-            ]
+            existing = [r for r in resources.async_items() if r["url"].startswith(url)]
             for resource in existing:
                 await resources.async_delete_item(resource["id"])

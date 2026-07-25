@@ -1,4 +1,5 @@
 """DataUpdateCoordinator for Ladestellen Austria."""
+
 from __future__ import annotations
 
 import asyncio
@@ -71,6 +72,7 @@ class _StationMeta:
     with `_station_*` scratch keys was the previous shape). Pairing
     keeps the API payload pristine.
     """
+
     label: str | None
     distance: float | None
 
@@ -221,9 +223,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # ------------------------------------------------------------------
 
     @callback
-    def _handle_tracker_update(
-        self, event: Event[EventStateChangedData]
-    ) -> None:
+    def _handle_tracker_update(self, event: Event[EventStateChangedData]) -> None:
         """Fire a refresh when the tracker entity's state changes — subject
         to the three-tier rate-limit guards in _should_update."""
         new_state = event.data.get("new_state")
@@ -255,7 +255,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 try:
                     lat_f = float(lat)
                     lng_f = float(lng)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     pass
                 else:
                     self._clear_tracker_issue()
@@ -309,9 +309,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         now = dt_util.utcnow()
 
-        last_domain = self.hass.data.get(DOMAIN, {}).get(
-            DOMAIN_LAST_API_CALL_KEY
-        )
+        last_domain = self.hass.data.get(DOMAIN, {}).get(DOMAIN_LAST_API_CALL_KEY)
         if last_domain is not None:
             age_min = (now - last_domain).total_seconds() / 60
             if age_min < DYNAMIC_DOMAIN_COOLDOWN_MINUTES:
@@ -330,13 +328,8 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 return False
 
-        if (
-            self._last_fetch_lat is not None
-            and self._last_fetch_lng is not None
-        ):
-            dist_m = distance(
-                lat, lng, self._last_fetch_lat, self._last_fetch_lng
-            )
+        if self._last_fetch_lat is not None and self._last_fetch_lng is not None:
+            dist_m = distance(lat, lng, self._last_fetch_lat, self._last_fetch_lng)
             if dist_m is not None and dist_m < DYNAMIC_DISTANCE_THRESHOLD_M:
                 _LOGGER.debug(
                     "Dynamic update skipped: only moved %.0f m (threshold %d)",
@@ -347,9 +340,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return True
 
-    def _raise_degraded_issue(
-        self, translation_key: str, **placeholders: str
-    ) -> None:
+    def _raise_degraded_issue(self, translation_key: str, **placeholders: str) -> None:
         """Raise a Repairs issue for a user-actionable degraded condition."""
         if self._issue_raised:
             return
@@ -537,6 +528,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # resolves the file and would otherwise grumble that
                 # the attr-defined ignore is unnecessary).
                 from . import _dev_fixture  # type: ignore[attr-defined,unused-ignore]
+
                 stations = [_dev_fixture.STATION, *stations]
         stations.sort(key=lambda s: s.get("distance") or float("inf"))
         truncated = stations[:DEFAULT_MAX_RESULTS]

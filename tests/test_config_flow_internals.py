@@ -4,6 +4,7 @@ These cover the helpers that the user-facing flow tests skip past:
 the probe-helper status→error-key mapping, the input validator, and
 the domain normaliser/validator pair.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -145,9 +146,7 @@ def test_validate_empty_api_key() -> None:
 
 
 def test_validate_invalid_domain() -> None:
-    cleaned, errors = _validate_user_input(
-        {**_GOOD_INPUT, CONF_DOMAIN: "no-tld"}
-    )
+    cleaned, errors = _validate_user_input({**_GOOD_INPUT, CONF_DOMAIN: "no-tld"})
     assert errors[CONF_DOMAIN] == "invalid_domain"
 
 
@@ -156,14 +155,12 @@ def test_validate_invalid_domain() -> None:
     [
         (None, 16.37),
         (48.21, None),
-        (91.0, 16.37),       # lat out of range
-        (48.21, 181.0),      # lng out of range
-        ("nope", 16.37),     # non-numeric
+        (91.0, 16.37),  # lat out of range
+        (48.21, 181.0),  # lng out of range
+        ("nope", 16.37),  # non-numeric
     ],
 )
-def test_validate_invalid_location(
-    lat: object, lng: object
-) -> None:
+def test_validate_invalid_location(lat: object, lng: object) -> None:
     cleaned, errors = _validate_user_input(
         {**_GOOD_INPUT, "location": {"latitude": lat, "longitude": lng}}
     )
@@ -179,9 +176,7 @@ def test_validate_passes_dynamic_entity_through() -> None:
 
 def test_validate_normalizes_dynamic_entity_empty_to_none() -> None:
     """Empty-string from the form becomes None (= static mode)."""
-    cleaned, _ = _validate_user_input(
-        {**_GOOD_INPUT, CONF_DYNAMIC_ENTITY: ""}
-    )
+    cleaned, _ = _validate_user_input({**_GOOD_INPUT, CONF_DYNAMIC_ENTITY: ""})
     assert cleaned[CONF_DYNAMIC_ENTITY] is None
 
 
@@ -222,7 +217,7 @@ def test_normalize_domain(raw: str, expected: str) -> None:
         ("sub.example.co.uk", True),
         # Negative cases
         ("", False),
-        ("singlelabel", False),       # no dot
+        ("singlelabel", False),  # no dot
         (".leadingdot", False),
         ("trailingdot.", False),
         ("-leading.example.com", False),
@@ -261,10 +256,7 @@ def test_compute_unique_id_dynamic() -> None:
         CONF_LONGITUDE: 16.37,
         CONF_DYNAMIC_ENTITY: "device_tracker.phone",
     }
-    assert (
-        _compute_unique_id(cleaned)
-        == "x.example:dynamic:device_tracker.phone"
-    )
+    assert _compute_unique_id(cleaned) == "x.example:dynamic:device_tracker.phone"
 
 
 def test_build_entry_data_round_trip() -> None:

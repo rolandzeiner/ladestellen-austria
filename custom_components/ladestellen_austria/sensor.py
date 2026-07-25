@@ -1,4 +1,5 @@
 """Sensor platform for Ladestellen Austria."""
+
 from __future__ import annotations
 
 import logging
@@ -87,7 +88,7 @@ class NearestStationSensor(
             return None
         try:
             return float(distance)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
 
     @property

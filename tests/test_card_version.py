@@ -10,6 +10,7 @@ one.
 
 Bump both in the same commit; this test catches drift in CI.
 """
+
 from __future__ import annotations
 
 import re
@@ -17,12 +18,8 @@ from pathlib import Path
 
 from custom_components.ladestellen_austria.const import CARD_VERSION as PY_VERSION
 
-_TS_CONST = (
-    Path(__file__).resolve().parent.parent / "src" / "const.ts"
-)
-_VERSION_RE = re.compile(
-    r'export\s+const\s+CARD_VERSION\s*=\s*"([^"]+)"\s*;'
-)
+_TS_CONST = Path(__file__).resolve().parent.parent / "src" / "const.ts"
+_VERSION_RE = re.compile(r'export\s+const\s+CARD_VERSION\s*=\s*"([^"]+)"\s*;')
 
 
 def test_card_version_matches_typescript() -> None:
@@ -31,7 +28,7 @@ def test_card_version_matches_typescript() -> None:
     match = _VERSION_RE.search(text)
     assert match, (
         f"Could not locate CARD_VERSION export in {_TS_CONST}; the regex "
-        "expects `export const CARD_VERSION = \"…\";`."
+        'expects `export const CARD_VERSION = "…";`.'
     )
     ts_version = match.group(1)
     assert ts_version == PY_VERSION, (

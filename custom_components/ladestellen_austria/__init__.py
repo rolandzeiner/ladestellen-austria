@@ -1,4 +1,5 @@
 """Ladestellen Austria integration."""
+
 from __future__ import annotations
 
 import logging
@@ -26,9 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 
-@websocket_command(
-    {vol.Required("type"): "ladestellen_austria/card_version"}
-)
+@websocket_command({vol.Required("type"): "ladestellen_austria/card_version"})
 @async_response
 async def _websocket_card_version(
     hass: HomeAssistant,
@@ -72,7 +71,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: LadestellenAustriaConfigEntry
+) -> bool:
     """Set up Ladestellen Austria from a config entry."""
     _LOGGER.info("Ladestellen Austria %s setup", INTEGRATION_VERSION)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
@@ -102,7 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: LadestellenAustriaConfig
     return True
 
 
-async def _async_reload_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> None:
+async def _async_reload_entry(
+    hass: HomeAssistant, entry: LadestellenAustriaConfigEntry
+) -> None:
     """Reload the config entry when options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -121,7 +124,9 @@ async def async_migrate_entry(
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: LadestellenAustriaConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: LadestellenAustriaConfigEntry
+) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
