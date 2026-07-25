@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -130,7 +129,7 @@ async def test_fetch_timeout_raises_update_failed(hass: HomeAssistant) -> None:
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 
-    _attach_session(coordinator, asyncio.TimeoutError())
+    _attach_session(coordinator, TimeoutError())
     with pytest.raises(UpdateFailed) as exc:
         await coordinator._fetch_search(48.21, 16.37)
     assert exc.value.translation_key == "api_timeout"
@@ -600,7 +599,7 @@ async def test_tracker_update_event_blocked_by_cooldown_no_refresh(
 # ---------------------------------------------------------------------------
 
 
-from custom_components.ladestellen_austria.const import (  # noqa: E402
+from custom_components.ladestellen_austria.const import (
     EVENT_SLOT_STATUS_CHANGED,
 )
 

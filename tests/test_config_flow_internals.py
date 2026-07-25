@@ -30,7 +30,6 @@ from custom_components.ladestellen_austria.const import (
 
 from .conftest import make_response_cm
 
-
 # ---------------------------------------------------------------------------
 # _test_api_connection — status → error-key contract
 # ---------------------------------------------------------------------------
@@ -141,12 +140,12 @@ def test_validate_happy_path() -> None:
 
 
 def test_validate_empty_api_key() -> None:
-    cleaned, errors = _validate_user_input({**_GOOD_INPUT, CONF_API_KEY: "  "})
+    _, errors = _validate_user_input({**_GOOD_INPUT, CONF_API_KEY: "  "})
     assert errors[CONF_API_KEY] == "invalid_api_key"
 
 
 def test_validate_invalid_domain() -> None:
-    cleaned, errors = _validate_user_input({**_GOOD_INPUT, CONF_DOMAIN: "no-tld"})
+    _, errors = _validate_user_input({**_GOOD_INPUT, CONF_DOMAIN: "no-tld"})
     assert errors[CONF_DOMAIN] == "invalid_domain"
 
 
@@ -161,7 +160,7 @@ def test_validate_invalid_domain() -> None:
     ],
 )
 def test_validate_invalid_location(lat: object, lng: object) -> None:
-    cleaned, errors = _validate_user_input(
+    _, errors = _validate_user_input(
         {**_GOOD_INPUT, "location": {"latitude": lat, "longitude": lng}}
     )
     assert errors.get("location") == "invalid_location"
