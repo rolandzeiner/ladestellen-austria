@@ -2,9 +2,11 @@
 
 ## Dev setup
 
+Uses [`uv`](https://docs.astral.sh/uv/) — the same tool CI installs deps with.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements_test.txt pre-commit
+uv venv --python 3.14 && source .venv/bin/activate
+uv pip install -r requirements_test.txt pre-commit
 pre-commit install
 
 npm ci
