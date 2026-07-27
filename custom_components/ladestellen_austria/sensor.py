@@ -88,7 +88,7 @@ class NearestStationSensor(
             return None
         try:
             return float(distance)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return None
 
     @property

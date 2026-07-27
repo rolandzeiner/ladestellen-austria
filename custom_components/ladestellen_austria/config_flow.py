@@ -199,7 +199,7 @@ def _validate_user_input(
     try:
         lat_f = float(latitude) if latitude is not None else None
         lng_f = float(longitude) if longitude is not None else None
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         lat_f = lng_f = None
     if (
         lat_f is None
@@ -286,7 +286,7 @@ async def _test_api_connection(
             # the probe validates the API the same way the coordinator uses it.
             payload = await resp.json()
             return None if isinstance(payload, list) else "cannot_connect"
-    except aiohttp.ClientError, ValueError, TimeoutError:
+    except (aiohttp.ClientError, ValueError, TimeoutError):
         return "cannot_connect"
 
 

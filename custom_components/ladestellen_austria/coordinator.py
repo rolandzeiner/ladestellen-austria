@@ -253,7 +253,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 try:
                     lat_f = float(lat)
                     lng_f = float(lng)
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     pass
                 else:
                     self._clear_tracker_issue()
