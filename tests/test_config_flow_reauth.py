@@ -1,4 +1,5 @@
 """Tests for the Ladestellen Austria reauth flow."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -104,9 +105,9 @@ async def test_reauth_success_updates_credentials(
     """A successful reauth rewrites api_key + domain on the entry.
 
     `mock_fetch` is required because reauth ends in
-    async_update_reload_and_abort, which reloads the entry — that in turn
-    triggers a coordinator first_refresh that we don't want to hit the
-    real upstream API.
+    async_update_and_abort, whose entry-data change fires the update
+    listener and reloads the entry — that in turn triggers a coordinator
+    first_refresh that we don't want to hit the real upstream API.
     """
     entry = _entry(hass)
     flow = await _start_reauth(hass, entry)

@@ -1,4 +1,5 @@
 """Shared pytest fixtures for Ladestellen Austria tests."""
+
 from __future__ import annotations
 
 from collections.abc import Generator
@@ -106,7 +107,7 @@ def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Enable custom integrations for all tests in this package."""
-    return None
+    return
 
 
 @pytest.fixture(autouse=True)

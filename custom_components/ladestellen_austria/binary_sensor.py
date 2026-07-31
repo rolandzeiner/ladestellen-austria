@@ -8,6 +8,7 @@ into JSON-attribute templating against the main sensor.
 Counts of free / total slots and stations-with-free are surfaced as
 attributes for cards and templates.
 """
+
 from __future__ import annotations
 
 from typing import Any

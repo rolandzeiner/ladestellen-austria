@@ -23,6 +23,7 @@ import {
 } from "./types";
 import { editorStyles } from "./styles";
 import { localize, setLanguage } from "./localize/localize";
+import { computeFormLabel } from "./utils";
 
 // ha-form's TS types aren't shipped on a stable channel by HA core, so
 // HaFormSchema is a permissive shape; the runtime accepts the
@@ -53,106 +54,114 @@ const TOP_SCHEMA: HaFormSchema = [
   { name: "name", selector: { text: {} } },
 ];
 
-// Same hoist rationale as TOP_SCHEMA. The localize() calls in
-// `select.options` are evaluated once at module load — that's
-// intentional, the option labels only need to track the language
-// captured by the localize cache when the bundle is parsed.
-const APPEARANCE_SCHEMA: HaFormSchema = [
-  {
-    type: "expandable",
-    name: "appearance",
-    // flatten: true keeps the inner fields at the top level of
-    // ev.detail.value (data.car_color_mode, not data.appearance.car_color_mode)
-    // so the card-side `_config.car_color_mode === "fixed"` check
-    // resolves correctly and the colour-swatch reveal works.
-    flatten: true,
-    schema: [
-      { name: "hide_header", selector: { boolean: {} } },
-      { name: "show_free_count", selector: { boolean: {} } },
-      { name: "logo_adapt_to_theme", selector: { boolean: {} } },
-      {
-        name: "car_color_mode",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              {
-                value: "random",
-                label: localize("editor.car_color_random"),
-              },
-              {
-                value: "theme",
-                label: localize("editor.car_color_theme"),
-              },
-              {
-                value: "fixed",
-                label: localize("editor.car_color_fixed"),
-              },
-            ],
+// Unlike TOP_SCHEMA this can't be a frozen module constant: its
+// select-option labels go through localize(), which must run AFTER
+// setLanguage() has pushed the HA UI language (willUpdate does that).
+// Building the array at module-parse time would freeze the labels to
+// whatever navigator.language happened to be when the bundle loaded —
+// a mixed-language editor when the browser locale differs from the HA
+// profile locale. _appearanceSchema() calls this from render() and
+// memoises the result by language, so ha-form's identity-based
+// schema-skip still holds (the array is rebuilt only when the language
+// actually changes).
+function buildAppearanceSchema(): HaFormSchema {
+  return [
+    {
+      type: "expandable",
+      name: "appearance",
+      // flatten: true keeps the inner fields at the top level of
+      // ev.detail.value (data.car_color_mode, not data.appearance.car_color_mode)
+      // so the card-side `_config.car_color_mode === "fixed"` check
+      // resolves correctly and the colour-swatch reveal works.
+      flatten: true,
+      schema: [
+        { name: "hide_header", selector: { boolean: {} } },
+        { name: "show_free_count", selector: { boolean: {} } },
+        { name: "logo_adapt_to_theme", selector: { boolean: {} } },
+        {
+          name: "car_color_mode",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                {
+                  value: "random",
+                  label: localize("editor.car_color_random"),
+                },
+                {
+                  value: "theme",
+                  label: localize("editor.car_color_theme"),
+                },
+                {
+                  value: "fixed",
+                  label: localize("editor.car_color_fixed"),
+                },
+              ],
+            },
           },
         },
-      },
-      {
-        name: "asphalt_style",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              {
-                value: "default",
-                label: localize("editor.asphalt_style_default"),
-              },
-              {
-                value: "textured",
-                label: localize("editor.asphalt_style_textured"),
-              },
-            ],
+        {
+          name: "asphalt_style",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                {
+                  value: "default",
+                  label: localize("editor.asphalt_style_default"),
+                },
+                {
+                  value: "textured",
+                  label: localize("editor.asphalt_style_textured"),
+                },
+              ],
+            },
           },
         },
-      },
-      {
-        name: "paint_width",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              {
-                value: "thin",
-                label: localize("editor.paint_width_thin"),
-              },
-              {
-                value: "medium",
-                label: localize("editor.paint_width_medium"),
-              },
-              {
-                value: "wide",
-                label: localize("editor.paint_width_wide"),
-              },
-            ],
+        {
+          name: "paint_width",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                {
+                  value: "thin",
+                  label: localize("editor.paint_width_thin"),
+                },
+                {
+                  value: "medium",
+                  label: localize("editor.paint_width_medium"),
+                },
+                {
+                  value: "wide",
+                  label: localize("editor.paint_width_wide"),
+                },
+              ],
+            },
           },
         },
-      },
-      {
-        name: "icon_paint_mode",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              {
-                value: "default",
-                label: localize("editor.icon_paint_default"),
-              },
-              {
-                value: "white",
-                label: localize("editor.icon_paint_white"),
-              },
-            ],
+        {
+          name: "icon_paint_mode",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                {
+                  value: "default",
+                  label: localize("editor.icon_paint_default"),
+                },
+                {
+                  value: "white",
+                  label: localize("editor.icon_paint_white"),
+                },
+              ],
+            },
           },
         },
-      },
-    ],
-  },
-];
+      ],
+    },
+  ];
+}
 
 @customElement("ladestellen-austria-parking-card-editor")
 export class LadestellenAustriaParkingCardEditor
@@ -182,24 +191,28 @@ export class LadestellenAustriaParkingCardEditor
     fireEvent(this, "config-changed", { config: next });
   }
 
-  private _computeLabel = (schema: {
-    name: string;
-    type?: string;
-  }): string => {
-    const key = schema.type === "expandable"
-      ? `editor.section_${schema.name}`
-      : `editor.${schema.name}`;
-    const resolved = localize(key);
-    return resolved === key ? schema.name : resolved;
-  };
-
   // Two schemas — split so the station-picker section can render
   // BETWEEN them. Both ha-forms share the same `_formChanged` handler
   // and the same `data` prop (full _config); each form preserves the
   // fields it doesn't render and writes back the merged config.
-  // Schemas live at module scope (TOP_SCHEMA above, APPEARANCE_SCHEMA
-  // below) so ha-form's identity-based `.schema` skip works — fresh
-  // array literals on every render would defeat it.
+  // TOP_SCHEMA is a module constant; the appearance schema is built per
+  // language via _appearanceSchema(). Both keep a stable array identity
+  // across renders so ha-form's identity-based `.schema` skip works —
+  // fresh array literals on every render would defeat it.
+
+  // Appearance schema memoised by HA UI language. buildAppearanceSchema()
+  // resolves select-option labels through localize(); the cache keeps
+  // the array identity stable across renders of the same language and
+  // rebuilds exactly once when the language changes.
+  private _appearanceSchemaCache?: { lang: string; schema: HaFormSchema };
+
+  private _appearanceSchema(): HaFormSchema {
+    const lang = this.hass?.language ?? "";
+    if (this._appearanceSchemaCache?.lang !== lang) {
+      this._appearanceSchemaCache = { lang, schema: buildAppearanceSchema() };
+    }
+    return this._appearanceSchemaCache.schema;
+  }
 
   private _selectStation(stationId: string): void {
     const next = this._config.station_id === stationId ? "" : stationId;
@@ -251,7 +264,7 @@ export class LadestellenAustriaParkingCardEditor
               .hass=${this.hass}
               .data=${data}
               .schema=${TOP_SCHEMA}
-              .computeLabel=${this._computeLabel}
+              .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
           : nothing}
@@ -313,8 +326,8 @@ export class LadestellenAustriaParkingCardEditor
           ? html`<ha-form
               .hass=${this.hass}
               .data=${data}
-              .schema=${APPEARANCE_SCHEMA}
-              .computeLabel=${this._computeLabel}
+              .schema=${this._appearanceSchema()}
+              .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
           : nothing}

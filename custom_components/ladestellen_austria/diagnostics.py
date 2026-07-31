@@ -1,4 +1,5 @@
 """Diagnostics support for Ladestellen Austria."""
+
 from __future__ import annotations
 
 from typing import Any

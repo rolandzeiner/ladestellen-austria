@@ -1,4 +1,5 @@
 """Tests for the integration's setup/unload/remove lifecycle."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch

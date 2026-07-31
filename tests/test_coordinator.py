@@ -1,7 +1,7 @@
 """Tests for the Ladestellen Austria coordinator."""
+
 from __future__ import annotations
 
-import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -73,17 +73,13 @@ def _attach_session(coordinator: LadestellenAustriaCoordinator, response_or_exc)
     if isinstance(response_or_exc, BaseException):
         session.get = MagicMock(side_effect=response_or_exc)
     else:
-        session.get = MagicMock(
-            return_value=make_response_cm(response_or_exc)
-        )
+        session.get = MagicMock(return_value=make_response_cm(response_or_exc))
     coordinator._session = session
     return session
 
 
 @pytest.mark.parametrize("status", [401, 403])
-async def test_fetch_auth_error_raises_reauth(
-    hass: HomeAssistant, status: int
-) -> None:
+async def test_fetch_auth_error_raises_reauth(hass: HomeAssistant, status: int) -> None:
     """401/403 from /search must raise ConfigEntryAuthFailed so HA triggers reauth."""
     entry = _make_entry()
     entry.add_to_hass(hass)
@@ -133,7 +129,7 @@ async def test_fetch_timeout_raises_update_failed(hass: HomeAssistant) -> None:
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 
-    _attach_session(coordinator, asyncio.TimeoutError())
+    _attach_session(coordinator, TimeoutError())
     with pytest.raises(UpdateFailed) as exc:
         await coordinator._fetch_search(48.21, 16.37)
     assert exc.value.translation_key == "api_timeout"
@@ -177,9 +173,7 @@ async def test_fetch_invalid_json_raises_update_failed(
 
     resp = _json_resp(None)
     resp.json = AsyncMock(
-        side_effect=aiohttp.ContentTypeError(
-            request_info=MagicMock(), history=()
-        )
+        side_effect=aiohttp.ContentTypeError(request_info=MagicMock(), history=())
     )
     _attach_session(coordinator, resp)
     with pytest.raises(UpdateFailed) as exc:
@@ -279,9 +273,7 @@ async def test_update_sorts_and_truncates_to_max_results(
 
     # 15 stations in reverse distance order — verifies sort, truncation,
     # and that nearest reflects the post-sort head.
-    payload = [
-        {"label": f"s{i}", "distance": float(20 - i)} for i in range(15)
-    ]
+    payload = [{"label": f"s{i}", "distance": float(20 - i)} for i in range(15)]
     _attach_session(coordinator, _json_resp(payload))
     data = await coordinator._async_update_data()
 
@@ -346,8 +338,7 @@ async def test_repair_issue_lifecycle(hass: HomeAssistant) -> None:
 
     coordinator._clear_degraded_issue("example_degraded")
     assert (
-        registry.async_get_issue(DOMAIN, f"example_degraded_{entry.entry_id}")
-        is None
+        registry.async_get_issue(DOMAIN, f"example_degraded_{entry.entry_id}") is None
     )
 
 
@@ -453,9 +444,7 @@ async def test_should_update_blocks_on_domain_cooldown(
     entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
-    hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = (
-        dt_util.utcnow()
-    )
+    hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = dt_util.utcnow()
     assert coordinator._should_update(48.21, 16.37) is False
 
 
@@ -509,9 +498,7 @@ async def test_tracker_missing_raises_repair_issue(hass: HomeAssistant) -> None:
     assert lng == 16.37
     # Repairs issue was raised.
     registry = ir.async_get(hass)
-    issue = registry.async_get_issue(
-        DOMAIN, f"tracker_missing_{entry.entry_id}"
-    )
+    issue = registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
     assert issue is not None
     assert issue.translation_key == "tracker_missing"
     assert coordinator._tracker_issue_raised is True
@@ -542,15 +529,10 @@ async def test_tracker_restored_clears_repair_issue(
         "not_home",
         {"latitude": 48.35, "longitude": 16.5},
     )
-    lat, lng = coordinator._get_entity_coords(
-        hass.states.get("device_tracker.phone")
-    )
+    lat, lng = coordinator._get_entity_coords(hass.states.get("device_tracker.phone"))
     assert lat == 48.35
     assert lng == 16.5
-    assert (
-        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
-        is None
-    )
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
     assert coordinator._tracker_issue_raised is False
 
 
@@ -579,9 +561,9 @@ async def test_tracker_update_event_refreshes_when_moved(
         await hass.async_block_till_done()
 
     refresh_mock.assert_awaited()
-    assert (
-        hass.data[DOMAIN].get(DOMAIN_LAST_API_CALL_KEY) is not None
-    ), "domain cooldown timestamp must be stamped on refresh dispatch"
+    assert hass.data[DOMAIN].get(DOMAIN_LAST_API_CALL_KEY) is not None, (
+        "domain cooldown timestamp must be stamped on refresh dispatch"
+    )
     coordinator.async_teardown()
 
 
@@ -617,7 +599,7 @@ async def test_tracker_update_event_blocked_by_cooldown_no_refresh(
 # ---------------------------------------------------------------------------
 
 
-from custom_components.ladestellen_austria.const import (  # noqa: E402
+from custom_components.ladestellen_austria.const import (
     EVENT_SLOT_STATUS_CHANGED,
 )
 

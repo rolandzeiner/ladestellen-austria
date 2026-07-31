@@ -29,6 +29,11 @@ export interface HassEntity {
  *  cast at the call site. */
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  // Entity-registry slice. The 2026.6 entity-first card picker calls each
+  // card's getEntitySuggestion with an entityId; we gate on the registry
+  // `platform` to only suggest our own integration's sensors. Open-ended
+  // bag — we read just `platform`.
+  entities?: Record<string, { platform?: string } & Record<string, unknown>>;
   language?: string;
   themes?: { darkMode?: boolean } & Record<string, unknown>;
   config?: { time_zone?: string } & Record<string, unknown>;
@@ -88,6 +93,16 @@ declare global {
       description: string;
       preview?: boolean;
       documentationURL?: string;
+      // 2026.6 entity-first card picker hook. Additive key older HA
+      // ignores; when present, HA asks the card whether it wants to
+      // suggest itself for a given entity. Backward-compatible.
+      getEntitySuggestion?: (
+        hass: HomeAssistant,
+        entityId: string,
+      ) =>
+        | { config: LovelaceCardConfig }
+        | Array<{ config: LovelaceCardConfig }>
+        | null;
     }>;
   }
 }
@@ -168,7 +183,7 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
 }
 
 // Short-label tokens used in the connector filter. These are the UI
-// labels as rendered by `_shortConnector` in the card — matching them
+// labels as rendered by `shortConnector()` (src/utils.ts) — matching them
 // here keeps the filter config human-readable and stable across API
 // changes (consumerName values on the wire occasionally shift).
 export const CONNECTOR_FILTER_OPTIONS: string[] = [
@@ -251,6 +266,11 @@ export interface OpeningHours {
   toTime: string;
 }
 
+// Mirrors the upstream ProximitySearchLocationDTO. A few fields
+// (countryId, operatorId, contactName, email, parkingPlaces) are kept
+// for shape-completeness against the wire payload but are not currently
+// read by either card — leave them so a future feature has the typing
+// ready rather than re-deriving it from the API spec.
 export interface Station {
   stationId: string;
   label: string;

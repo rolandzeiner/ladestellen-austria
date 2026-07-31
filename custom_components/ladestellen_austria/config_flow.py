@@ -1,4 +1,5 @@
 """Config flow for Ladestellen Austria."""
+
 from __future__ import annotations
 
 import logging
@@ -8,7 +9,6 @@ from urllib.parse import urlparse
 
 import aiohttp
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -201,7 +201,12 @@ def _validate_user_input(
         lng_f = float(longitude) if longitude is not None else None
     except (TypeError, ValueError):
         lat_f = lng_f = None
-    if lat_f is None or lng_f is None or not (-90 <= lat_f <= 90) or not (-180 <= lng_f <= 180):
+    if (
+        lat_f is None
+        or lng_f is None
+        or not (-90 <= lat_f <= 90)
+        or not (-180 <= lng_f <= 180)
+    ):
         errors["location"] = "invalid_location"
 
     cleaned = {
@@ -239,7 +244,7 @@ def _compute_unique_id(cleaned: dict[str, Any]) -> str:
     location doesn't collide, coarse enough that micro-adjustments in the map
     picker don't create duplicates.
 
-    Dynamic mode (beta-50): `{domain}:dynamic:{entity_id}`. A dynamic
+    Dynamic mode — FROZEN: `{domain}:dynamic:{entity_id}`. A dynamic
     entry's live position changes constantly, so tying the unique_id to
     lat/lng would make the ID unstable. The tracker entity_id is the
     user's intended identity for the entry and stays fixed across moves.
@@ -271,11 +276,18 @@ async def _test_api_connection(
             params=params,
             timeout=timeout,
         ) as resp:
-            status = resp.status
-    except (aiohttp.ClientError, TimeoutError):
+            outcome = classify_probe_status(resp.status)
+            if outcome is not None:
+                return outcome
+            # 2xx — confirm the body is the JSON list /search must return.
+            # A misconfigured gateway answering 200 with an HTML error page
+            # would otherwise pass the probe and only fail on the first
+            # coordinator refresh; mirror _fetch_search's shape contract so
+            # the probe validates the API the same way the coordinator uses it.
+            payload = await resp.json()
+            return None if isinstance(payload, list) else "cannot_connect"
+    except (aiohttp.ClientError, ValueError, TimeoutError):
         return "cannot_connect"
-
-    return classify_probe_status(status)
 
 
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -316,7 +328,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = probe_err
                 else:
                     await self.async_set_unique_id(_compute_unique_id(cleaned))
-                    self._abort_if_unique_id_configured()
+                    self._abort_if_unique_id_configured(reload_on_update=False)
                     title = user_input.get("name", "Ladestellen Austria")
                     return self.async_create_entry(
                         title=title, data=_build_entry_data(cleaned)
@@ -369,15 +381,13 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                     # Allow THIS entry to change its unique_id (mode
                     # switch / location move) but abort if another
                     # entry already holds the new unique_id.
-                    for other in self._async_current_entries(
-                        include_ignore=True
-                    ):
+                    for other in self._async_current_entries(include_ignore=True):
                         if (
                             other.entry_id != entry.entry_id
                             and other.unique_id == new_unique_id
                         ):
                             return self.async_abort(reason="already_configured")
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         entry,
                         data=_build_entry_data(cleaned),
                         unique_id=new_unique_id,
@@ -431,7 +441,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 if probe_err:
                     errors["base"] = probe_err
                 else:
-                    return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         entry,
                         data={
                             **entry.data,
@@ -446,9 +456,7 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_API_KEY, default=entry.data.get(CONF_API_KEY, "")
-                    ): TextSelector(
-                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                    ),
+                    ): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
                     vol.Required(
                         CONF_DOMAIN, default=entry.data.get(CONF_DOMAIN, "")
                     ): TextSelector(),
@@ -481,9 +489,7 @@ class LadestellenAustriaOptionsFlow(OptionsFlow):
                 {
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=current.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                        ),
+                        default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): NumberSelector(
                         NumberSelectorConfig(
                             min=MIN_POLL_MINUTES,

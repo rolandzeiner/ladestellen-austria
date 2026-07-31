@@ -30,6 +30,7 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - Bilingual config flow (EN/DE), with reauth and reconfigure flows.
 - **Dynamic location mode** — point the entry at a `device_tracker` and the search origin follows live GPS, with rate-limit guards (see [Dynamic location mode](#dynamic-location-mode)).
 - **Two Lovelace cards** — a list view (kW-led tile rows, expandable per-station detail) and a parking-lot view (top-down vector cars on occupied spots, wrench overlay on out-of-order, hover or tap reveals the slot's spec).
+- **Entity-first card picker.** Pick one of the integration's sensors when adding a dashboard card and the matching card offers itself, already configured. Home Assistant 2026.6 or newer; older versions are unaffected. *(0.5.0)*
 - WCAG 2.2 A+AA accessibility across both cards and editors.
 - **Robust polling.** Exponential backoff on consecutive coordinator failures (10 → 20 → 40 min doubling, 12 h cap, snap-back to the configured interval on first success) so a sustained upstream outage settles into a slow poll instead of hammering. *(0.4.0)*
 - Strict-typed, async-only.

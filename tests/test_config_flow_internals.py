@@ -4,9 +4,10 @@ These cover the helpers that the user-facing flow tests skip past:
 the probe-helper status→error-key mapping, the input validator, and
 the domain normaliser/validator pair.
 """
+
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
@@ -29,7 +30,6 @@ from custom_components.ladestellen_austria.const import (
 
 from .conftest import make_response_cm
 
-
 # ---------------------------------------------------------------------------
 # _test_api_connection — status → error-key contract
 # ---------------------------------------------------------------------------
@@ -38,6 +38,9 @@ from .conftest import make_response_cm
 def _resp(status: int) -> MagicMock:
     resp = MagicMock()
     resp.status = status
+    # On a 2xx the probe reads the body to confirm /search returned the
+    # JSON list it expects; the non-2xx paths return before touching it.
+    resp.json = AsyncMock(return_value=[])
     return resp
 
 
@@ -67,6 +70,27 @@ async def test_probe_status_mapping(
             hass, "key", "www.meineseite.at", 48.21, 16.37
         )
     assert result == expected
+
+
+async def test_probe_rejects_non_list_body(hass: HomeAssistant) -> None:
+    """A 2xx whose body isn't the JSON list /search returns is rejected.
+
+    Guards against a misconfigured gateway answering 200 with an HTML
+    error page — the probe would otherwise green-light credentials that
+    fail on the first coordinator refresh.
+    """
+    resp = _resp(200)
+    resp.json = AsyncMock(return_value={"error": "not a list"})
+    session = MagicMock()
+    session.get = MagicMock(return_value=make_response_cm(resp))
+    with patch(
+        "custom_components.ladestellen_austria.config_flow.async_get_clientsession",
+        return_value=session,
+    ):
+        result = await _test_api_connection(
+            hass, "key", "www.meineseite.at", 48.21, 16.37
+        )
+    assert result == "cannot_connect"
 
 
 @pytest.mark.parametrize(
@@ -116,14 +140,12 @@ def test_validate_happy_path() -> None:
 
 
 def test_validate_empty_api_key() -> None:
-    cleaned, errors = _validate_user_input({**_GOOD_INPUT, CONF_API_KEY: "  "})
+    _, errors = _validate_user_input({**_GOOD_INPUT, CONF_API_KEY: "  "})
     assert errors[CONF_API_KEY] == "invalid_api_key"
 
 
 def test_validate_invalid_domain() -> None:
-    cleaned, errors = _validate_user_input(
-        {**_GOOD_INPUT, CONF_DOMAIN: "no-tld"}
-    )
+    _, errors = _validate_user_input({**_GOOD_INPUT, CONF_DOMAIN: "no-tld"})
     assert errors[CONF_DOMAIN] == "invalid_domain"
 
 
@@ -132,15 +154,13 @@ def test_validate_invalid_domain() -> None:
     [
         (None, 16.37),
         (48.21, None),
-        (91.0, 16.37),       # lat out of range
-        (48.21, 181.0),      # lng out of range
-        ("nope", 16.37),     # non-numeric
+        (91.0, 16.37),  # lat out of range
+        (48.21, 181.0),  # lng out of range
+        ("nope", 16.37),  # non-numeric
     ],
 )
-def test_validate_invalid_location(
-    lat: object, lng: object
-) -> None:
-    cleaned, errors = _validate_user_input(
+def test_validate_invalid_location(lat: object, lng: object) -> None:
+    _, errors = _validate_user_input(
         {**_GOOD_INPUT, "location": {"latitude": lat, "longitude": lng}}
     )
     assert errors.get("location") == "invalid_location"
@@ -155,9 +175,7 @@ def test_validate_passes_dynamic_entity_through() -> None:
 
 def test_validate_normalizes_dynamic_entity_empty_to_none() -> None:
     """Empty-string from the form becomes None (= static mode)."""
-    cleaned, _ = _validate_user_input(
-        {**_GOOD_INPUT, CONF_DYNAMIC_ENTITY: ""}
-    )
+    cleaned, _ = _validate_user_input({**_GOOD_INPUT, CONF_DYNAMIC_ENTITY: ""})
     assert cleaned[CONF_DYNAMIC_ENTITY] is None
 
 
@@ -198,7 +216,7 @@ def test_normalize_domain(raw: str, expected: str) -> None:
         ("sub.example.co.uk", True),
         # Negative cases
         ("", False),
-        ("singlelabel", False),       # no dot
+        ("singlelabel", False),  # no dot
         (".leadingdot", False),
         ("trailingdot.", False),
         ("-leading.example.com", False),
@@ -237,10 +255,7 @@ def test_compute_unique_id_dynamic() -> None:
         CONF_LONGITUDE: 16.37,
         CONF_DYNAMIC_ENTITY: "device_tracker.phone",
     }
-    assert (
-        _compute_unique_id(cleaned)
-        == "x.example:dynamic:device_tracker.phone"
-    )
+    assert _compute_unique_id(cleaned) == "x.example:dynamic:device_tracker.phone"
 
 
 def test_build_entry_data_round_trip() -> None:

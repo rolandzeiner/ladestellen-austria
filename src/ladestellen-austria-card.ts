@@ -59,6 +59,17 @@ window.customCards.push({
   description: "Nearby EV charging stations, powered by E-Control Austria",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
+  // 2026.6 entity-first picker: suggest this card only for our own
+  // integration's sensor entities (registry platform === domain).
+  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
+    if (!entityId.startsWith("sensor.")) return null;
+    if (hass?.entities?.[entityId]?.platform !== "ladestellen_austria") {
+      return null;
+    }
+    return {
+      config: { type: "custom:ladestellen-austria-card", entity: entityId },
+    };
+  },
 });
 
 const DEFAULT_MAX_STATIONS = 10;
@@ -142,7 +153,11 @@ export class LadestellenAustriaCard extends LitElement {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
-    if (changedProps.has("config") || changedProps.has("_expanded")) {
+    if (
+      changedProps.has("config") ||
+      changedProps.has("_expanded") ||
+      changedProps.has("_versionMismatch")
+    ) {
       return true;
     }
     const prev = changedProps.get("hass") as HomeAssistant | undefined;
@@ -241,18 +256,15 @@ export class LadestellenAustriaCard extends LitElement {
     }
 
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
-    const liveAvailable =
-      (stateObj.attributes["live_status_available"] as boolean) === true;
+    const liveAvailable = stateObj.attributes.live_status_available === true;
     // Dynamic-tracker mode signals: the sensor follows a device_tracker's
     // GPS instead of the fixed config coords. Pinning is meaningless in
     // this mode (the list of nearby stations changes as the user moves),
     // so we short-circuit any configured pins to an empty list. The
     // config itself is preserved untouched, so switching back to static
     // mode restores the previously-pinned stations.
-    const dynamicMode =
-      (stateObj.attributes["dynamic_mode"] as boolean) === true;
-    const dynamicEntity =
-      (stateObj.attributes["dynamic_entity"] as string | undefined) ?? null;
+    const dynamicMode = stateObj.attributes.dynamic_mode === true;
+    const dynamicEntity = stateObj.attributes.dynamic_entity ?? null;
 
     // Partition by pin status. Pinned first in user-defined order,
     // bypassing filters + sort. Orphan pins (IDs not found in the API
@@ -367,7 +379,7 @@ export class LadestellenAustriaCard extends LitElement {
           </div>
           ${renderFooter(
             this.hass,
-            stateObj.attributes["attribution"] as string | undefined,
+            stateObj.attributes.attribution,
             this.config.logo_adapt_to_theme === true,
           )}
         </div>
@@ -415,7 +427,7 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _stationHasFree(s: Station): boolean {
     if (s.stationStatus !== "ACTIVE") return false;
-    return (s.points ?? []).some((p) => p.status === "AVAILABLE");
+    return (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
   }
 
   // Build the pinned section, preserving config order. Each item is
@@ -520,7 +532,7 @@ export class LadestellenAustriaCard extends LitElement {
       if (onlyAvailable) {
         const hasActive =
           s.stationStatus === "ACTIVE" &&
-          (s.points ?? []).some((p) => p.status === "AVAILABLE");
+          (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
         if (!hasActive) return false;
       }
       if (onlyFree) {
@@ -610,14 +622,17 @@ export class LadestellenAustriaCard extends LitElement {
     const cityLabel = this._heroCity(nearest);
     const farKm = farthest ? this._formatKm(farthest.distance) : km;
     const rangeText = localize("card.hero_range")
-      .replace("{min}", this._formatKm(nearest.distance))
-      .replace("{max}", farKm);
+      .replaceAll("{min}", this._formatKm(nearest.distance))
+      .replaceAll("{max}", farKm);
     const countText =
       filteredTotal === rawTotal
-        ? localize("card.hero_count").replace("{count}", String(filteredTotal))
+        ? localize("card.hero_count").replaceAll(
+            "{count}",
+            String(filteredTotal),
+          )
         : localize("card.hero_count_filtered")
-            .replace("{filtered}", String(filteredTotal))
-            .replace("{total}", String(rawTotal));
+            .replaceAll("{filtered}", String(filteredTotal))
+            .replaceAll("{total}", String(rawTotal));
     return html`
       <section class="hero">
         <div class="metric">
@@ -679,12 +694,18 @@ export class LadestellenAustriaCard extends LitElement {
     );
 
     const expanded = this._expanded.has(station.stationId);
-    // Self-built URL — pass through `safeHttpsUri` defensively so a future
-    // contributor can't wire an upstream attribute through this binding
-    // and silently bypass the allowlist (item 42).
-    const mapsUrl = safeHttpsUri(
-      `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lon}`,
-    );
+    // `stations` arrives from an unvalidated state attribute, so a station
+    // can reach here without `location` despite the type. Read it once and
+    // only build the deeplink when present — a missing field must not throw
+    // and blank the whole card. Self-built URL still passes through
+    // `safeHttpsUri` defensively so a future contributor can't wire an
+    // upstream attribute through this binding and bypass the allowlist.
+    const loc = station.location;
+    const mapsUrl = loc
+      ? safeHttpsUri(
+          `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`,
+        )
+      : "";
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
@@ -758,20 +779,22 @@ export class LadestellenAustriaCard extends LitElement {
             </div>
           </div>
           <div class="station-actions">
-            <a
-              class="icon-action"
-              href=${mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label=${`${localize("card.open_in_maps")}: ${station.label}`}
-              title=${localize("card.open_in_maps")}
-              @click=${(ev: Event) => ev.stopPropagation()}
-            >
-              <ha-icon
-                icon="mdi:map-marker-outline"
-                aria-hidden="true"
-              ></ha-icon>
-            </a>
+            ${mapsUrl
+              ? html`<a
+                  class="icon-action"
+                  href=${mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label=${`${localize("card.open_in_maps")}: ${station.label}`}
+                  title=${localize("card.open_in_maps")}
+                  @click=${(ev: Event) => ev.stopPropagation()}
+                >
+                  <ha-icon
+                    icon="mdi:map-marker-outline"
+                    aria-hidden="true"
+                  ></ha-icon>
+                </a>`
+              : nothing}
             <ha-icon
               class="chevron"
               icon="mdi:chevron-down"
@@ -890,19 +913,21 @@ export class LadestellenAustriaCard extends LitElement {
             </div>`
           : nothing}
         <div class="actions">
-          <a
-            class="btn-primary"
-            href=${mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            @click=${(ev: Event) => ev.stopPropagation()}
-          >
-            <ha-icon
-              icon="mdi:map-marker-radius-outline"
-              aria-hidden="true"
-            ></ha-icon>
-            <span>${localize("card.open_in_maps")}</span>
-          </a>
+          ${mapsUrl
+            ? html`<a
+                class="btn-primary"
+                href=${mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                @click=${(ev: Event) => ev.stopPropagation()}
+              >
+                <ha-icon
+                  icon="mdi:map-marker-radius-outline"
+                  aria-hidden="true"
+                ></ha-icon>
+                <span>${localize("card.open_in_maps")}</span>
+              </a>`
+            : nothing}
           ${(() => {
             const websiteUrl = safeHttpsUri(station.website);
             return websiteUrl
@@ -1045,7 +1070,7 @@ export class LadestellenAustriaCard extends LitElement {
     const blockFrom = point.blockingFeeFromMinute ?? 0;
     if (blockCent > 0 && blockFrom > 0) {
       lines.push(
-        `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replace("{from}", String(blockFrom))}`,
+        `${formatCent(blockCent)} ${localize("card.blocking_fee_label").replaceAll("{from}", String(blockFrom))}`,
       );
     }
     // `\n` collapses to a single space in HTML `title=` attributes, which
@@ -1295,7 +1320,7 @@ export class LadestellenAustriaCard extends LitElement {
       parts.push(
         `${formatCent(maxRate)} ${localize(
           "card.blocking_fee_label",
-        ).replace("{from}", String(minFrom))}`,
+        ).replaceAll("{from}", String(minFrom))}`,
       );
     }
     return parts.length > 0 ? parts.join(", ") : null;

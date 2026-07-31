@@ -12,6 +12,7 @@ This test pins the formula on the Python side and re-derives the TS
 formula from the source so a contributor changing one without the other
 sees red CI.
 """
+
 from __future__ import annotations
 
 import re
