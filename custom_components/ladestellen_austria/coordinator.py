@@ -234,11 +234,18 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = (
             dt_util.utcnow()
         )
-        # Entry-owned and named, not a bare `hass.async_create_task`. Owned
-        # so a tracker tick landing during a reload is cancelled with the
-        # entry instead of running a full E-Control fetch against a
-        # torn-down coordinator; named so it is identifiable in HA's task
-        # list rather than showing up as "Task-123".
+        # Entry-owned and named, not a bare `hass.async_create_task`.
+        # Owned so unload WAITS for the fetch (config_entries.py:1250
+        # awaits `_tasks` with timeout=10) instead of orphaning it — note
+        # unload cancels only `_background_tasks`, so this is a wait, not
+        # a cancel. Named so it is identifiable in HA's task list rather
+        # than showing up as "Task-123".
+        #
+        # The coordinator is independently safe against a torn-down
+        # refresh: `async_shutdown` is registered as an `async_on_unload`
+        # callback (update_coordinator.py:148-149) and so runs BEFORE the
+        # task wait, setting `_shutdown_requested`, which `_async_refresh`
+        # short-circuits on (update_coordinator.py:212, :424).
         self._entry.async_create_task(
             self.hass,
             self.async_refresh(),
@@ -600,7 +607,8 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         surfaces them in the UI picker, fires them via
         ``async_attach_trigger``, and integrates with the automation
         editor's natural-language description. See
-        PORTFOLIO_LIFTABLES.md item 18.
+        the portfolio-liftables reference, item 18
+        (maintainer note; the file is not in this repo).
         """
         if not isinstance(self.data, dict):
             return
