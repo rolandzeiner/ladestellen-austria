@@ -234,7 +234,16 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.hass.data.setdefault(DOMAIN, {})[DOMAIN_LAST_API_CALL_KEY] = (
             dt_util.utcnow()
         )
-        self.hass.async_create_task(self.async_refresh())
+        # Entry-owned and named, not a bare `hass.async_create_task`. Owned
+        # so a tracker tick landing during a reload is cancelled with the
+        # entry instead of running a full E-Control fetch against a
+        # torn-down coordinator; named so it is identifiable in HA's task
+        # list rather than showing up as "Task-123".
+        self._entry.async_create_task(
+            self.hass,
+            self.async_refresh(),
+            name=f"{DOMAIN}_tracker_refresh",
+        )
 
     def _get_entity_coords(self, state: State | None) -> tuple[float, float]:
         """Pull lat/lng from a device_tracker state's attributes.
