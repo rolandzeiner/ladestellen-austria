@@ -12,5 +12,5 @@
   "loggers": ["custom_components.ladestellen_austria"],
   "quality_scale": "platinum",
   "requirements": [],
-  "version": "0.5.0"
+  "version": "0.5.1"
 }
