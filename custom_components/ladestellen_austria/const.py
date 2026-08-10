@@ -19,9 +19,12 @@ INTEGRATION_VERSION: Final = json.loads(
 )["version"]
 
 # Must match src/const.ts CARD_VERSION byte-for-byte; tests/test_card_version.py
-# enforces the invariant in CI. Bump both in the same commit. manifest.json
-# "version" stays on the clean release (no -beta); this constant plus
-# src/const.ts can carry a -beta-N suffix during development.
+# enforces the invariant in CI. This constant is an ALIAS of
+# INTEGRATION_VERSION, so it cannot drift from manifest.json on its own —
+# a release is one edit to manifest.json plus one to src/const.ts. There
+# is no dev-time suffix: a pre-release carries the same version as the
+# eventual final release, and the GitHub --prerelease flag is what
+# distinguishes them.
 #
 # Two cache-stale defences combine here:
 #   1. Cache-buster: card_registration.py appends `?v=<CARD_VERSION>` to the
@@ -68,21 +71,25 @@ MAX_POLL_MINUTES: Final = 720
 # Exponential-backoff cap for consecutive `_async_update_data` failures.
 # Bound to MAX_POLL_MINUTES (12 h) so a sustained ladestellen.at /search
 # outage settles into a slow poll instead of hammering the API every
-# 10 min × 6 = 60 retries/h. First failure stays at the user-configured
+# 10 min — 6 retries/h, 144/day. First failure stays at the user-configured
 # cadence (transient hiccups shouldn't slow down the loop); from the
 # second failure onwards the interval doubles each tick, capped here,
 # until the next success resets it.
 BACKOFF_CAP_SECONDS: Final = MAX_POLL_MINUTES * 60
 
 # ------------------------------------------------------------------
-# Sensor-attribute size discipline (recorder budget).
+# Sensor-attribute size discipline (live payload, not recorder).
 # Each station carries label, address, points[], connectors[], pricing,
 # opening-hours, and distance — empirically ~600-1200 bytes per station
-# at the 13-status fixture density. 10 stations × ~1 KB stays well
-# below HA's 16 KB recorder attribute cap with margin for outliers
-# (large operators, long opening-hours strings). Don't blindly raise
-# this without measuring — going to 25 has tipped the cap on the
-# tankstellen sister integration in the past.
+# at the 13-status fixture density, so 10 stations is ~10 KB.
+#
+# NOT a recorder budget: `stations` is in sensor.py's
+# `_unrecorded_attributes`, so the recorder never stores it and HA's
+# 16 KB attribute cap does not apply. (It used to — that cap is why the
+# attribute was excluded in the first place.) What this bounds is the
+# live payload every state write pushes to the frontend, the WebSocket
+# subscribers, and `/api/states`. Raise it and you pay there instead.
+# Measure before raising.
 # ------------------------------------------------------------------
 DEFAULT_MAX_RESULTS: Final = 10
 

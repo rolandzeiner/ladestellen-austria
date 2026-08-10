@@ -11,6 +11,13 @@ from homeassistant.core import HomeAssistant
 from .const import ATTRIBUTION, CONF_API_KEY, CONF_DOMAIN
 from .coordinator import LadestellenAustriaConfigEntry
 
+# `entry.title` is deliberately NOT redacted, even though it is coarse
+# location data of the same kind as the coordinates below. The two are not
+# inconsistent: coordinates pin a household to a few metres, whereas the
+# title is a user-chosen label that is what makes a shared dump readable
+# at all — "which entry is this?" is the first question every triage
+# starts with. Redacting it buys little and costs the dump most of its
+# usefulness. Decision reviewed and ratified 2026-08-07.
 TO_REDACT: set[str] = {
     CONF_API_KEY,
     CONF_DOMAIN,
