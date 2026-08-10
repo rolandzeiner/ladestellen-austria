@@ -133,16 +133,36 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     /* Spacing / radius / sizing — layered over the HA Design System
        so the card moves with HA when tokens evolve. Hard-coded values
        are the fallback for older HA versions. */
-    --lade-radius-sm: var(--ha-radius-sm, 6px);
-    --lade-radius-md: var(--ha-radius-md, 10px);
-    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-radius-lg, 12px));
-    --lade-pad-x:     var(--ha-spacing-4, 16px);
-    --lade-pad-y:     var(--ha-spacing-3, 14px);
-    --lade-row-gap:   var(--ha-spacing-3, 12px);
+    /* These names were wrong until v0.5.1 and nothing complained: var()
+       on a token HA does not define is not an error, it just resolves to
+       the fallback. So the card ran entirely on its own literals while
+       looking theme-aware — which is how --ha-spacing-3 came to mean
+       14px on one line and 12px on the next, and --ha-radius-sm meant
+       6px here and 8px in the parking card.
+
+       Verified against the frontend's src/resources/theme/core.globals.ts:
+         --ha-space-N          4px grid, 1…14   (was --ha-spacing-N)
+         --ha-border-radius-*  sm 4 / md 8 / lg 12 / xl 16 / pill / circle
+                                                (was --ha-radius-*)
+         --ha-animation-duration-*  none 1 / instant 75 / fast 150 /
+                                    normal 250 / slow 350ms
+                                                (was --ha-transition-duration-*)
+       There is no easing token — --ha-transition-easing-standard never
+       existed either, so easings are now named directly.
+
+       Fallbacks are kept and now match the token they stand in for.
+       Adopting a new --ha-* token means checking core.globals.ts first;
+       a typo here is invisible. */
+    --lade-radius-sm: var(--ha-border-radius-sm, 4px);
+    --lade-radius-md: var(--ha-border-radius-md, 8px);
+    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
+    --lade-pad-x:     var(--ha-space-4, 16px);
+    --lade-pad-y:     var(--ha-space-3, 12px);
+    --lade-row-gap:   var(--ha-space-3, 12px);
     --lade-tile-size: 40px;
     --lade-slot-size: 80px;
     --lade-slot-height: 64px;
-    --lade-slot-radius: var(--ha-radius-md, 10px);
+    --lade-slot-radius: var(--ha-border-radius-md, 8px);
     --lade-slot-gap: 8px;
 
     /* Parking-card surface tokens — defaults match the rollback look
@@ -266,7 +286,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease), color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: background-color var(--ha-animation-duration-fast, 150ms) ease, color var(--ha-animation-duration-fast, 150ms) ease;
     --mdc-icon-size: 20px;
   }
   .icon-action:hover,
@@ -423,7 +443,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     flex-direction: column;
     border-bottom: 1px solid var(--divider-color);
     cursor: pointer;
-    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: background-color var(--ha-animation-duration-fast, 150ms) ease;
   }
   .station:last-child {
     border-bottom: none;
@@ -466,7 +486,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   .chevron {
     --mdc-icon-size: 22px;
     color: var(--secondary-text-color);
-    transition: transform var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: transform var(--ha-animation-duration-fast, 150ms) ease;
   }
   .station.expanded .chevron {
     transform: rotate(180deg);
@@ -726,7 +746,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     align-items: center;
     justify-content: center;
     gap: 3px;
-    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: background-color var(--ha-animation-duration-fast, 150ms) ease;
     cursor: default;
   }
   /* Status-coloured rack slots — tinted surface + inset bottom shadow for
@@ -915,7 +935,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     font-weight: 600;
     text-decoration: none;
     box-shadow: 0 1px 2px color-mix(in srgb, #000 12%, transparent);
-    transition: filter var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease), transform var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: filter var(--ha-animation-duration-fast, 150ms) ease, transform var(--ha-animation-duration-fast, 150ms) ease;
   }
   .btn-primary:hover {
     filter: brightness(1.08);
@@ -941,7 +961,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: background-color var(--ha-transition-duration-fast, 160ms) var(--ha-transition-easing-standard, ease);
+    transition: background-color var(--ha-animation-duration-fast, 150ms) ease;
   }
   .btn-secondary:hover {
     background: color-mix(in srgb, var(--secondary-text-color) 18%, transparent);
@@ -1068,18 +1088,18 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     display: block;
   }
   .editor {
-    padding: var(--ha-spacing-4, 16px);
+    padding: var(--ha-space-4, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--ha-spacing-3, 12px);
+    gap: var(--ha-space-3, 12px);
   }
   .editor-section {
     background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-    border-radius: var(--ha-radius-lg, 12px);
-    padding: var(--ha-spacing-3, 14px) var(--ha-spacing-4, 16px);
+    border-radius: var(--ha-border-radius-lg, 12px);
+    padding: var(--ha-space-3, 12px) var(--ha-space-4, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--ha-spacing-2, 10px);
+    gap: var(--ha-space-2, 8px);
   }
   .section-header {
     font-size: var(--ha-font-size-xs, 11px);
@@ -1282,17 +1302,19 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
     --lade-error:   var(--error-color,   #ef4444);
     --lade-info:    var(--info-color,    #1565c0);
 
-    /* Spacing / radius / sizing — layered over the HA Design System. */
-    --lade-radius-sm: var(--ha-radius-sm, 6px);
-    --lade-radius-md: var(--ha-radius-md, 10px);
-    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-radius-lg, 12px));
-    --lade-pad-x:     var(--ha-spacing-4, 16px);
-    --lade-pad-y:     var(--ha-spacing-3, 14px);
-    --lade-row-gap:   var(--ha-spacing-3, 12px);
+    /* Spacing / radius / sizing — layered over the HA Design System.
+       Token names verified against core.globals.ts; see the note in the
+       main cardStyles :host block for why they were wrong before. */
+    --lade-radius-sm: var(--ha-border-radius-sm, 4px);
+    --lade-radius-md: var(--ha-border-radius-md, 8px);
+    --lade-radius-lg: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
+    --lade-pad-x:     var(--ha-space-4, 16px);
+    --lade-pad-y:     var(--ha-space-3, 12px);
+    --lade-row-gap:   var(--ha-space-3, 12px);
     --lade-tile-size: 40px;
     --lade-slot-size: 96px;
     --lade-slot-height: 120px;
-    --lade-slot-radius: var(--ha-radius-sm, 8px);
+    --lade-slot-radius: var(--ha-border-radius-sm, 4px);
     --lade-slot-gap: 8px;
   }
   ha-card {
