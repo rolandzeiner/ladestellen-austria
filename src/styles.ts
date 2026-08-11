@@ -328,7 +328,7 @@ const cardOwnStyles = css`
   }
   .metric-num {
     font-size: 2.25rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
@@ -546,7 +546,7 @@ const cardOwnStyles = css`
   }
   .metric-kw .kw-num {
     font-size: 1.5rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .metric-kw .kw-unit {
@@ -571,7 +571,7 @@ const cardOwnStyles = css`
   }
   .metric-price.free {
     color: var(--lade-rt);
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
   }
 
   /* ── Status dot (halo three-cue treatment) ────────────────────────── */
@@ -795,7 +795,7 @@ const cardOwnStyles = css`
   }
   .rack-kw-num {
     font-size: 1.15rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .rack-kw-unit {
@@ -865,7 +865,7 @@ const cardOwnStyles = css`
   }
   .power-badge {
     font-size: 0.5625rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -1421,7 +1421,7 @@ const parkingOwnStyles = css`
   }
   .header-count-num {
     font-size: 1.5rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     color: var(--primary-text-color);
     letter-spacing: -0.5px;
   }
@@ -1534,7 +1534,7 @@ const parkingOwnStyles = css`
 
   .slot-power-badge {
     font-size: 0.5625rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -1557,7 +1557,7 @@ const parkingOwnStyles = css`
   }
   .slot-kw-num {
     font-size: 1.4rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .slot-kw-unit {

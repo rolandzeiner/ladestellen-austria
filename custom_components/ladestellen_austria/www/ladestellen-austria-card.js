@@ -324,7 +324,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .metric-num {
     font-size: 2.25rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     color: var(--primary-text-color);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
@@ -542,7 +542,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .metric-kw .kw-num {
     font-size: 1.5rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .metric-kw .kw-unit {
@@ -567,7 +567,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .metric-price.free {
     color: var(--lade-rt);
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
   }
 
   /* ── Status dot (halo three-cue treatment) ────────────────────────── */
@@ -791,7 +791,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .rack-kw-num {
     font-size: 1.15rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .rack-kw-unit {
@@ -861,7 +861,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .power-badge {
     font-size: 0.5625rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -1401,7 +1401,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .header-count-num {
     font-size: 1.5rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     color: var(--primary-text-color);
     letter-spacing: -0.5px;
   }
@@ -1514,7 +1514,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
 
   .slot-power-badge {
     font-size: 0.5625rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: 0.08em;
     line-height: 1;
     text-transform: uppercase;
@@ -1537,7 +1537,7 @@ function e(e,t,i,a){var n,o=arguments.length,r=o<3?t:null===a?a=Object.getOwnPro
   }
   .slot-kw-num {
     font-size: 1.4rem;
-    font-weight: var(--ha-font-weight-bold, 600);
+    font-weight: var(--ha-font-weight-bold, 700);
     letter-spacing: -0.02em;
   }
   .slot-kw-unit {
