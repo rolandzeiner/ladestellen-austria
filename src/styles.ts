@@ -145,7 +145,11 @@ const cardOwnStyles = css`
        6px here and 8px in the parking card.
 
        Verified against the frontend's src/resources/theme/core.globals.ts:
-         --ha-space-N          4px grid, 1…14   (was --ha-spacing-N)
+         --ha-space-N          4px grid, 1…20   (was --ha-spacing-N)
+         --ha-font-size-*      xs 10 / s 12 / m 14 / l 16 / xl 20px.
+                               typography.globals.ts sets the root to
+                               font-size:14px, so -m is 1rem, NOT 0.875 —
+                               do the rem maths at 14px or just write px.
          --ha-border-radius-*  sm 4 / md 8 / lg 12 / xl 16 / pill / circle
                                                 (was --ha-radius-*)
          --ha-animation-duration-*  none 1 / instant 75 / fast 150 /
@@ -1112,7 +1116,7 @@ export const editorStyles = css`
     gap: var(--ha-space-2, 8px);
   }
   .section-header {
-    font-size: var(--ha-font-size-xs, 11px);
+    font-size: var(--ha-font-size-xs, 10px);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -1140,7 +1144,7 @@ export const editorStyles = css`
     background: var(--ha-card-background, var(--card-background-color));
     color: var(--primary-text-color);
     padding: 4px 12px;
-    font-size: var(--ha-font-size-s, 13px);
+    font-size: var(--ha-font-size-s, 12px);
     cursor: pointer;
     transition:
       background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -1186,7 +1190,7 @@ export const editorStyles = css`
     border: 1px solid var(--divider-color);
     background: var(--ha-card-background, var(--card-background-color));
     color: var(--primary-text-color);
-    font-size: var(--ha-font-size-s, 13px);
+    font-size: var(--ha-font-size-s, 12px);
     cursor: pointer;
     transition:
       background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -1220,7 +1224,7 @@ export const editorStyles = css`
     min-width: 0;
   }
   .pin-meta {
-    font-size: var(--ha-font-size-xs, 11px);
+    font-size: var(--ha-font-size-xs, 10px);
     color: var(--secondary-text-color);
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
