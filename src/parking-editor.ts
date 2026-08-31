@@ -48,7 +48,9 @@ const TOP_SCHEMA: HaFormSchema = [
     name: "entity",
     required: true,
     selector: {
-      entity: { domain: "sensor", integration: "ladestellen_austria" },
+      entity: {
+        filter: { domain: "sensor", integration: "ladestellen_austria" },
+      },
     },
   },
   { name: "name", selector: { text: {} } },
