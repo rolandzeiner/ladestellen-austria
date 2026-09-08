@@ -1,6 +1,6 @@
 // Ladestellen Austria — single-station "parking lot from above" card.
 //
-// Ships in the same Rollup bundle as the main list card. Registers its
+// Ships in the same Rolldown bundle as the main list card. Registers its
 // own @customElement + window.customCards entry so Lovelace's "Add Card"
 // picker shows both. The user picks one sensor + one station; the card
 // renders every point as a parking slot viewed from above, with

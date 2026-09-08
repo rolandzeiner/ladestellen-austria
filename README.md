@@ -163,7 +163,7 @@ template:
 
 ## Development
 
-Cards are TypeScript + Lit 3 + Rollup, single bundle at `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`. End users install via HACS and never run `npm`; contributors do:
+Cards are TypeScript + Lit 3 + Rolldown, single bundle at `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`. End users install via HACS and never run `npm`; contributors do:
 
 ```bash
 npm install && npm run build      # production bundle

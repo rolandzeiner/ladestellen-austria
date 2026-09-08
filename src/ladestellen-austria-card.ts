@@ -1,7 +1,7 @@
 // Ladestellen Austria — Lovelace custom card
 // https://github.com/rolandzeiner/ladestellen-austria
 //
-// Lit 3 + Shadow DOM + Rollup, single-file HACS bundle.
+// Lit 3 + Shadow DOM + Rolldown, single-file HACS bundle.
 // §3c of the ladestellen.at Terms of Use requires the E-Control brand link
 // to https://www.e-control.at/. §3d requires the verbatim "Datenquelle:
 // E-Control" attribution next to the data. Both are non-negotiable —
@@ -49,7 +49,7 @@ import {
 import "./editor";
 // Second card type ships in the same bundle — its @customElement
 // decorator registers on module load, its window.customCards push
-// runs, and Rollup rolls it into ladestellen-austria-card.js.
+// runs, and Rolldown rolls it into ladestellen-austria-card.js.
 import "./parking-card";
 
 window.customCards = window.customCards ?? [];

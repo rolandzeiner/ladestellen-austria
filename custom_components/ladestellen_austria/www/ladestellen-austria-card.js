@@ -1,22 +1,64 @@
-// Ladestellen Austria Card — bundled by Rollup. Edit sources in src/, then `npm run build`.
-const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,i=Symbol(),a=new WeakMap;let n=class{constructor(e,t,a){if(this._$cssResult$=!0,a!==i)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o;const i=this.t;if(t&&void 0===e){const t=void 0!==i&&1===i.length;t&&(e=a.get(i)),void 0===e&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),t&&a.set(i,e))}return e}toString(){return this.cssText}};const o=(e,...t)=>{const a=1===e.length?e[0]:t.reduce((t,i,a)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if("number"==typeof e)return e;throw Error("Value passed to 'css' function must be a 'css' function result: "+e+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(i)+e[a+1],e[0]);return new n(a,e,i)},r=t?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t="";for(const i of e.cssRules)t+=i.cssText;return(e=>new n("string"==typeof e?e:e+"",void 0,i))(t)})(e):e,{is:s,defineProperty:l,getOwnPropertyDescriptor:c,getOwnPropertyNames:d,getOwnPropertySymbols:h,getPrototypeOf:p}=Object,u=globalThis,g=u.trustedTypes,m=g?g.emptyScript:"",f=u.reactiveElementPolyfillSupport,v=(e,t)=>e,_={toAttribute(e,t){switch(t){case Boolean:e=e?m:null;break;case Object:case Array:e=null==e?e:JSON.stringify(e)}return e},fromAttribute(e,t){let i=e;switch(t){case Boolean:i=null!==e;break;case Number:i=null===e?null:Number(e);break;case Object:case Array:try{i=JSON.parse(e)}catch(e){i=null}}return i}},b=(e,t)=>!s(e,t),y={attribute:!0,type:String,converter:_,reflect:!1,useDefault:!1,hasChanged:b};Symbol.metadata??=Symbol("metadata"),u.litPropertyMetadata??=new WeakMap;let w=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=y){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){const i=Symbol(),a=this.getPropertyDescriptor(e,i,t);void 0!==a&&l(this.prototype,e,a)}}static getPropertyDescriptor(e,t,i){const{get:a,set:n}=c(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:a,set(t){const o=a?.call(this);n?.call(this,t),this.requestUpdate(e,o,i)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??y}static _$Ei(){if(this.hasOwnProperty(v("elementProperties")))return;const e=p(this);e.finalize(),void 0!==e.l&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(v("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(v("properties"))){const e=this.properties,t=[...d(e),...h(e)];for(const i of t)this.createProperty(i,e[i])}const e=this[Symbol.metadata];if(null!==e){const t=litPropertyMetadata.get(e);if(void 0!==t)for(const[e,i]of t)this.elementProperties.set(e,i)}this._$Eh=new Map;for(const[e,t]of this.elementProperties){const i=this._$Eu(e,t);void 0!==i&&this._$Eh.set(i,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){const t=[];if(Array.isArray(e)){const i=new Set(e.flat(1/0).reverse());for(const e of i)t.unshift(r(e))}else void 0!==e&&t.push(r(e));return t}static _$Eu(e,t){const i=t.attribute;return!1===i?void 0:"string"==typeof i?i:"string"==typeof e?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),void 0!==this.renderRoot&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){const e=new Map,t=this.constructor.elementProperties;for(const i of t.keys())this.hasOwnProperty(i)&&(e.set(i,this[i]),delete this[i]);e.size>0&&(this._$Ep=e)}createRenderRoot(){const i=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return((i,a)=>{if(t)i.adoptedStyleSheets=a.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(const t of a){const a=document.createElement("style"),n=e.litNonce;void 0!==n&&a.setAttribute("nonce",n),a.textContent=t.cssText,i.appendChild(a)}})(i,this.constructor.elementStyles),i}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,i){this._$AK(e,i)}_$ET(e,t){const i=this.constructor.elementProperties.get(e),a=this.constructor._$Eu(e,i);if(void 0!==a&&!0===i.reflect){const n=(void 0!==i.converter?.toAttribute?i.converter:_).toAttribute(t,i.type);this._$Em=e,null==n?this.removeAttribute(a):this.setAttribute(a,n),this._$Em=null}}_$AK(e,t){const i=this.constructor,a=i._$Eh.get(e);if(void 0!==a&&this._$Em!==a){const e=i.getPropertyOptions(a),n="function"==typeof e.converter?{fromAttribute:e.converter}:void 0!==e.converter?.fromAttribute?e.converter:_;this._$Em=a;const o=n.fromAttribute(t,e.type);this[a]=o??this._$Ej?.get(a)??o,this._$Em=null}}requestUpdate(e,t,i,a=!1,n){if(void 0!==e){const o=this.constructor;if(!1===a&&(n=this[e]),i??=o.getPropertyOptions(e),!((i.hasChanged??b)(n,t)||i.useDefault&&i.reflect&&n===this._$Ej?.get(e)&&!this.hasAttribute(o._$Eu(e,i))))return;this.C(e,t,i)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:i,reflect:a,wrapped:n},o){i&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,o??t??this[e]),!0!==n||void 0!==o)||(this._$AL.has(e)||(this.hasUpdated||i||(t=void 0),this._$AL.set(e,t)),!0===a&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}const e=this.scheduleUpdate();return null!=e&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}const e=this.constructor.elementProperties;if(e.size>0)for(const[t,i]of e){const{wrapped:e}=i,a=this[t];!0!==e||this._$AL.has(t)||void 0===a||this.C(t,void 0,i,a)}}let e=!1;const t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};w.elementStyles=[],w.shadowRootOptions={mode:"open"},w[v("elementProperties")]=new Map,w[v("finalized")]=new Map,f?.({ReactiveElement:w}),(u.reactiveElementVersions??=[]).push("2.1.2");const x=globalThis,k=e=>e,$=x.trustedTypes,A=$?$.createPolicy("lit-html",{createHTML:e=>e}):void 0,S="$lit$",C=`lit$${Math.random().toFixed(9).slice(2)}$`,E="?"+C,z=`<${E}>`,I=document,T=()=>I.createComment(""),R=e=>null===e||"object"!=typeof e&&"function"!=typeof e,P=Array.isArray,O="[ \t\n\f\r]",D=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,M=/-->/g,L=/>/g,N=RegExp(`>|${O}(?:([^\\s"'>=/]+)(${O}*=${O}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),U=/'/g,F=/"/g,H=/^(?:script|style|textarea|title)$/i,W=(e=>(t,...i)=>({_$litType$:e,strings:t,values:i}))(1),j=Symbol.for("lit-noChange"),B=Symbol.for("lit-nothing"),G=new WeakMap,V=I.createTreeWalker(I,129);function Z(e,t){if(!P(e)||!e.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==A?A.createHTML(t):t}const Y=(e,t)=>{const i=e.length-1,a=[];let n,o=2===t?"<svg>":3===t?"<math>":"",r=D;for(let t=0;t<i;t++){const i=e[t];let s,l,c=-1,d=0;for(;d<i.length&&(r.lastIndex=d,l=r.exec(i),null!==l);)d=r.lastIndex,r===D?"!--"===l[1]?r=M:void 0!==l[1]?r=L:void 0!==l[2]?(H.test(l[2])&&(n=RegExp("</"+l[2],"g")),r=N):void 0!==l[3]&&(r=N):r===N?">"===l[0]?(r=n??D,c=-1):void 0===l[1]?c=-2:(c=r.lastIndex-l[2].length,s=l[1],r=void 0===l[3]?N:'"'===l[3]?F:U):r===F||r===U?r=N:r===M||r===L?r=D:(r=N,n=void 0);const h=r===N&&e[t+1].startsWith("/>")?" ":"";o+=r===D?i+z:c>=0?(a.push(s),i.slice(0,c)+S+i.slice(c)+C+h):i+C+(-2===c?t:h)}return[Z(e,o+(e[i]||"<?>")+(2===t?"</svg>":3===t?"</math>":"")),a]};class K{constructor({strings:e,_$litType$:t},i){let a;this.parts=[];let n=0,o=0;const r=e.length-1,s=this.parts,[l,c]=Y(e,t);if(this.el=K.createElement(l,i),V.currentNode=this.el.content,2===t||3===t){const e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;null!==(a=V.nextNode())&&s.length<r;){if(1===a.nodeType){if(a.hasAttributes())for(const e of a.getAttributeNames())if(e.endsWith(S)){const t=c[o++],i=a.getAttribute(e).split(C),r=/([.?@])?(.*)/.exec(t);s.push({type:1,index:n,name:r[2],strings:i,ctor:"."===r[1]?ee:"?"===r[1]?te:"@"===r[1]?ie:Q}),a.removeAttribute(e)}else e.startsWith(C)&&(s.push({type:6,index:n}),a.removeAttribute(e));if(H.test(a.tagName)){const e=a.textContent.split(C),t=e.length-1;if(t>0){a.textContent=$?$.emptyScript:"";for(let i=0;i<t;i++)a.append(e[i],T()),V.nextNode(),s.push({type:2,index:++n});a.append(e[t],T())}}}else if(8===a.nodeType)if(a.data===E)s.push({type:2,index:n});else{let e=-1;for(;-1!==(e=a.data.indexOf(C,e+1));)s.push({type:7,index:n}),e+=C.length-1}n++}}static createElement(e,t){const i=I.createElement("template");return i.innerHTML=e,i}}function q(e,t,i=e,a){if(t===j)return t;let n=void 0!==a?i._$Co?.[a]:i._$Cl;const o=R(t)?void 0:t._$litDirective$;return n?.constructor!==o&&(n?._$AO?.(!1),void 0===o?n=void 0:(n=new o(e),n._$AT(e,i,a)),void 0!==a?(i._$Co??=[])[a]=n:i._$Cl=n),void 0!==n&&(t=q(e,n._$AS(e,t.values),n,a)),t}class J{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){const{el:{content:t},parts:i}=this._$AD,a=(e?.creationScope??I).importNode(t,!0);V.currentNode=a;let n=V.nextNode(),o=0,r=0,s=i[0];for(;void 0!==s;){if(o===s.index){let t;2===s.type?t=new X(n,n.nextSibling,this,e):1===s.type?t=new s.ctor(n,s.name,s.strings,this,e):6===s.type&&(t=new ae(n,this,e)),this._$AV.push(t),s=i[++r]}o!==s?.index&&(n=V.nextNode(),o++)}return V.currentNode=I,a}p(e){let t=0;for(const i of this._$AV)void 0!==i&&(void 0!==i.strings?(i._$AI(e,i,t),t+=i.strings.length-2):i._$AI(e[t])),t++}}class X{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,i,a){this.type=2,this._$AH=B,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=i,this.options=a,this._$Cv=a?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode;const t=this._$AM;return void 0!==t&&11===e?.nodeType&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=q(this,e,t),R(e)?e===B||null==e||""===e?(this._$AH!==B&&this._$AR(),this._$AH=B):e!==this._$AH&&e!==j&&this._(e):void 0!==e._$litType$?this.$(e):void 0!==e.nodeType?this.T(e):(e=>P(e)||"function"==typeof e?.[Symbol.iterator])(e)?this.k(e):this._(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==B&&R(this._$AH)?this._$AA.nextSibling.data=e:this.T(I.createTextNode(e)),this._$AH=e}$(e){const{values:t,_$litType$:i}=e,a="number"==typeof i?this._$AC(e):(void 0===i.el&&(i.el=K.createElement(Z(i.h,i.h[0]),this.options)),i);if(this._$AH?._$AD===a)this._$AH.p(t);else{const e=new J(a,this),i=e.u(this.options);e.p(t),this.T(i),this._$AH=e}}_$AC(e){let t=G.get(e.strings);return void 0===t&&G.set(e.strings,t=new K(e)),t}k(e){P(this._$AH)||(this._$AH=[],this._$AR());const t=this._$AH;let i,a=0;for(const n of e)a===t.length?t.push(i=new X(this.O(T()),this.O(T()),this,this.options)):i=t[a],i._$AI(n),a++;a<t.length&&(this._$AR(i&&i._$AB.nextSibling,a),t.length=a)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){const t=k(e).nextSibling;k(e).remove(),e=t}}setConnected(e){void 0===this._$AM&&(this._$Cv=e,this._$AP?.(e))}}class Q{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,i,a,n){this.type=1,this._$AH=B,this._$AN=void 0,this.element=e,this.name=t,this._$AM=a,this.options=n,i.length>2||""!==i[0]||""!==i[1]?(this._$AH=Array(i.length-1).fill(new String),this.strings=i):this._$AH=B}_$AI(e,t=this,i,a){const n=this.strings;let o=!1;if(void 0===n)e=q(this,e,t,0),o=!R(e)||e!==this._$AH&&e!==j,o&&(this._$AH=e);else{const a=e;let r,s;for(e=n[0],r=0;r<n.length-1;r++)s=q(this,a[i+r],t,r),s===j&&(s=this._$AH[r]),o||=!R(s)||s!==this._$AH[r],s===B?e=B:e!==B&&(e+=(s??"")+n[r+1]),this._$AH[r]=s}o&&!a&&this.j(e)}j(e){e===B?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??"")}}class ee extends Q{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===B?void 0:e}}class te extends Q{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==B)}}class ie extends Q{constructor(e,t,i,a,n){super(e,t,i,a,n),this.type=5}_$AI(e,t=this){if((e=q(this,e,t,0)??B)===j)return;const i=this._$AH,a=e===B&&i!==B||e.capture!==i.capture||e.once!==i.once||e.passive!==i.passive,n=e!==B&&(i===B||a);a&&this.element.removeEventListener(this.name,this,i),n&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}}class ae{constructor(e,t,i){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=i}get _$AU(){return this._$AM._$AU}_$AI(e){q(this,e)}}const ne=x.litHtmlPolyfillSupport;ne?.(K,X),(x.litHtmlVersions??=[]).push("3.3.2");const oe=globalThis;class re extends w{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){const e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){const t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=((e,t,i)=>{const a=i?.renderBefore??t;let n=a._$litPart$;if(void 0===n){const e=i?.renderBefore??null;a._$litPart$=n=new X(t.insertBefore(T(),e),e,void 0,i??{})}return n._$AI(e),n})(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return j}}re._$litElement$=!0,re.finalized=!0,oe.litElementHydrateSupport?.({LitElement:re});const se=oe.litElementPolyfillSupport;se?.({LitElement:re}),(oe.litElementVersions??=[]).push("4.2.2");const le=e=>(t,i)=>{void 0!==i?i.addInitializer(()=>{customElements.define(e,t)}):customElements.define(e,t)},ce={attribute:!0,type:String,converter:_,reflect:!1,hasChanged:b},de=(e=ce,t,i)=>{const{kind:a,metadata:n}=i;let o=globalThis.litPropertyMetadata.get(n);if(void 0===o&&globalThis.litPropertyMetadata.set(n,o=new Map),"setter"===a&&((e=Object.create(e)).wrapped=!0),o.set(i.name,e),"accessor"===a){const{name:a}=i;return{set(i){const n=t.get.call(this);t.set.call(this,i),this.requestUpdate(a,n,e,!0,i)},init(t){return void 0!==t&&this.C(a,void 0,e,t),t}}}if("setter"===a){const{name:a}=i;return function(i){const n=this[a];t.call(this,i),this.requestUpdate(a,n,e,!0,i)}}throw Error("Unsupported decorator location: "+a)};function he(e){return(t,i)=>"object"==typeof i?de(e,t,i):((e,t,i)=>{const a=t.hasOwnProperty(i);return t.constructor.createProperty(i,e),a?Object.getOwnPropertyDescriptor(t,i):void 0})(e,t,i)}function pe(e){return he({...e,state:!0,attribute:!1})}function ue(e,t,i){e.dispatchEvent(new CustomEvent(t,{detail:i,bubbles:!0,composed:!0}))}const ge=["Type 2","CCS","CHAdeMO","Type 1","Tesla","Schuko","CEE"],me=[{key:"green_energy",icon:"mdi:leaf",label_key:"amenities.green_energy"},{key:"austrian_ecolabel",icon:"mdi:certificate-outline",label_key:"amenities.austrian_ecolabel"},{key:"free_parking",icon:"mdi:parking",label_key:"amenities.free_parking"},{key:"roofed_parking",icon:"mdi:home-roof",label_key:"amenities.roofed_parking"},{key:"illuminated_parking",icon:"mdi:lightbulb-outline",label_key:"amenities.illuminated_parking"},{key:"barrier_free",icon:"mdi:wheelchair-accessibility",label_key:"amenities.barrier_free"},{key:"catering",icon:"mdi:silverware-fork-knife",label_key:"amenities.catering"},{key:"bathrooms",icon:"mdi:toilet",label_key:"amenities.bathrooms"},{key:"resting",icon:"mdi:sofa",label_key:"amenities.resting"}],fe=[{key:"APP",icon:"mdi:cellphone",label_key:"auth.app"},{key:"QR",icon:"mdi:qrcode",label_key:"auth.qr"},{key:"RFID_READER",icon:"mdi:credit-card-wireless-outline",label_key:"auth.rfid"},{key:"CHARGING_CONTRACT",icon:"mdi:handshake-outline",label_key:"auth.contract"},{key:"DEBIT_CARD",icon:"mdi:credit-card-outline",label_key:"auth.debit"},{key:"CREDIT_CARD",icon:"mdi:credit-card",label_key:"auth.credit"},{key:"CONTACTLESS_CARD_SUPPORT",icon:"mdi:contactless-payment",label_key:"auth.contactless"}];var ve={version:"Version",invalid_configuration:"Invalid configuration",invalid_entity:"Card config: 'entity' must be a string referencing a sensor entity_id.",invalid_station_id:"Card config: 'station_id' must be a string.",loading:"Loading…",version_update:"A newer card version ({v}) is available. Reload to apply.",version_reload:"Reload",version_reload_stuck:"Reload didn't pick up the new version. Close this browser tab and reopen the dashboard, or clear your browser's site data for Home Assistant."},_e={no_entity:"Select a Ladestellen Austria sensor in the card editor.",no_stations:"No stations match the current filters.",hero_context:"to the nearest charger in {city}",hero_count:"{count} stations",hero_count_filtered:"{filtered} of {total} stations",hero_range:"{min}–{max} km range",inactive:"inactive",status_unknown:"live availability unavailable",gratis:"Free",live_suffix:"free",open_in_maps:"Open in Maps",website:"Website",call:"Call",address_heading:"Address",amenities_heading:"Amenities",pinned:"Pinned",unpin:"Remove pin",orphan_pin_title:"Pinned station not in range",operator_heading:"Operator",charging_points_heading:"Charging points",opening_hours_heading:"Opening hours",payment_heading:"Payment",open_now:"Open now",closed_now:"Closed",always_open_short:"24h",start_fee_label:"start fee",blocking_fee_label:"¢/min from {from} min.",point_status_available:"Available",point_status_charging:"Charging",point_status_occupied:"Occupied",point_status_reserved:"Reserved",point_status_blocked:"Blocked",point_status_out_of_order:"Out of order",point_status_faulted:"Faulted",point_status_inoperative:"Inoperative",point_status_unavailable:"Unavailable",point_status_out_of_stock:"Empty",point_status_planned:"Planned",point_status_removed:"Removed",point_status_unknown:"Unknown",tariff:"Tariff",dynamic_follows_entity:"Tracking: {entity}"},be={editor_station_heading:"Station",pick_station_hint:"Pick one station from the sensor. The card shows that station's charging points as parking slots.",no_station_selected:"Pick a station in the card editor.",station_not_found:"The selected station is not in the sensor's current results.",station_not_in_range:"Selected station not in range",available_count:"{avail} of {total} free",no_points:"No charging points reported for this station.",slot_status_free:"free",slot_status_busy:"in use",slot_status_warn:"out of order",slot_status_unknown:"unknown",slot_status_reserved:"reserved",slot_status_blocked:"blocked",slot_status_out_of_stock:"empty",slot_status_faulted:"faulted",slot_status_inoperative:"offline",slot_status_unavailable:"n/a",slot_status_planned:"planned",slot_status_removed:"removed"},ye={green_energy:"Green energy",free_parking:"Free parking",roofed_parking:"Roofed parking",illuminated_parking:"Illuminated",barrier_free:"Accessible",austrian_ecolabel:"Austrian Eco-Label",catering:"Catering nearby",bathrooms:"Restrooms",resting:"Resting area"},we={app:"App",qr:"QR code",rfid:"RFID",contract:"Contract",debit:"Debit card",credit:"Credit card",contactless:"Contactless"},xe={mo:"Mo",tu:"Tu",we:"We",th:"Th",fr:"Fr",sa:"Sa",su:"Su"},ke={section_main:"Main",section_display:"Display",section_filters:"Filters",section_chip_filters:"Filter by type",section_appearance:"Appearance",name:"Card title (optional)",entity:"Sensor",entity_missing:"Selected sensor is unavailable. Pick a different Ladestellen Austria sensor.",max_stations:"Stations to show",show_hero:"Show hero block",show_pricing:"Show pricing",show_amenities:"Show amenity details",sort_by_power:"Sort by power (fastest first)",logo_adapt_to_theme:"Adapt logo to theme (black on light, white on dark)",hide_header:"Hide header",show_free_count:"Show free / total counter",car_color_mode:"Car colour",car_color_random:"Random per spot",car_color_theme:"Theme accent colour",car_color_fixed:"Single colour",car_color_pick:"Pick car colour",asphalt_style:"Asphalt style",asphalt_style_default:"Default (flat grey)",asphalt_style_textured:"Textured asphalt",paint_width:"Lane-line width",paint_width_thin:"Thin",paint_width_medium:"Medium",paint_width_wide:"Wide",icon_paint_mode:"Icon colour",icon_paint_default:"Default (state colours)",icon_paint_white:"White (painted on asphalt)",only_available:"Only currently available stations",only_free:"Only stations with free charging",only_open:"Only currently open stations",connector_filter_hint:"Tap connector types to only show stations offering at least one of them. Empty = no filter.",amenity_filter_hint:"Tap amenities to narrow to stations offering all selected features (AND). Empty = no filter.",payment_filter_hint:"Tap payment methods to only show stations accepting at least one of them. Empty = no filter.",hint_compliance:"The E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' attribution in the footer are required by the ladestellen.at Terms of Use.",section_pinned:"Pinned stations",pin_hint:"Pinned stations always appear first and bypass filters. They still count toward the display cap above.",pin_select_sensor_first:"Select a sensor first to see available stations.",pin_no_stations_yet:"No stations returned yet — wait for the next refresh.",pin_orphans_heading:"Pinned but not in range (click to remove):",pin_unpin:"Remove",pin_disabled_dynamic:"Dynamic location mode is active on this sensor — pinned stations are disabled because the list follows your current position. Existing pins are preserved for when you switch back to fixed mode."},$e={common:ve,card:_e,parking:be,amenities:ye,auth:we,weekday:xe,editor:ke},Ae={version:"Version",invalid_configuration:"Ungültige Konfiguration",invalid_entity:"Kartenkonfiguration: „entity“ muss ein String mit einer Sensor-entity_id sein.",invalid_station_id:"Kartenkonfiguration: „station_id“ muss ein String sein.",loading:"Lade…",version_update:"Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",version_reload:"Neu laden",version_reload_stuck:"Neu laden hat die neue Version nicht übernommen. Schließen Sie diesen Browser-Tab und öffnen Sie das Dashboard erneut, oder löschen Sie die Website-Daten für Home Assistant in den Browser-Einstellungen."},Se={no_entity:"Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",no_stations:"Keine Ladestellen entsprechen den aktuellen Filtern.",hero_context:"zur nächsten Ladestelle in {city}",hero_count:"{count} Ladestellen",hero_count_filtered:"{filtered} von {total} Ladestellen",hero_range:"{min}–{max} km Umkreis",inactive:"inaktiv",status_unknown:"Live-Status nicht verfügbar",gratis:"Gratis",live_suffix:"frei",open_in_maps:"In Karte öffnen",website:"Website",call:"Anrufen",address_heading:"Adresse",amenities_heading:"Ausstattung",pinned:"Angepinnt",unpin:"Pin entfernen",orphan_pin_title:"Angepinnte Ladestelle außerhalb des Umkreises",operator_heading:"Betreiber",charging_points_heading:"Ladepunkte",opening_hours_heading:"Öffnungszeiten",payment_heading:"Bezahlung",open_now:"Jetzt geöffnet",closed_now:"Geschlossen",always_open_short:"24h",start_fee_label:"Startgebühr",blocking_fee_label:"¢/min ab {from} Min.",point_status_available:"Verfügbar",point_status_charging:"Lädt",point_status_occupied:"Belegt",point_status_reserved:"Reserviert",point_status_blocked:"Blockiert",point_status_out_of_order:"Außer Betrieb",point_status_faulted:"Defekt",point_status_inoperative:"Außer Betrieb",point_status_unavailable:"Nicht verfügbar",point_status_out_of_stock:"Leer",point_status_planned:"Geplant",point_status_removed:"Entfernt",point_status_unknown:"Unbekannt",tariff:"Tarif",dynamic_follows_entity:"Folgt: {entity}"},Ce={editor_station_heading:"Ladestelle",pick_station_hint:"Eine Ladestelle aus dem Sensor auswählen. Die Karte zeigt deren Ladepunkte als Parkplätze.",no_station_selected:"Bitte eine Ladestelle im Karten-Editor auswählen.",station_not_found:"Die gewählte Ladestelle ist aktuell nicht in den Sensor-Ergebnissen.",station_not_in_range:"Gewählte Ladestelle nicht im Umkreis",available_count:"{avail} von {total} frei",no_points:"Keine Ladepunkte für diese Ladestelle vorhanden.",slot_status_free:"frei",slot_status_busy:"belegt",slot_status_warn:"außer Betrieb",slot_status_unknown:"unbekannt",slot_status_reserved:"reserviert",slot_status_blocked:"gesperrt",slot_status_out_of_stock:"leer",slot_status_faulted:"defekt",slot_status_inoperative:"offline",slot_status_unavailable:"n. v.",slot_status_planned:"geplant",slot_status_removed:"entfernt"},Ee={green_energy:"Ökostrom",free_parking:"Gratis Parken",roofed_parking:"Überdacht",illuminated_parking:"Beleuchtet",barrier_free:"Barrierefrei",austrian_ecolabel:"Umweltzeichen",catering:"Gastronomie",bathrooms:"WC",resting:"Ruhebereich"},ze={app:"App",qr:"QR-Code",rfid:"RFID",contract:"Vertrag",debit:"Bankomat",credit:"Kreditkarte",contactless:"Kontaktlos"},Ie={mo:"Mo",tu:"Di",we:"Mi",th:"Do",fr:"Fr",sa:"Sa",su:"So"},Te={section_main:"Allgemein",section_display:"Anzeige",section_filters:"Filter",section_chip_filters:"Nach Typ filtern",section_appearance:"Darstellung",name:"Kartentitel (optional)",entity:"Sensor",entity_missing:"Ausgewählter Sensor ist nicht verfügbar. Bitte einen anderen Ladestellen-Austria-Sensor wählen.",max_stations:"Anzahl angezeigter Ladestellen",show_hero:"Hauptbereich anzeigen",show_pricing:"Preise anzeigen",show_amenities:"Ausstattungs-Details anzeigen",sort_by_power:"Nach Leistung sortieren (schnellste zuerst)",logo_adapt_to_theme:"Logo an Design anpassen (schwarz auf hell, weiß auf dunkel)",hide_header:"Kopfzeile ausblenden",show_free_count:"Frei/Gesamt-Zähler anzeigen",car_color_mode:"Auto-Farbe",car_color_random:"Zufällig pro Platz",car_color_fixed:"Eigene Farbe",car_color_theme:"Akzentfarbe des Designs",car_color_pick:"Auto-Farbe wählen",asphalt_style:"Asphalt-Stil",asphalt_style_default:"Standard (flaches Grau)",asphalt_style_textured:"Strukturierter Asphalt",paint_width:"Linienbreite",paint_width_thin:"Schmal",paint_width_medium:"Mittel",paint_width_wide:"Breit",icon_paint_mode:"Symbol-Farbe",icon_paint_default:"Standard (Statusfarben)",icon_paint_white:"Weiß (auf Asphalt gemalt)",only_available:"Nur aktuell verfügbare Ladestellen",only_free:"Nur Ladestellen mit Gratis-Laden",only_open:"Nur aktuell geöffnete Ladestellen",connector_filter_hint:"Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.",amenity_filter_hint:"Ausstattungsmerkmale antippen, um nur Ladestellen mit allen gewählten Merkmalen anzuzeigen (UND). Leer = kein Filter.",payment_filter_hint:"Bezahlmethoden antippen, um nur Ladestellen anzuzeigen, die mindestens eine davon akzeptieren. Leer = kein Filter.",hint_compliance:"Die Anzeige des E-Control-Logos (verlinkt auf e-control.at) und des Hinweises „Datenquelle: E-Control“ in der Fußzeile ist von den ladestellen.at-Nutzungsbedingungen vorgeschrieben.",section_pinned:"Angepinnte Ladestellen",pin_hint:"Angepinnte Ladestellen erscheinen immer zuerst und ignorieren Filter. Sie zählen weiterhin zur obigen Maximalanzahl.",pin_select_sensor_first:"Zuerst einen Sensor auswählen, um verfügbare Ladestellen zu sehen.",pin_no_stations_yet:"Noch keine Ladestellen geladen — auf die nächste Aktualisierung warten.",pin_orphans_heading:"Angepinnt, aber nicht im Umkreis (anklicken zum Entfernen):",pin_unpin:"Entfernen",pin_disabled_dynamic:"Dynamische Standortverfolgung ist für diesen Sensor aktiv — angepinnte Ladestellen sind deaktiviert, weil die Liste deiner aktuellen Position folgt. Bestehende Pins bleiben erhalten, falls du wieder auf festen Standort wechselst."},Re={common:Ae,card:Se,parking:Ce,amenities:Ee,auth:ze,weekday:Ie,editor:Te};const Pe={en:Object.freeze({__proto__:null,amenities:ye,auth:we,card:_e,common:ve,default:$e,editor:ke,parking:be,weekday:xe}),de:Object.freeze({__proto__:null,amenities:Ee,auth:ze,card:Se,common:Ae,default:Re,editor:Te,parking:Ce,weekday:Ie})};function Oe(e,t){const i=e.split(".").reduce((e,t)=>{if(e&&"object"==typeof e&&t in e)return e[t]},t);return"string"==typeof i?i:void 0}let De;function Me(e){"string"==typeof e&&e.length>0&&(De=e)}function Le(e,t="",i=""){const a=(De||("undefined"!=typeof navigator?navigator.language:"")||"en").replace(/['"]+/g,"").substring(0,2).toLowerCase(),n=Pe.en??{};let o=Oe(e,Pe[a]??n);return void 0===o&&(o=Oe(e,n)),void 0===o&&(o=e),""!==t&&""!==i&&(o=o.replaceAll(t,i)),o}async function Ne(e){if(!e?.callWS)return null;try{const t=await e.callWS({type:"ladestellen_austria/card_version"});if(t?.version&&"1.0.0"!==t.version)return t.version}catch{}return null}function Ue(e){return e?function(e){if(!e)return!1;try{return"1"===window.sessionStorage?.getItem(`lade-reload-attempted-${e}`)}catch{return!1}}(e)?W`
+/*! Ladestellen Austria Card — bundled by Rolldown. Edit sources in src/, then `npm run build`. */
+var e=Object.defineProperty,t=(t,n)=>{let r={};for(var i in t)e(r,i,{get:t[i],enumerable:!0});return n||e(r,Symbol.toStringTag,{value:`Module`}),r};
+/**
+* @license
+* Copyright 2019 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+const n=globalThis,r=n.ShadowRoot&&(n.ShadyCSS===void 0||n.ShadyCSS.nativeShadow)&&`adoptedStyleSheets`in Document.prototype&&`replace`in CSSStyleSheet.prototype,i=Symbol(),a=new WeakMap;var o=class{constructor(e,t,n){if(this._$cssResult$=!0,n!==i)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=e,this.t=t}get styleSheet(){let e=this.o,t=this.t;if(r&&e===void 0){let n=t!==void 0&&t.length===1;n&&(e=a.get(t)),e===void 0&&((this.o=e=new CSSStyleSheet).replaceSync(this.cssText),n&&a.set(t,e))}return e}toString(){return this.cssText}};const s=e=>new o(typeof e==`string`?e:e+``,void 0,i),c=(e,...t)=>new o(e.length===1?e[0]:t.reduce((t,n,r)=>t+(e=>{if(!0===e._$cssResult$)return e.cssText;if(typeof e==`number`)return e;throw Error(`Value passed to 'css' function must be a 'css' function result: `+e+`. Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.`)})(n)+e[r+1],e[0]),e,i),l=(e,t)=>{if(r)e.adoptedStyleSheets=t.map(e=>e instanceof CSSStyleSheet?e:e.styleSheet);else for(let r of t){let t=document.createElement(`style`),i=n.litNonce;i!==void 0&&t.setAttribute(`nonce`,i),t.textContent=r.cssText,e.appendChild(t)}},u=r?e=>e:e=>e instanceof CSSStyleSheet?(e=>{let t=``;for(let n of e.cssRules)t+=n.cssText;return s(t)})(e):e,{is:d,defineProperty:f,getOwnPropertyDescriptor:p,getOwnPropertyNames:m,getOwnPropertySymbols:h,getPrototypeOf:g}=Object,_=globalThis,v=_.trustedTypes,y=v?v.emptyScript:``,ee=_.reactiveElementPolyfillSupport,b=(e,t)=>e,x={toAttribute(e,t){
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+switch(t){case Boolean:e=e?y:null;break;case Object:case Array:e=e==null?e:JSON.stringify(e)}return e},fromAttribute(e,t){let n=e;switch(t){case Boolean:n=e!==null;break;case Number:n=e===null?null:Number(e);break;case Object:case Array:try{n=JSON.parse(e)}catch{n=null}}return n}},S=(e,t)=>!d(e,t),C={attribute:!0,type:String,converter:x,reflect:!1,useDefault:!1,hasChanged:S};Symbol.metadata??=Symbol(`metadata`),_.litPropertyMetadata??=new WeakMap;var w=class extends HTMLElement{static addInitializer(e){this._$Ei(),(this.l??=[]).push(e)}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(e,t=C){if(t.state&&(t.attribute=!1),this._$Ei(),this.prototype.hasOwnProperty(e)&&((t=Object.create(t)).wrapped=!0),this.elementProperties.set(e,t),!t.noAccessor){let n=Symbol(),r=this.getPropertyDescriptor(e,n,t);r!==void 0&&f(this.prototype,e,r)}}static getPropertyDescriptor(e,t,n){let{get:r,set:i}=p(this.prototype,e)??{get(){return this[t]},set(e){this[t]=e}};return{get:r,set(t){let a=r?.call(this);i?.call(this,t),this.requestUpdate(e,a,n)},configurable:!0,enumerable:!0}}static getPropertyOptions(e){return this.elementProperties.get(e)??C}static _$Ei(){if(this.hasOwnProperty(b(`elementProperties`)))return;let e=g(this);e.finalize(),e.l!==void 0&&(this.l=[...e.l]),this.elementProperties=new Map(e.elementProperties)}static finalize(){if(this.hasOwnProperty(b(`finalized`)))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(b(`properties`))){let e=this.properties,t=[...m(e),...h(e)];for(let n of t)this.createProperty(n,e[n])}let e=this[Symbol.metadata];if(e!==null){let t=litPropertyMetadata.get(e);if(t!==void 0)for(let[e,n]of t)this.elementProperties.set(e,n)}this._$Eh=new Map;for(let[e,t]of this.elementProperties){let n=this._$Eu(e,t);n!==void 0&&this._$Eh.set(n,e)}this.elementStyles=this.finalizeStyles(this.styles)}static finalizeStyles(e){let t=[];if(Array.isArray(e)){let n=new Set(e.flat(1/0).reverse());for(let e of n)t.unshift(u(e))}else e!==void 0&&t.push(u(e));return t}static _$Eu(e,t){let n=t.attribute;return!1===n?void 0:typeof n==`string`?n:typeof e==`string`?e.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev()}_$Ev(){this._$ES=new Promise(e=>this.enableUpdating=e),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(e=>e(this))}addController(e){(this._$EO??=new Set).add(e),this.renderRoot!==void 0&&this.isConnected&&e.hostConnected?.()}removeController(e){this._$EO?.delete(e)}_$E_(){let e=new Map,t=this.constructor.elementProperties;for(let n of t.keys())this.hasOwnProperty(n)&&(e.set(n,this[n]),delete this[n]);e.size>0&&(this._$Ep=e)}createRenderRoot(){let e=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return l(e,this.constructor.elementStyles),e}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach(e=>e.hostConnected?.())}enableUpdating(e){}disconnectedCallback(){this._$EO?.forEach(e=>e.hostDisconnected?.())}attributeChangedCallback(e,t,n){this._$AK(e,n)}_$ET(e,t){let n=this.constructor.elementProperties.get(e),r=this.constructor._$Eu(e,n);if(r!==void 0&&!0===n.reflect){let i=(n.converter?.toAttribute===void 0?x:n.converter).toAttribute(t,n.type);this._$Em=e,i==null?this.removeAttribute(r):this.setAttribute(r,i),this._$Em=null}}_$AK(e,t){let n=this.constructor,r=n._$Eh.get(e);if(r!==void 0&&this._$Em!==r){let e=n.getPropertyOptions(r),i=typeof e.converter==`function`?{fromAttribute:e.converter}:e.converter?.fromAttribute===void 0?x:e.converter;this._$Em=r;let a=i.fromAttribute(t,e.type);this[r]=a??this._$Ej?.get(r)??a,this._$Em=null}}requestUpdate(e,t,n,r=!1,i){if(e!==void 0){let a=this.constructor;if(!1===r&&(i=this[e]),n??=a.getPropertyOptions(e),!((n.hasChanged??S)(i,t)||n.useDefault&&n.reflect&&i===this._$Ej?.get(e)&&!this.hasAttribute(a._$Eu(e,n))))return;this.C(e,t,n)}!1===this.isUpdatePending&&(this._$ES=this._$EP())}C(e,t,{useDefault:n,reflect:r,wrapped:i},a){n&&!(this._$Ej??=new Map).has(e)&&(this._$Ej.set(e,a??t??this[e]),!0!==i||a!==void 0)||(this._$AL.has(e)||(this.hasUpdated||n||(t=void 0),this._$AL.set(e,t)),!0===r&&this._$Em!==e&&(this._$Eq??=new Set).add(e))}async _$EP(){this.isUpdatePending=!0;try{await this._$ES}catch(e){Promise.reject(e)}let e=this.scheduleUpdate();return e!=null&&await e,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(let[e,t]of this._$Ep)this[e]=t;this._$Ep=void 0}let e=this.constructor.elementProperties;if(e.size>0)for(let[t,n]of e){let{wrapped:e}=n,r=this[t];!0!==e||this._$AL.has(t)||r===void 0||this.C(t,void 0,n,r)}}let e=!1,t=this._$AL;try{e=this.shouldUpdate(t),e?(this.willUpdate(t),this._$EO?.forEach(e=>e.hostUpdate?.()),this.update(t)):this._$EM()}catch(t){throw e=!1,this._$EM(),t}e&&this._$AE(t)}willUpdate(e){}_$AE(e){this._$EO?.forEach(e=>e.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(e)),this.updated(e)}_$EM(){this._$AL=new Map,this.isUpdatePending=!1}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(e){return!0}update(e){this._$Eq&&=this._$Eq.forEach(e=>this._$ET(e,this[e])),this._$EM()}updated(e){}firstUpdated(e){}};w.elementStyles=[],w.shadowRootOptions={mode:`open`},w[b(`elementProperties`)]=new Map,w[b(`finalized`)]=new Map,ee?.({ReactiveElement:w}),(_.reactiveElementVersions??=[]).push(`2.1.2`);
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+const te=globalThis,ne=e=>e,T=te.trustedTypes,re=T?T.createPolicy(`lit-html`,{createHTML:e=>e}):void 0,ie=`$lit$`,E=`lit$${Math.random().toFixed(9).slice(2)}$`,ae=`?`+E,oe=`<${ae}>`,D=document,O=()=>D.createComment(``),k=e=>e===null||typeof e!=`object`&&typeof e!=`function`,se=Array.isArray,ce=e=>se(e)||typeof e?.[Symbol.iterator]==`function`,le=`[ 	
+\f\r]`,A=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,ue=/-->/g,de=/>/g,j=RegExp(`>|${le}(?:([^\\s"'>=/]+)(${le}*=${le}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,`g`),fe=/'/g,pe=/"/g,me=/^(?:script|style|textarea|title)$/i,M=(e=>(t,...n)=>({_$litType$:e,strings:t,values:n}))(1),N=Symbol.for(`lit-noChange`),P=Symbol.for(`lit-nothing`),he=new WeakMap,F=D.createTreeWalker(D,129);function ge(e,t){if(!se(e)||!e.hasOwnProperty(`raw`))throw Error(`invalid template strings array`);return re===void 0?t:re.createHTML(t)}const _e=(e,t)=>{let n=e.length-1,r=[],i,a=t===2?`<svg>`:t===3?`<math>`:``,o=A;for(let t=0;t<n;t++){let n=e[t],s,c,l=-1,u=0;for(;u<n.length&&(o.lastIndex=u,c=o.exec(n),c!==null);)u=o.lastIndex,o===A?c[1]===`!--`?o=ue:c[1]===void 0?c[2]===void 0?c[3]!==void 0&&(o=j):(me.test(c[2])&&(i=RegExp(`</`+c[2],`g`)),o=j):o=de:o===j?c[0]===`>`?(o=i??A,l=-1):c[1]===void 0?l=-2:(l=o.lastIndex-c[2].length,s=c[1],o=c[3]===void 0?j:c[3]===`"`?pe:fe):o===pe||o===fe?o=j:o===ue||o===de?o=A:(o=j,i=void 0);let d=o===j&&e[t+1].startsWith(`/>`)?` `:``;a+=o===A?n+oe:l>=0?(r.push(s),n.slice(0,l)+ie+n.slice(l)+E+d):n+E+(l===-2?t:d)}return[ge(e,a+(e[n]||`<?>`)+(t===2?`</svg>`:t===3?`</math>`:``)),r]};var ve=class e{constructor({strings:t,_$litType$:n},r){let i;this.parts=[];let a=0,o=0,s=t.length-1,c=this.parts,[l,u]=_e(t,n);if(this.el=e.createElement(l,r),F.currentNode=this.el.content,n===2||n===3){let e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;(i=F.nextNode())!==null&&c.length<s;){if(i.nodeType===1){if(i.hasAttributes())for(let e of i.getAttributeNames())if(e.endsWith(ie)){let t=u[o++],n=i.getAttribute(e).split(E),r=/([.?@])?(.*)/.exec(t);c.push({type:1,index:a,name:r[2],strings:n,ctor:r[1]===`.`?xe:r[1]===`?`?Se:r[1]===`@`?Ce:L}),i.removeAttribute(e)}else e.startsWith(E)&&(c.push({type:6,index:a}),i.removeAttribute(e));if(me.test(i.tagName)){let e=i.textContent.split(E),t=e.length-1;if(t>0){i.textContent=T?T.emptyScript:``;for(let n=0;n<t;n++)i.append(e[n],O()),F.nextNode(),c.push({type:2,index:++a});i.append(e[t],O())}}}else if(i.nodeType===8){if(i.data===ae)c.push({type:2,index:a});else{let e=-1;for(;(e=i.data.indexOf(E,e+1))!==-1;)c.push({type:7,index:a}),e+=E.length-1}}a++}}static createElement(e,t){let n=D.createElement(`template`);return n.innerHTML=e,n}};function I(e,t,n=e,r){if(t===N)return t;let i=r===void 0?n._$Cl:n._$Co?.[r],a=k(t)?void 0:t._$litDirective$;return i?.constructor!==a&&(i?._$AO?.(!1),a===void 0?i=void 0:(i=new a(e),i._$AT(e,n,r)),r===void 0?n._$Cl=i:(n._$Co??=[])[r]=i),i!==void 0&&(t=I(e,i._$AS(e,t.values),i,r)),t}var ye=class{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){let{el:{content:t},parts:n}=this._$AD,r=(e?.creationScope??D).importNode(t,!0);F.currentNode=r;let i=F.nextNode(),a=0,o=0,s=n[0];for(;s!==void 0;){if(a===s.index){let t;s.type===2?t=new be(i,i.nextSibling,this,e):s.type===1?t=new s.ctor(i,s.name,s.strings,this,e):s.type===6&&(t=new we(i,this,e)),this._$AV.push(t),s=n[++o]}a!==s?.index&&(i=F.nextNode(),a++)}return F.currentNode=D,r}p(e){let t=0;for(let n of this._$AV)n!==void 0&&(n.strings===void 0?n._$AI(e[t]):(n._$AI(e,n,t),t+=n.strings.length-2)),t++}},be=class e{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,n,r){this.type=2,this._$AH=P,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=n,this.options=r,this._$Cv=r?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode,t=this._$AM;return t!==void 0&&e?.nodeType===11&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=I(this,e,t),k(e)?e===P||e==null||e===``?(this._$AH!==P&&this._$AR(),this._$AH=P):e!==this._$AH&&e!==N&&this._(e):e._$litType$===void 0?e.nodeType===void 0?ce(e)?this.k(e):this._(e):this.T(e):this.$(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==P&&k(this._$AH)?this._$AA.nextSibling.data=e:this.T(D.createTextNode(e)),this._$AH=e}$(e){let{values:t,_$litType$:n}=e,r=typeof n==`number`?this._$AC(e):(n.el===void 0&&(n.el=ve.createElement(ge(n.h,n.h[0]),this.options)),n);if(this._$AH?._$AD===r)this._$AH.p(t);else{let e=new ye(r,this),n=e.u(this.options);e.p(t),this.T(n),this._$AH=e}}_$AC(e){let t=he.get(e.strings);return t===void 0&&he.set(e.strings,t=new ve(e)),t}k(t){se(this._$AH)||(this._$AH=[],this._$AR());let n=this._$AH,r,i=0;for(let a of t)i===n.length?n.push(r=new e(this.O(O()),this.O(O()),this,this.options)):r=n[i],r._$AI(a),i++;i<n.length&&(this._$AR(r&&r._$AB.nextSibling,i),n.length=i)}_$AR(e=this._$AA.nextSibling,t){for(this._$AP?.(!1,!0,t);e!==this._$AB;){let t=ne(e).nextSibling;ne(e).remove(),e=t}}setConnected(e){this._$AM===void 0&&(this._$Cv=e,this._$AP?.(e))}},L=class{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,n,r,i){this.type=1,this._$AH=P,this._$AN=void 0,this.element=e,this.name=t,this._$AM=r,this.options=i,n.length>2||n[0]!==``||n[1]!==``?(this._$AH=Array(n.length-1).fill(new String),this.strings=n):this._$AH=P}_$AI(e,t=this,n,r){let i=this.strings,a=!1;if(i===void 0)e=I(this,e,t,0),a=!k(e)||e!==this._$AH&&e!==N,a&&(this._$AH=e);else{let r=e,o,s;for(e=i[0],o=0;o<i.length-1;o++)s=I(this,r[n+o],t,o),s===N&&(s=this._$AH[o]),a||=!k(s)||s!==this._$AH[o],s===P?e=P:e!==P&&(e+=(s??``)+i[o+1]),this._$AH[o]=s}a&&!r&&this.j(e)}j(e){e===P?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??``)}},xe=class extends L{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===P?void 0:e}},Se=class extends L{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==P)}},Ce=class extends L{constructor(e,t,n,r,i){super(e,t,n,r,i),this.type=5}_$AI(e,t=this){if((e=I(this,e,t,0)??P)===N)return;let n=this._$AH,r=e===P&&n!==P||e.capture!==n.capture||e.once!==n.once||e.passive!==n.passive,i=e!==P&&(n===P||r);r&&this.element.removeEventListener(this.name,this,n),i&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){typeof this._$AH==`function`?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}},we=class{constructor(e,t,n){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=n}get _$AU(){return this._$AM._$AU}_$AI(e){I(this,e)}};const Te=te.litHtmlPolyfillSupport;Te?.(ve,be),(te.litHtmlVersions??=[]).push(`3.3.2`);const Ee=(e,t,n)=>{let r=n?.renderBefore??t,i=r._$litPart$;if(i===void 0){let e=n?.renderBefore??null;r._$litPart$=i=new be(t.insertBefore(O(),e),e,void 0,n??{})}return i._$AI(e),i},De=globalThis
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+;var R=class extends w{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0}createRenderRoot(){let e=super.createRenderRoot();return this.renderOptions.renderBefore??=e.firstChild,e}update(e){let t=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(e),this._$Do=Ee(t,this.renderRoot,this.renderOptions)}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0)}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1)}render(){return N}};R._$litElement$=!0,R.finalized=!0,De.litElementHydrateSupport?.({LitElement:R});const Oe=De.litElementPolyfillSupport;Oe?.({LitElement:R}),(De.litElementVersions??=[]).push(`4.2.2`);
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+const z=e=>(t,n)=>{n===void 0?customElements.define(e,t):n.addInitializer(()=>{customElements.define(e,t)})},ke={attribute:!0,type:String,converter:x,reflect:!1,hasChanged:S},Ae=(e=ke,t,n)=>{
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&globalThis.litPropertyMetadata.set(i,a=new Map),r===`setter`&&((e=Object.create(e)).wrapped=!0),a.set(n.name,e),r===`accessor`){let{name:r}=n;return{set(n){let i=t.get.call(this);t.set.call(this,n),this.requestUpdate(r,i,e,!0,n)},init(t){return t!==void 0&&this.C(r,void 0,e,t),t}}}if(r===`setter`){let{name:r}=n;return function(n){let i=this[r];t.call(this,n),this.requestUpdate(r,i,e,!0,n)}}throw Error(`Unsupported decorator location: `+r)};function B(e){return(t,n)=>typeof n==`object`?Ae(e,t,n):((e,t,n)=>{let r=t.hasOwnProperty(n);return t.constructor.createProperty(n,e),r?Object.getOwnPropertyDescriptor(t,n):void 0})(e,t,n)}
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/function V(e){return B({...e,state:!0,attribute:!1})}function H(e,t,n){e.dispatchEvent(new CustomEvent(t,{detail:n,bubbles:!0,composed:!0}))}const je=[`Type 2`,`CCS`,`CHAdeMO`,`Type 1`,`Tesla`,`Schuko`,`CEE`],Me=[{key:`green_energy`,icon:`mdi:leaf`,label_key:`amenities.green_energy`},{key:`austrian_ecolabel`,icon:`mdi:certificate-outline`,label_key:`amenities.austrian_ecolabel`},{key:`free_parking`,icon:`mdi:parking`,label_key:`amenities.free_parking`},{key:`roofed_parking`,icon:`mdi:home-roof`,label_key:`amenities.roofed_parking`},{key:`illuminated_parking`,icon:`mdi:lightbulb-outline`,label_key:`amenities.illuminated_parking`},{key:`barrier_free`,icon:`mdi:wheelchair-accessibility`,label_key:`amenities.barrier_free`},{key:`catering`,icon:`mdi:silverware-fork-knife`,label_key:`amenities.catering`},{key:`bathrooms`,icon:`mdi:toilet`,label_key:`amenities.bathrooms`},{key:`resting`,icon:`mdi:sofa`,label_key:`amenities.resting`}],Ne=[{key:`APP`,icon:`mdi:cellphone`,label_key:`auth.app`},{key:`QR`,icon:`mdi:qrcode`,label_key:`auth.qr`},{key:`RFID_READER`,icon:`mdi:credit-card-wireless-outline`,label_key:`auth.rfid`},{key:`CHARGING_CONTRACT`,icon:`mdi:handshake-outline`,label_key:`auth.contract`},{key:`DEBIT_CARD`,icon:`mdi:credit-card-outline`,label_key:`auth.debit`},{key:`CREDIT_CARD`,icon:`mdi:credit-card`,label_key:`auth.credit`},{key:`CONTACTLESS_CARD_SUPPORT`,icon:`mdi:contactless-payment`,label_key:`auth.contactless`}];var Pe=t({amenities:()=>Re,auth:()=>ze,card:()=>Ie,common:()=>Fe,default:()=>He,editor:()=>Ve,parking:()=>Le,weekday:()=>Be}),Fe={version:`Version`,invalid_configuration:`Invalid configuration`,invalid_entity:`Card config: 'entity' must be a string referencing a sensor entity_id.`,invalid_station_id:`Card config: 'station_id' must be a string.`,loading:`Loading…`,version_update:`A newer card version ({v}) is available. Reload to apply.`,version_reload:`Reload`,version_reload_stuck:`Reload didn't pick up the new version. Close this browser tab and reopen the dashboard, or clear your browser's site data for Home Assistant.`},Ie={no_entity:`Select a Ladestellen Austria sensor in the card editor.`,no_stations:`No stations match the current filters.`,hero_context:`to the nearest charger in {city}`,hero_count:`{count} stations`,hero_count_filtered:`{filtered} of {total} stations`,hero_range:`{min}–{max} km range`,inactive:`inactive`,status_unknown:`live availability unavailable`,gratis:`Free`,live_suffix:`free`,open_in_maps:`Open in Maps`,website:`Website`,call:`Call`,address_heading:`Address`,amenities_heading:`Amenities`,pinned:`Pinned`,unpin:`Remove pin`,orphan_pin_title:`Pinned station not in range`,operator_heading:`Operator`,charging_points_heading:`Charging points`,opening_hours_heading:`Opening hours`,payment_heading:`Payment`,open_now:`Open now`,closed_now:`Closed`,always_open_short:`24h`,start_fee_label:`start fee`,blocking_fee_label:`¢/min from {from} min.`,point_status_available:`Available`,point_status_charging:`Charging`,point_status_occupied:`Occupied`,point_status_reserved:`Reserved`,point_status_blocked:`Blocked`,point_status_out_of_order:`Out of order`,point_status_faulted:`Faulted`,point_status_inoperative:`Inoperative`,point_status_unavailable:`Unavailable`,point_status_out_of_stock:`Empty`,point_status_planned:`Planned`,point_status_removed:`Removed`,point_status_unknown:`Unknown`,tariff:`Tariff`,dynamic_follows_entity:`Tracking: {entity}`},Le={editor_station_heading:`Station`,pick_station_hint:`Pick one station from the sensor. The card shows that station's charging points as parking slots.`,no_station_selected:`Pick a station in the card editor.`,station_not_found:`The selected station is not in the sensor's current results.`,station_not_in_range:`Selected station not in range`,available_count:`{avail} of {total} free`,no_points:`No charging points reported for this station.`,slot_status_free:`free`,slot_status_busy:`in use`,slot_status_warn:`out of order`,slot_status_unknown:`unknown`,slot_status_reserved:`reserved`,slot_status_blocked:`blocked`,slot_status_out_of_stock:`empty`,slot_status_faulted:`faulted`,slot_status_inoperative:`offline`,slot_status_unavailable:`n/a`,slot_status_planned:`planned`,slot_status_removed:`removed`},Re={green_energy:`Green energy`,free_parking:`Free parking`,roofed_parking:`Roofed parking`,illuminated_parking:`Illuminated`,barrier_free:`Accessible`,austrian_ecolabel:`Austrian Eco-Label`,catering:`Catering nearby`,bathrooms:`Restrooms`,resting:`Resting area`},ze={app:`App`,qr:`QR code`,rfid:`RFID`,contract:`Contract`,debit:`Debit card`,credit:`Credit card`,contactless:`Contactless`},Be={mo:`Mo`,tu:`Tu`,we:`We`,th:`Th`,fr:`Fr`,sa:`Sa`,su:`Su`},Ve={section_main:`Main`,section_display:`Display`,section_filters:`Filters`,section_chip_filters:`Filter by type`,section_appearance:`Appearance`,name:`Card title (optional)`,entity:`Sensor`,entity_missing:`Selected sensor is unavailable. Pick a different Ladestellen Austria sensor.`,max_stations:`Stations to show`,show_hero:`Show hero block`,show_pricing:`Show pricing`,show_amenities:`Show amenity details`,sort_by_power:`Sort by power (fastest first)`,logo_adapt_to_theme:`Adapt logo to theme (black on light, white on dark)`,hide_header:`Hide header`,show_free_count:`Show free / total counter`,car_color_mode:`Car colour`,car_color_random:`Random per spot`,car_color_theme:`Theme accent colour`,car_color_fixed:`Single colour`,car_color_pick:`Pick car colour`,asphalt_style:`Asphalt style`,asphalt_style_default:`Default (flat grey)`,asphalt_style_textured:`Textured asphalt`,paint_width:`Lane-line width`,paint_width_thin:`Thin`,paint_width_medium:`Medium`,paint_width_wide:`Wide`,icon_paint_mode:`Icon colour`,icon_paint_default:`Default (state colours)`,icon_paint_white:`White (painted on asphalt)`,only_available:`Only currently available stations`,only_free:`Only stations with free charging`,only_open:`Only currently open stations`,connector_filter_hint:`Tap connector types to only show stations offering at least one of them. Empty = no filter.`,amenity_filter_hint:`Tap amenities to narrow to stations offering all selected features (AND). Empty = no filter.`,payment_filter_hint:`Tap payment methods to only show stations accepting at least one of them. Empty = no filter.`,hint_compliance:`The E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' attribution in the footer are required by the ladestellen.at Terms of Use.`,section_pinned:`Pinned stations`,pin_hint:`Pinned stations always appear first and bypass filters. They still count toward the display cap above.`,pin_select_sensor_first:`Select a sensor first to see available stations.`,pin_no_stations_yet:`No stations returned yet — wait for the next refresh.`,pin_orphans_heading:`Pinned but not in range (click to remove):`,pin_unpin:`Remove`,pin_disabled_dynamic:`Dynamic location mode is active on this sensor — pinned stations are disabled because the list follows your current position. Existing pins are preserved for when you switch back to fixed mode.`},He={common:Fe,card:Ie,parking:Le,amenities:Re,auth:ze,weekday:Be,editor:Ve},Ue=t({amenities:()=>qe,auth:()=>Je,card:()=>Ge,common:()=>We,default:()=>Ze,editor:()=>Xe,parking:()=>Ke,weekday:()=>Ye}),We={version:`Version`,invalid_configuration:`Ungültige Konfiguration`,invalid_entity:`Kartenkonfiguration: „entity“ muss ein String mit einer Sensor-entity_id sein.`,invalid_station_id:`Kartenkonfiguration: „station_id“ muss ein String sein.`,loading:`Lade…`,version_update:`Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.`,version_reload:`Neu laden`,version_reload_stuck:`Neu laden hat die neue Version nicht übernommen. Schließen Sie diesen Browser-Tab und öffnen Sie das Dashboard erneut, oder löschen Sie die Website-Daten für Home Assistant in den Browser-Einstellungen.`},Ge={no_entity:`Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.`,no_stations:`Keine Ladestellen entsprechen den aktuellen Filtern.`,hero_context:`zur nächsten Ladestelle in {city}`,hero_count:`{count} Ladestellen`,hero_count_filtered:`{filtered} von {total} Ladestellen`,hero_range:`{min}–{max} km Umkreis`,inactive:`inaktiv`,status_unknown:`Live-Status nicht verfügbar`,gratis:`Gratis`,live_suffix:`frei`,open_in_maps:`In Karte öffnen`,website:`Website`,call:`Anrufen`,address_heading:`Adresse`,amenities_heading:`Ausstattung`,pinned:`Angepinnt`,unpin:`Pin entfernen`,orphan_pin_title:`Angepinnte Ladestelle außerhalb des Umkreises`,operator_heading:`Betreiber`,charging_points_heading:`Ladepunkte`,opening_hours_heading:`Öffnungszeiten`,payment_heading:`Bezahlung`,open_now:`Jetzt geöffnet`,closed_now:`Geschlossen`,always_open_short:`24h`,start_fee_label:`Startgebühr`,blocking_fee_label:`¢/min ab {from} Min.`,point_status_available:`Verfügbar`,point_status_charging:`Lädt`,point_status_occupied:`Belegt`,point_status_reserved:`Reserviert`,point_status_blocked:`Blockiert`,point_status_out_of_order:`Außer Betrieb`,point_status_faulted:`Defekt`,point_status_inoperative:`Außer Betrieb`,point_status_unavailable:`Nicht verfügbar`,point_status_out_of_stock:`Leer`,point_status_planned:`Geplant`,point_status_removed:`Entfernt`,point_status_unknown:`Unbekannt`,tariff:`Tarif`,dynamic_follows_entity:`Folgt: {entity}`},Ke={editor_station_heading:`Ladestelle`,pick_station_hint:`Eine Ladestelle aus dem Sensor auswählen. Die Karte zeigt deren Ladepunkte als Parkplätze.`,no_station_selected:`Bitte eine Ladestelle im Karten-Editor auswählen.`,station_not_found:`Die gewählte Ladestelle ist aktuell nicht in den Sensor-Ergebnissen.`,station_not_in_range:`Gewählte Ladestelle nicht im Umkreis`,available_count:`{avail} von {total} frei`,no_points:`Keine Ladepunkte für diese Ladestelle vorhanden.`,slot_status_free:`frei`,slot_status_busy:`belegt`,slot_status_warn:`außer Betrieb`,slot_status_unknown:`unbekannt`,slot_status_reserved:`reserviert`,slot_status_blocked:`gesperrt`,slot_status_out_of_stock:`leer`,slot_status_faulted:`defekt`,slot_status_inoperative:`offline`,slot_status_unavailable:`n. v.`,slot_status_planned:`geplant`,slot_status_removed:`entfernt`},qe={green_energy:`Ökostrom`,free_parking:`Gratis Parken`,roofed_parking:`Überdacht`,illuminated_parking:`Beleuchtet`,barrier_free:`Barrierefrei`,austrian_ecolabel:`Umweltzeichen`,catering:`Gastronomie`,bathrooms:`WC`,resting:`Ruhebereich`},Je={app:`App`,qr:`QR-Code`,rfid:`RFID`,contract:`Vertrag`,debit:`Bankomat`,credit:`Kreditkarte`,contactless:`Kontaktlos`},Ye={mo:`Mo`,tu:`Di`,we:`Mi`,th:`Do`,fr:`Fr`,sa:`Sa`,su:`So`},Xe={section_main:`Allgemein`,section_display:`Anzeige`,section_filters:`Filter`,section_chip_filters:`Nach Typ filtern`,section_appearance:`Darstellung`,name:`Kartentitel (optional)`,entity:`Sensor`,entity_missing:`Ausgewählter Sensor ist nicht verfügbar. Bitte einen anderen Ladestellen-Austria-Sensor wählen.`,max_stations:`Anzahl angezeigter Ladestellen`,show_hero:`Hauptbereich anzeigen`,show_pricing:`Preise anzeigen`,show_amenities:`Ausstattungs-Details anzeigen`,sort_by_power:`Nach Leistung sortieren (schnellste zuerst)`,logo_adapt_to_theme:`Logo an Design anpassen (schwarz auf hell, weiß auf dunkel)`,hide_header:`Kopfzeile ausblenden`,show_free_count:`Frei/Gesamt-Zähler anzeigen`,car_color_mode:`Auto-Farbe`,car_color_random:`Zufällig pro Platz`,car_color_fixed:`Eigene Farbe`,car_color_theme:`Akzentfarbe des Designs`,car_color_pick:`Auto-Farbe wählen`,asphalt_style:`Asphalt-Stil`,asphalt_style_default:`Standard (flaches Grau)`,asphalt_style_textured:`Strukturierter Asphalt`,paint_width:`Linienbreite`,paint_width_thin:`Schmal`,paint_width_medium:`Mittel`,paint_width_wide:`Breit`,icon_paint_mode:`Symbol-Farbe`,icon_paint_default:`Standard (Statusfarben)`,icon_paint_white:`Weiß (auf Asphalt gemalt)`,only_available:`Nur aktuell verfügbare Ladestellen`,only_free:`Nur Ladestellen mit Gratis-Laden`,only_open:`Nur aktuell geöffnete Ladestellen`,connector_filter_hint:`Steckertypen antippen, um nur Ladestellen mit mindestens einem davon anzuzeigen. Leer = kein Filter.`,amenity_filter_hint:`Ausstattungsmerkmale antippen, um nur Ladestellen mit allen gewählten Merkmalen anzuzeigen (UND). Leer = kein Filter.`,payment_filter_hint:`Bezahlmethoden antippen, um nur Ladestellen anzuzeigen, die mindestens eine davon akzeptieren. Leer = kein Filter.`,hint_compliance:`Die Anzeige des E-Control-Logos (verlinkt auf e-control.at) und des Hinweises „Datenquelle: E-Control“ in der Fußzeile ist von den ladestellen.at-Nutzungsbedingungen vorgeschrieben.`,section_pinned:`Angepinnte Ladestellen`,pin_hint:`Angepinnte Ladestellen erscheinen immer zuerst und ignorieren Filter. Sie zählen weiterhin zur obigen Maximalanzahl.`,pin_select_sensor_first:`Zuerst einen Sensor auswählen, um verfügbare Ladestellen zu sehen.`,pin_no_stations_yet:`Noch keine Ladestellen geladen — auf die nächste Aktualisierung warten.`,pin_orphans_heading:`Angepinnt, aber nicht im Umkreis (anklicken zum Entfernen):`,pin_unpin:`Entfernen`,pin_disabled_dynamic:`Dynamische Standortverfolgung ist für diesen Sensor aktiv — angepinnte Ladestellen sind deaktiviert, weil die Liste deiner aktuellen Position folgt. Bestehende Pins bleiben erhalten, falls du wieder auf festen Standort wechselst.`},Ze={common:We,card:Ge,parking:Ke,amenities:qe,auth:Je,weekday:Ye,editor:Xe};const Qe={en:Pe,de:Ue};function $e(e,t){let n=e.split(`.`).reduce((e,t)=>{if(e&&typeof e==`object`&&t in e)return e[t]},t);return typeof n==`string`?n:void 0}let et;function U(e){typeof e==`string`&&e.length>0&&(et=e)}function tt(){return(et||(typeof navigator<`u`?navigator.language:``)||`en`).replace(/['"]+/g,``).substring(0,2).toLowerCase()}function W(e,t=``,n=``){let r=tt(),i=Qe.en??{},a=$e(e,Qe[r]??i);return a===void 0&&(a=$e(e,i)),a===void 0&&(a=e),t!==``&&n!==``&&(a=a.replaceAll(t,n)),a}async function nt(e){if(!e?.callWS)return null;try{let t=await e.callWS({type:`ladestellen_austria/card_version`});if(t?.version&&t.version!==`1.0.0`)return t.version}catch{}return null}function rt(e){try{window.caches?.keys?.().then(e=>{e.forEach(e=>window.caches?.delete?.(e))})}catch{}if(e)try{window.sessionStorage?.setItem(`lade-reload-attempted-${e}`,`1`)}catch{}window.location.reload()}function it(e){if(!e)return!1;try{return window.sessionStorage?.getItem(`lade-reload-attempted-${e}`)===`1`}catch{return!1}}function G(e){return e?it(e)?M`
       <div class="version-notice" role="alert" aria-live="assertive">
-        <span>${Le("common.version_reload_stuck")}</span>
+        <span>${W(`common.version_reload_stuck`)}</span>
       </div>
-    `:W`
+    `:M`
     <div class="version-notice" role="alert" aria-live="assertive">
       <span
-        >${Le("common.version_update").replaceAll("{v}",e)}</span
+        >${W(`common.version_update`).replaceAll(`{v}`,e)}</span
       >
       <button
         class="version-reload-btn"
         type="button"
-        @click=${()=>function(e){try{window.caches?.keys?.().then(e=>{e.forEach(e=>window.caches?.delete?.(e))})}catch{}if(e)try{window.sessionStorage?.setItem(`lade-reload-attempted-${e}`,"1")}catch{}window.location.reload()}(e)}
+        @click=${()=>rt(e)}
       >
-        ${Le("common.version_reload")}
+        ${W(`common.version_reload`)}
       </button>
     </div>
-  `:B}function Fe(e,t,i){const a=Boolean(e?.themes?.darkMode),n=i?"brand-logo adaptive "+(a?"adaptive-dark":"adaptive-light"):"brand-logo",o=t&&t.includes("E-Control")?t:"Datenquelle: E-Control";return W`
+  `:P}function K(e,t,n){let r=!!e?.themes?.darkMode,i=n?`brand-logo adaptive ${r?`adaptive-dark`:`adaptive-light`}`:`brand-logo`,a=t&&t.includes(`E-Control`)?t:`Datenquelle: E-Control`;return M`
     <div class="footer">
       <a
         class="brand-link"
@@ -27,14 +69,14 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
         @click=${e=>e.stopPropagation()}
       >
         <img
-          class=${n}
+          class=${i}
           src="/ladestellen_austria/e-control_logo.svg"
           alt="E-Control"
         />
       </a>
-      <span class="attribution-text">${o}</span>
+      <span class="attribution-text">${a}</span>
     </div>
-  `}const He=o`
+  `}const at=c`
   .version-notice {
     display: flex;
     align-items: center;
@@ -61,7 +103,7 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
   .version-reload-btn:hover {
     background: rgba(255, 255, 255, 0.92);
   }
-`,We=o`
+`,ot=c`
   .footer {
     display: flex;
     align-items: center;
@@ -99,7 +141,7 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
     letter-spacing: 0.03em;
     opacity: 0.85;
   }
-`,je=o`
+`,st=c`
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -110,7 +152,7 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
       scroll-behavior: auto !important;
     }
   }
-`,Be=o`
+`,ct=c`
   :host {
     /* color-scheme enables light-dark() and steers forced-colors palette
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
@@ -1108,7 +1150,7 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
   }
 
   /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */
-`,Ge=o`
+`,lt=c`
   :host {
     display: block;
   }
@@ -1302,7 +1344,7 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
        leaks past inset:0; clip just in case. */
     overflow: hidden;
   }
-`,Ve=o`
+`,ut=c`
   :host {
     /* color-scheme enables light-dark() and steers forced-colors palette
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
@@ -1913,31 +1955,31 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
     }
   }
   /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */
-`,Ze=[He,We,je,Be],Ye=[He,We,je,Ve];function Ke(e){const t=e.electricityType??[];return t.some(e=>"DC"===e||e?.startsWith("DC"))?"dc":t.some(e=>e?.startsWith("AC"))?"ac":null}function qe(e){return(e??"").toUpperCase().replace(/_/g,"")}function Je(e){const t=qe(e);return"AVAILABLE"===t?"ok":"CHARGING"===t||"OCCUPIED"===t||"RESERVED"===t||"BLOCKED"===t?"busy":"OUTOFORDER"===t||"FAULTED"===t||"INOPERATIVE"===t||"UNAVAILABLE"===t?"warn":"UNKNOWN"===t?"unknown":"empty"}function Xe(e){if(!e)return"";const t={AVAILABLE:"available",CHARGING:"charging",OCCUPIED:"occupied",RESERVED:"reserved",BLOCKED:"blocked",OUTOFORDER:"out_of_order",FAULTED:"faulted",INOPERATIVE:"inoperative",UNAVAILABLE:"unavailable",OUTOFSTOCK:"out_of_stock",PLANNED:"planned",REMOVED:"removed",UNKNOWN:"unknown"}[qe(e)];if(!t)return e;const i=`card.point_status_${t}`,a=Le(i);return a===i?e:a}function Qe(e){const t=Je(e.status),i=function(e){switch(qe(e)){case"OUTOFORDER":case"FAULTED":case"INOPERATIVE":case"UNAVAILABLE":return{icon:"mdi:wrench",tone:"warning"};case"OUTOFSTOCK":return{icon:"mdi:battery-off-outline",tone:"warning",bgTint:"warning"};case"PLANNED":return{icon:"mdi:progress-wrench",tone:"info",bgTint:"info"};case"REMOVED":return{icon:"mdi:close-circle-outline",tone:"error",bgTint:"error"};case"UNKNOWN":return{icon:"mdi:help-circle-outline",tone:"muted"};default:return null}}(e.status);return{bucket:t,isAvailable:"ok"===t,isBusy:"busy"===t,isWarn:"warn"===t,overlay:i,showCar:"busy"===t&&null===i,showOverlayIcon:null!==i}}function et(e){if(null==e||!Number.isFinite(e))return"–";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:0,maximumFractionDigits:1}).format(e)}catch{return String(e).replace(".",",")}}function tt(e){const t=e/100;try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}function it(e){if(!Number.isFinite(e))return"0";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:0,maximumFractionDigits:2}).format(e)}catch{return String(e).replace(".",",")}}function at(e,t){switch(e){case"TYPE_2_AC":return"Type 2";case"COMBO2_CCS_DC":return"CCS";case"CHADEMO":return"CHAdeMO";case"TYPE_1_AC":return"Type 1";case"TESLA_S":case"TESLA_R":return"Tesla";case"OTHER":return"DOMESTIC_F"===t?"Schuko":t?.startsWith("CEE")?"CEE":t??"?";default:return e?.replace(/_/g," ")??t??"?"}}function nt(e){const t=(e.connectorType??[])[0];return t?at(t.consumerName,t.key):"–"}function ot(e){return"string"!=typeof e?"":/^https?:\/\//i.test(e)?e:""}function rt(e){const t="expandable"===e.type?`editor.section_${e.name}`:`editor.${e.name}`,i=Le(t);return i===t?e.name:i}function st(e,t,i,a){var n,o=arguments.length,r=o<3?t:a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,a);else for(var s=e.length-1;s>=0;s--)(n=e[s])&&(r=(o<3?n(r):o>3?n(t,i,r):n(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r}const lt=[{name:"entity",required:!0,selector:{entity:{filter:{domain:"sensor",integration:"ladestellen_austria"}}}},{name:"name",selector:{text:{}}},{type:"expandable",name:"display",flatten:!0,schema:[{name:"max_stations",selector:{number:{min:1,max:10,step:1,mode:"slider"}}},{name:"hide_header",selector:{boolean:{}}},{name:"show_hero",selector:{boolean:{}}},{name:"show_pricing",selector:{boolean:{}}},{name:"show_amenities",selector:{boolean:{}}},{name:"sort_by_power",selector:{boolean:{}}},{name:"logo_adapt_to_theme",selector:{boolean:{}}}]},{type:"expandable",name:"filters",flatten:!0,schema:[{name:"only_available",selector:{boolean:{}}},{name:"only_free",selector:{boolean:{}}},{name:"only_open",selector:{boolean:{}}}]}],ct={max_stations:10,hide_header:!1,show_hero:!0,show_pricing:!0,show_amenities:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1};class dt extends re{setConfig(e){const t=e.entity&&this.hass?.states[e.entity]?.attributes.friendly_name;this._config="string"==typeof t?{name:t,...e}:{...e}}_formChanged(e){const t=e.detail.value;t&&(this._config=t,ue(this,"config-changed",{config:t}))}_toggleConnector(e){const t=this._config.connector_types??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:i},ue(this,"config-changed",{config:this._config})}_toggleAmenity(e){const t=this._config.amenities??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,amenities:i},ue(this,"config-changed",{config:this._config})}_togglePayment(e){const t=this._config.payment_methods??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,payment_methods:i},ue(this,"config-changed",{config:this._config})}_togglePin(e){const t=this._config.pinned_station_ids??[],i=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:i},ue(this,"config-changed",{config:this._config})}willUpdate(e){super.willUpdate(e),e.has("hass")&&Me(this.hass?.language)}render(){if(!this._config)return W`<p>${Le("common.loading")}</p>`;const e={...ct,...this._config},t=this._config.connector_types??[],i=this._config.amenities??[],a=this._config.payment_methods??[],n=!!this._config.entity&&!!this.hass&&!this.hass.states[this._config.entity];return W`
+`,dt=[at,ot,st,ct],ft=[at,ot,st,ut];function pt(e){let t=e.electricityType??[];return t.some(e=>e===`DC`||e?.startsWith(`DC`))?`dc`:t.some(e=>e?.startsWith(`AC`))?`ac`:null}function q(e){return(e??``).toUpperCase().replace(/_/g,``)}function mt(e){let t=q(e);return t===`AVAILABLE`?`ok`:t===`CHARGING`||t===`OCCUPIED`||t===`RESERVED`||t===`BLOCKED`?`busy`:t===`OUTOFORDER`||t===`FAULTED`||t===`INOPERATIVE`||t===`UNAVAILABLE`?`warn`:t===`UNKNOWN`?`unknown`:`empty`}function ht(e){if(!e)return``;let t={AVAILABLE:`available`,CHARGING:`charging`,OCCUPIED:`occupied`,RESERVED:`reserved`,BLOCKED:`blocked`,OUTOFORDER:`out_of_order`,FAULTED:`faulted`,INOPERATIVE:`inoperative`,UNAVAILABLE:`unavailable`,OUTOFSTOCK:`out_of_stock`,PLANNED:`planned`,REMOVED:`removed`,UNKNOWN:`unknown`}[q(e)];if(!t)return e;let n=`card.point_status_${t}`,r=W(n);return r===n?e:r}function gt(e){return{AVAILABLE:`free`,CHARGING:`busy`,OCCUPIED:`busy`,RESERVED:`reserved`,BLOCKED:`blocked`,OUTOFORDER:`out_of_order`,FAULTED:`faulted`,INOPERATIVE:`inoperative`,UNAVAILABLE:`unavailable`,OUTOFSTOCK:`out_of_stock`,PLANNED:`planned`,REMOVED:`removed`,UNKNOWN:`unknown`}[q(e)]??`unknown`}function _t(e){switch(q(e)){case`OUTOFORDER`:case`FAULTED`:case`INOPERATIVE`:case`UNAVAILABLE`:return{icon:`mdi:wrench`,tone:`warning`};case`OUTOFSTOCK`:return{icon:`mdi:battery-off-outline`,tone:`warning`,bgTint:`warning`};case`PLANNED`:return{icon:`mdi:progress-wrench`,tone:`info`,bgTint:`info`};case`REMOVED`:return{icon:`mdi:close-circle-outline`,tone:`error`,bgTint:`error`};case`UNKNOWN`:return{icon:`mdi:help-circle-outline`,tone:`muted`};default:return null}}function vt(e){let t=mt(e.status),n=_t(e.status);return{bucket:t,isAvailable:t===`ok`,isBusy:t===`busy`,isWarn:t===`warn`,overlay:n,showCar:t===`busy`&&n===null,showOverlayIcon:n!==null}}function yt(e){if(e==null||!Number.isFinite(e))return`–`;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:0,maximumFractionDigits:1}).format(e)}catch{return String(e).replace(`.`,`,`)}}function J(e){let t=e/100;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}function bt(e){if(!Number.isFinite(e))return`0`;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:0,maximumFractionDigits:2}).format(e)}catch{return String(e).replace(`.`,`,`)}}function xt(e,t){switch(e){case`TYPE_2_AC`:return`Type 2`;case`COMBO2_CCS_DC`:return`CCS`;case`CHADEMO`:return`CHAdeMO`;case`TYPE_1_AC`:return`Type 1`;case`TESLA_S`:case`TESLA_R`:return`Tesla`;case`OTHER`:return t===`DOMESTIC_F`?`Schuko`:t?.startsWith(`CEE`)?`CEE`:t??`?`;default:return e?.replace(/_/g,` `)??t??`?`}}function St(e){let t=(e.connectorType??[])[0];return t?xt(t.consumerName,t.key):`–`}function Ct(e){return typeof e==`string`&&/^https?:\/\//i.test(e)?e:``}function wt(e){let t=e.type===`expandable`?`editor.section_${e.name}`:`editor.${e.name}`,n=W(t);return n===t?e.name:n}function Y(e,t,n,r){var i=arguments.length,a=i<3?t:r===null?r=Object.getOwnPropertyDescriptor(t,n):r,o;if(typeof Reflect==`object`&&typeof Reflect.decorate==`function`)a=Reflect.decorate(e,t,n,r);else for(var s=e.length-1;s>=0;s--)(o=e[s])&&(a=(i<3?o(a):i>3?o(t,n,a):o(t,n))||a);return i>3&&a&&Object.defineProperty(t,n,a),a}const Tt=[{name:`entity`,required:!0,selector:{entity:{filter:{domain:`sensor`,integration:`ladestellen_austria`}}}},{name:`name`,selector:{text:{}}},{type:`expandable`,name:`display`,flatten:!0,schema:[{name:`max_stations`,selector:{number:{min:1,max:10,step:1,mode:`slider`}}},{name:`hide_header`,selector:{boolean:{}}},{name:`show_hero`,selector:{boolean:{}}},{name:`show_pricing`,selector:{boolean:{}}},{name:`show_amenities`,selector:{boolean:{}}},{name:`sort_by_power`,selector:{boolean:{}}},{name:`logo_adapt_to_theme`,selector:{boolean:{}}}]},{type:`expandable`,name:`filters`,flatten:!0,schema:[{name:`only_available`,selector:{boolean:{}}},{name:`only_free`,selector:{boolean:{}}},{name:`only_open`,selector:{boolean:{}}}]}],Et={max_stations:10,hide_header:!1,show_hero:!0,show_pricing:!0,show_amenities:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1};let X=class extends R{constructor(...e){super(...e),this._config={type:`ladestellen-austria-card`}}setConfig(e){let t=e.entity&&this.hass?.states[e.entity]?.attributes.friendly_name;this._config=typeof t==`string`?{name:t,...e}:{...e}}_formChanged(e){let t=e.detail.value;t&&(this._config=t,H(this,`config-changed`,{config:t}))}_toggleConnector(e){let t=this._config.connector_types??[],n=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,connector_types:n},H(this,`config-changed`,{config:this._config})}_toggleAmenity(e){let t=this._config.amenities??[],n=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,amenities:n},H(this,`config-changed`,{config:this._config})}_togglePayment(e){let t=this._config.payment_methods??[],n=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,payment_methods:n},H(this,`config-changed`,{config:this._config})}_togglePin(e){let t=this._config.pinned_station_ids??[],n=t.includes(e)?t.filter(t=>t!==e):[...t,e];this._config={...this._config,pinned_station_ids:n},H(this,`config-changed`,{config:this._config})}willUpdate(e){super.willUpdate(e),e.has(`hass`)&&U(this.hass?.language)}render(){if(!this._config)return M`<p>${W(`common.loading`)}</p>`;let e={...Et,...this._config},t=this._config.connector_types??[],n=this._config.amenities??[],r=this._config.payment_methods??[],i=!!this._config.entity&&!!this.hass&&!this.hass.states[this._config.entity];return M`
       <div class="editor">
-        ${this.hass?W`<ha-form
+        ${this.hass?M`<ha-form
               .hass=${this.hass}
               .data=${e}
-              .schema=${lt}
-              .computeLabel=${rt}
+              .schema=${Tt}
+              .computeLabel=${wt}
               @value-changed=${this._formChanged}
-            ></ha-form>`:B}
-        ${n?W`<ha-alert alert-type="error">
-              ${Le("editor.entity_missing")}
-            </ha-alert>`:B}
+            ></ha-form>`:P}
+        ${i?M`<ha-alert alert-type="error">
+              ${W(`editor.entity_missing`)}
+            </ha-alert>`:P}
 
         <div class="editor-section">
           <div class="section-header">
-            ${Le("editor.section_chip_filters")}
+            ${W(`editor.section_chip_filters`)}
           </div>
           <div class="editor-hint">
-            ${Le("editor.connector_filter_hint")}
+            ${W(`editor.connector_filter_hint`)}
           </div>
           <div class="chip-row">
-            ${ge.map(e=>W`
+            ${je.map(e=>M`
                 <button
                   type="button"
-                  class=${t.includes(e)?"filter-chip active":"filter-chip"}
+                  class=${t.includes(e)?`filter-chip active`:`filter-chip`}
                   @click=${()=>this._toggleConnector(e)}
                 >
                   ${e}
@@ -1946,76 +1988,76 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
           </div>
 
           <div class="editor-hint">
-            ${Le("editor.amenity_filter_hint")}
+            ${W(`editor.amenity_filter_hint`)}
           </div>
           <div class="chip-row">
-            ${me.map(e=>W`
+            ${Me.map(e=>M`
                 <button
                   type="button"
-                  class=${i.includes(e.key)?"filter-chip icon-chip active":"filter-chip icon-chip"}
+                  class=${n.includes(e.key)?`filter-chip icon-chip active`:`filter-chip icon-chip`}
                   @click=${()=>this._toggleAmenity(e.key)}
                 >
                   <ha-icon icon=${e.icon}></ha-icon>
-                  <span>${Le(e.label_key)}</span>
+                  <span>${W(e.label_key)}</span>
                 </button>
               `)}
           </div>
 
           <div class="editor-hint">
-            ${Le("editor.payment_filter_hint")}
+            ${W(`editor.payment_filter_hint`)}
           </div>
           <div class="chip-row">
-            ${fe.map(e=>W`
+            ${Ne.map(e=>M`
                 <button
                   type="button"
-                  class=${a.includes(e.key)?"filter-chip icon-chip active":"filter-chip icon-chip"}
+                  class=${r.includes(e.key)?`filter-chip icon-chip active`:`filter-chip icon-chip`}
                   @click=${()=>this._togglePayment(e.key)}
                 >
                   <ha-icon icon=${e.icon}></ha-icon>
-                  <span>${Le(e.label_key)}</span>
+                  <span>${W(e.label_key)}</span>
                 </button>
               `)}
           </div>
 
-          <div class="editor-hint">${Le("editor.hint_compliance")}</div>
+          <div class="editor-hint">${W(`editor.hint_compliance`)}</div>
         </div>
 
         ${this._renderPinSection()}
       </div>
-    `}_renderPinSection(){const e=this._config.entity,t=e?this.hass?.states[e]:void 0,i=t?.attributes?.stations??[],a=this._config.pinned_station_ids??[],n=new Set(a),o=new Set(i.map(e=>e.stationId)),r=a.filter(e=>!o.has(e)),s=!0===t?.attributes?.dynamic_mode;return W`
+    `}_renderPinSection(){let e=this._config.entity,t=e?this.hass?.states[e]:void 0,n=t?.attributes?.stations??[],r=this._config.pinned_station_ids??[],i=new Set(r),a=new Set(n.map(e=>e.stationId)),o=r.filter(e=>!a.has(e)),s=t?.attributes?.dynamic_mode===!0;return M`
       <div class="editor-section">
-        <div class="section-header">${Le("editor.section_pinned")}</div>
-        <div class="editor-hint">${Le("editor.pin_hint")}</div>
+        <div class="section-header">${W(`editor.section_pinned`)}</div>
+        <div class="editor-hint">${W(`editor.pin_hint`)}</div>
 
-        ${s?W`<div class="editor-hint editor-hint--muted">
-              ${Le("editor.pin_disabled_dynamic")}
-            </div>`:e?0===i.length?W`<div class="editor-hint editor-hint--muted">
-              ${Le("editor.pin_no_stations_yet")}
-            </div>`:W`
+        ${s?M`<div class="editor-hint editor-hint--muted">
+              ${W(`editor.pin_disabled_dynamic`)}
+            </div>`:e?n.length===0?M`<div class="editor-hint editor-hint--muted">
+              ${W(`editor.pin_no_stations_yet`)}
+            </div>`:M`
               <div class="pin-list">
-                ${i.map(e=>{const t=n.has(e.stationId),i="number"==typeof e.distance?`${e.distance.toFixed(2)} km`:"";return W`
+                ${n.map(e=>{let t=i.has(e.stationId),n=typeof e.distance==`number`?`${e.distance.toFixed(2)} km`:``;return M`
                     <button
                       type="button"
-                      class=${t?"pin-row pinned":"pin-row"}
+                      class=${t?`pin-row pinned`:`pin-row`}
                       @click=${()=>this._togglePin(e.stationId)}
                     >
                       <ha-icon
-                        icon=${t?"mdi:pin":"mdi:pin-outline"}
+                        icon=${t?`mdi:pin`:`mdi:pin-outline`}
                       ></ha-icon>
                       <span class="pin-label">${e.label}</span>
-                      <span class="pin-meta">${i}</span>
+                      <span class="pin-meta">${n}</span>
                     </button>
                   `})}
               </div>
-            `:W`<div class="editor-hint editor-hint--muted">
-              ${Le("editor.pin_select_sensor_first")}
+            `:M`<div class="editor-hint editor-hint--muted">
+              ${W(`editor.pin_select_sensor_first`)}
             </div>`}
-        ${!s&&r.length>0?W`
+        ${!s&&o.length>0?M`
               <div class="editor-hint editor-hint--muted">
-                ${Le("editor.pin_orphans_heading")}
+                ${W(`editor.pin_orphans_heading`)}
               </div>
               <div class="pin-list">
-                ${r.map(e=>W`
+                ${o.map(e=>M`
                     <button
                       type="button"
                       class="pin-row pinned orphan"
@@ -2024,218 +2066,14 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
                       <ha-icon icon="mdi:pin"></ha-icon>
                       <span class="pin-label orphan-id">${e}</span>
                       <span class="pin-meta">
-                        ${Le("editor.pin_unpin")}
+                        ${W(`editor.pin_unpin`)}
                       </span>
                     </button>
                   `)}
               </div>
-            `:B}
+            `:P}
       </div>
-    `}static{this.styles=Ge}constructor(...e){super(...e),this._config={type:"ladestellen-austria-card"}}}function ht(e,t,i,a){var n,o=arguments.length,r=o<3?t:a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,a);else for(var s=e.length-1;s>=0;s--)(n=e[s])&&(r=(o<3?n(r):o>3?n(t,i,r):n(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r}st([he({attribute:!1})],dt.prototype,"hass",void 0),st([pe()],dt.prototype,"_config",void 0),dt=st([le("ladestellen-austria-card-editor")],dt);const pt={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:"random",asphalt_style:"default",paint_width:"medium",icon_paint_mode:"default"},ut=[{name:"entity",required:!0,selector:{entity:{filter:{domain:"sensor",integration:"ladestellen_austria"}}}},{name:"name",selector:{text:{}}}];class gt extends re{setConfig(e){this._config={...e}}_formChanged(e){const t=e.detail.value;t&&(this._config=t,ue(this,"config-changed",{config:t}))}_appearanceSchema(){const e=this.hass?.language??"";return this._appearanceSchemaCache?.lang!==e&&(this._appearanceSchemaCache={lang:e,schema:[{type:"expandable",name:"appearance",flatten:!0,schema:[{name:"hide_header",selector:{boolean:{}}},{name:"show_free_count",selector:{boolean:{}}},{name:"logo_adapt_to_theme",selector:{boolean:{}}},{name:"car_color_mode",selector:{select:{mode:"dropdown",options:[{value:"random",label:Le("editor.car_color_random")},{value:"theme",label:Le("editor.car_color_theme")},{value:"fixed",label:Le("editor.car_color_fixed")}]}}},{name:"asphalt_style",selector:{select:{mode:"dropdown",options:[{value:"default",label:Le("editor.asphalt_style_default")},{value:"textured",label:Le("editor.asphalt_style_textured")}]}}},{name:"paint_width",selector:{select:{mode:"dropdown",options:[{value:"thin",label:Le("editor.paint_width_thin")},{value:"medium",label:Le("editor.paint_width_medium")},{value:"wide",label:Le("editor.paint_width_wide")}]}}},{name:"icon_paint_mode",selector:{select:{mode:"dropdown",options:[{value:"default",label:Le("editor.icon_paint_default")},{value:"white",label:Le("editor.icon_paint_white")}]}}}]}]}),this._appearanceSchemaCache.schema}_selectStation(e){const t=this._config.station_id===e?"":e;this._config={...this._config,station_id:t},ue(this,"config-changed",{config:this._config})}_carColorFixedChanged(e){const t=e.target;if(!t)return;const i=t.value;this._config.car_color_fixed!==i&&(this._config={...this._config,car_color_fixed:i},ue(this,"config-changed",{config:this._config}))}willUpdate(e){super.willUpdate(e),e.has("hass")&&Me(this.hass?.language)}render(){if(!this._config)return W`<p>${Le("common.loading")}</p>`;const e=this._config.entity,t=e?this.hass?.states[e]:void 0,i=t?.attributes?.stations??[],a=this._config.station_id??"",n={...pt,...this._config},o=!!e&&!!this.hass&&!this.hass.states[e];return W`
-      <div class="editor">
-        ${this.hass?W`<ha-form
-              .hass=${this.hass}
-              .data=${n}
-              .schema=${ut}
-              .computeLabel=${rt}
-              @value-changed=${this._formChanged}
-            ></ha-form>`:B}
-        ${o?W`<ha-alert alert-type="error">
-              ${Le("editor.entity_missing")}
-            </ha-alert>`:B}
-
-        <div class="editor-section">
-          <div class="section-header">
-            ${Le("parking.editor_station_heading")}
-          </div>
-          <div class="editor-hint">
-            ${Le("parking.pick_station_hint")}
-          </div>
-          ${e?0===i.length?W`<div class="editor-hint editor-hint--muted">
-                ${Le("editor.pin_no_stations_yet")}
-              </div>`:W`
-                <div class="pin-list">
-                  ${i.map(e=>{const t=e.stationId===a,i="number"==typeof e.distance?`${e.distance.toFixed(2)} km`:"";return W`
-                      <button
-                        type="button"
-                        class=${t?"pin-row pinned":"pin-row"}
-                        @click=${()=>this._selectStation(e.stationId)}
-                      >
-                        <ha-icon
-                          icon=${t?"mdi:radiobox-marked":"mdi:radiobox-blank"}
-                        ></ha-icon>
-                        <span class="pin-label">${e.label}</span>
-                        <span class="pin-meta">${i}</span>
-                      </button>
-                    `})}
-                </div>
-              `:W`<div class="editor-hint editor-hint--muted">
-                ${Le("editor.pin_select_sensor_first")}
-              </div>`}
-          ${a&&!i.some(e=>e.stationId===a)?W`<div class="editor-hint editor-hint--muted">
-                ${Le("parking.station_not_in_range")}: ${a}
-              </div>`:B}
-        </div>
-
-        ${this.hass?W`<ha-form
-              .hass=${this.hass}
-              .data=${n}
-              .schema=${this._appearanceSchema()}
-              .computeLabel=${rt}
-              @value-changed=${this._formChanged}
-            ></ha-form>`:B}
-
-        ${"fixed"===this._config.car_color_mode?W`<div class="editor-section">
-              <div class="section-header">
-                ${Le("editor.car_color_pick")}
-              </div>
-              <div class="toggle-row">
-                <span>${Le("editor.car_color_pick")}</span>
-                <label
-                  class="color-swatch"
-                  style=${`--swatch-color: ${this._config.car_color_fixed||"#1d4ed8"};`}
-                >
-                  <ha-icon
-                    icon="mdi:palette-swatch-variant"
-                    aria-hidden="true"
-                  ></ha-icon>
-                  <span class="color-swatch-hex"
-                    >${(this._config.car_color_fixed||"#1d4ed8").toUpperCase()}</span
-                  >
-                  <input
-                    type="color"
-                    class="color-swatch-input"
-                    .value=${this._config.car_color_fixed||"#1d4ed8"}
-                    aria-label=${Le("editor.car_color_pick")}
-                    @input=${this._carColorFixedChanged}
-                    @change=${this._carColorFixedChanged}
-                  />
-                </label>
-              </div>
-            </div>`:B}
-
-        <div class="editor-section">
-          <div class="editor-hint">${Le("editor.hint_compliance")}</div>
-        </div>
-      </div>
-    `}static{this.styles=Ge}constructor(...e){super(...e),this._config={type:"ladestellen-austria-parking-card"}}}function mt(e,t,i,a){var n,o=arguments.length,r=o<3?t:a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,a);else for(var s=e.length-1;s>=0;s--)(n=e[s])&&(r=(o<3?n(r):o>3?n(t,i,r):n(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r}ht([he({attribute:!1})],gt.prototype,"hass",void 0),ht([pe()],gt.prototype,"_config",void 0),gt=ht([le("ladestellen-austria-parking-card-editor")],gt),window.customCards=window.customCards??[],window.customCards.push({type:"ladestellen-austria-parking-card",name:"Ladestellen Austria — Parking",description:"Single station, points rendered as parking slots viewed from above.",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria",getEntitySuggestion:(e,t)=>t.startsWith("sensor.")?"ladestellen_austria"!==e?.entities?.[t]?.platform?null:{config:{type:"custom:ladestellen-austria-parking-card",entity:t}}:null});class ft extends re{static getConfigElement(){return document.createElement("ladestellen-austria-parking-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??"",station_id:""}}setConfig(e){if(!e||"object"!=typeof e)throw new Error(Le("common.invalid_configuration"));if(void 0!==e.entity&&"string"!=typeof e.entity)throw new Error(Le("common.invalid_entity"));if(void 0!==e.station_id&&"string"!=typeof e.station_id)throw new Error(Le("common.invalid_station_id"));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:"random",asphalt_style:"default",paint_width:"medium",icon_paint_mode:"default",...e}}shouldUpdate(e){if(e.has("config")||e.has("_revealedSlots")||e.has("_versionMismatch"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:"auto",min_columns:4,min_rows:3}}willUpdate(e){super.willUpdate(e),e.has("hass")&&Me(this.hass?.language)}firstUpdated(e){this._maybeRunVersionCheck()}updated(e){super.updated(e),e.has("hass")&&this._maybeRunVersionCheck()}_maybeRunVersionCheck(){!this._versionCheckDone&&this.hass&&(this._versionCheckDone=!0,Ne(this.hass).then(e=>{this.isConnected&&e&&(this._versionMismatch=e)}))}render(){if(!this.hass||!this.config)return W`<ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            data-asphalt-style=${this.config?.asphalt_style??"default"}
-            data-paint-width=${this.config?.paint_width??"medium"}
-            data-icon-paint=${this.config?.icon_paint_mode??"default"}
-          >
-            ${Ue(this._versionMismatch)}
-            <div class="empty-state">${Le("common.loading")}</div>
-          </div>
-        </div>
-      </ha-card>`;const e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return W`<ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            data-asphalt-style=${this.config.asphalt_style??"default"}
-            data-paint-width=${this.config.paint_width??"medium"}
-            data-icon-paint=${this.config.icon_paint_mode??"default"}
-          >
-            ${Ue(this._versionMismatch)}
-            <div class="empty-state">${Le("card.no_entity")}</div>
-          </div>
-          ${Fe(this.hass,void 0,!0===this.config?.logo_adapt_to_theme)}
-        </div>
-      </ha-card>`;const t=e.attributes.stations??[],i=this.config.station_id??"",a=t.find(e=>e.stationId===i),n=this.config.name;if(!i||!a)return W`<ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            data-asphalt-style=${this.config.asphalt_style??"default"}
-            data-paint-width=${this.config.paint_width??"medium"}
-            data-icon-paint=${this.config.icon_paint_mode??"default"}
-          >
-            ${Ue(this._versionMismatch)}
-            ${n&&!this.config.hide_header?W`<header class="header">
-                  <div class="icon-tile" aria-hidden="true">
-                    <ha-icon icon="mdi:ev-station"></ha-icon>
-                  </div>
-                  <div class="header-text">
-                    <h3 class="title">${n}</h3>
-                  </div>
-                </header>`:B}
-            <div class="empty-state">
-              ${Le(i?"parking.station_not_found":"parking.no_station_selected")}
-            </div>
-          </div>
-          ${Fe(this.hass,e.attributes.attribution,!0===this.config.logo_adapt_to_theme)}
-        </div>
-      </ha-card>`;const o=a.points??[],r=o.filter(e=>"ok"===Je(e.status)).length,s=o.length,l=Le("parking.available_count").replaceAll("{avail}",String(r)).replaceAll("{total}",String(s)),c=n??a.label,d=n?a.label:"";return W`
-      <ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            style="--lade-accent: var(--primary-color);"
-            data-asphalt-style=${this.config.asphalt_style??"default"}
-            data-paint-width=${this.config.paint_width??"medium"}
-            data-icon-paint=${this.config.icon_paint_mode??"default"}
-          >
-            ${Ue(this._versionMismatch)}
-            ${this.config.hide_header?B:W`<header class="header">
-                  <div class="icon-tile" aria-hidden="true">
-                    <ha-icon icon="mdi:ev-station"></ha-icon>
-                  </div>
-                  <div class="header-text">
-                    <h3 class="title">${c}</h3>
-                    ${d?W`<p class="subtitle">${d}</p>`:B}
-                  </div>
-                  ${!1!==this.config.show_free_count?W`<div
-                        class=${r>0?"header-count has-free":"header-count"}
-                        aria-label=${l}
-                      >
-                        <div class="header-count-value">
-                          <span
-                            class="header-count-num"
-                            role="status"
-                            aria-live="polite"
-                            >${r}</span
-                          >
-                          <span class="header-count-of">/ ${s}</span>
-                        </div>
-                        <div class="header-count-label">
-                          ${Le("parking.slot_status_free")}
-                        </div>
-                      </div>`:B}
-                </header>`}
-            ${0===o.length?W`<div class="empty-state">
-                  ${Le("parking.no_points")}
-                </div>`:W`<div class="rack-block">
-                  <div
-                    class="parking-lot"
-                    role="list"
-                    aria-label=${l}
-                  >
-                    ${o.map(e=>this._renderSlot(e))}
-                  </div>
-                </div>`}
-          </div>
-          ${Fe(this.hass,e.attributes.attribution,!0===this.config.logo_adapt_to_theme)}
-        </div>
-      </ha-card>
-    `}_renderSlot(e){const t=Qe(e),{bucket:i,isAvailable:a,isBusy:n,isWarn:o,overlay:r,showCar:s,showOverlayIcon:l}=t,c=Ke(e),d=nt(e),h=et(e.capacityKw),p=Xe(e.status),u=this._slotStatusBucket(i),g={AVAILABLE:"free",CHARGING:"busy",OCCUPIED:"busy",RESERVED:"reserved",BLOCKED:"blocked",OUTOFORDER:"out_of_order",FAULTED:"faulted",INOPERATIVE:"inoperative",UNAVAILABLE:"unavailable",OUTOFSTOCK:"out_of_stock",PLANNED:"planned",REMOVED:"removed",UNKNOWN:"unknown"}[qe(e.status)]??"unknown";const m=s||l,f=m&&this._revealedSlots.has(e.evseId),v=a?"is-available":n?"is-busy":o?"is-warn":"is-unknown",_=[c?c.toUpperCase():null,e.capacityKw?`${h} kW`:null,d&&"–"!==d?d:null,p].filter(Boolean).join(" · "),b=s?this._carColor(e.evseId):null,y=["parking-slot",v,m?"has-overlay":"",s?"has-car":"",l?"has-icon":"",r?.bgTint?`slot-tint-${r.bgTint}`:"",f?"is-revealed":""].filter(Boolean).join(" ");return W`
-      <button
-        type="button"
-        class=${y}
-        data-status=${i}
-        role="listitem"
-        tabindex=${m?"0":"-1"}
-        aria-label=${_}
-        aria-pressed=${m?f?"true":"false":B}
-        title=${`${e.evseId??""} · ${p}`.trim()}
-        @click=${t=>{t.preventDefault(),m&&this._toggleSlot(e.evseId)}}
-      >
-        ${s&&b?W`<span
-              class="slot-car"
-              aria-hidden="true"
-              style=${`--slot-car-color: ${b};`}
-            >
-              ${W`
+    `}static{this.styles=lt}};Y([B({attribute:!1})],X.prototype,`hass`,void 0),Y([V()],X.prototype,`_config`,void 0),X=Y([z(`ladestellen-austria-card-editor`)],X);function Dt(){return M`
     <svg
       viewBox="0 0 50 90"
       preserveAspectRatio="xMidYMid meet"
@@ -2284,81 +2122,285 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
         style="fill: var(--slot-car-color);"
       />
     </svg>
-  `}
-            </span>`:B}
-        ${r?W`<span
-              class="slot-overlay-icon tone-${r.tone}"
+  `}const Ot={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`},kt=[{name:`entity`,required:!0,selector:{entity:{filter:{domain:`sensor`,integration:`ladestellen_austria`}}}},{name:`name`,selector:{text:{}}}];function At(){return[{type:`expandable`,name:`appearance`,flatten:!0,schema:[{name:`hide_header`,selector:{boolean:{}}},{name:`show_free_count`,selector:{boolean:{}}},{name:`logo_adapt_to_theme`,selector:{boolean:{}}},{name:`car_color_mode`,selector:{select:{mode:`dropdown`,options:[{value:`random`,label:W(`editor.car_color_random`)},{value:`theme`,label:W(`editor.car_color_theme`)},{value:`fixed`,label:W(`editor.car_color_fixed`)}]}}},{name:`asphalt_style`,selector:{select:{mode:`dropdown`,options:[{value:`default`,label:W(`editor.asphalt_style_default`)},{value:`textured`,label:W(`editor.asphalt_style_textured`)}]}}},{name:`paint_width`,selector:{select:{mode:`dropdown`,options:[{value:`thin`,label:W(`editor.paint_width_thin`)},{value:`medium`,label:W(`editor.paint_width_medium`)},{value:`wide`,label:W(`editor.paint_width_wide`)}]}}},{name:`icon_paint_mode`,selector:{select:{mode:`dropdown`,options:[{value:`default`,label:W(`editor.icon_paint_default`)},{value:`white`,label:W(`editor.icon_paint_white`)}]}}}]}]}let Z=class extends R{constructor(...e){super(...e),this._config={type:`ladestellen-austria-parking-card`}}setConfig(e){this._config={...e}}_formChanged(e){let t=e.detail.value;t&&(this._config=t,H(this,`config-changed`,{config:t}))}_appearanceSchema(){let e=this.hass?.language??``;return this._appearanceSchemaCache?.lang!==e&&(this._appearanceSchemaCache={lang:e,schema:At()}),this._appearanceSchemaCache.schema}_selectStation(e){let t=this._config.station_id===e?``:e;this._config={...this._config,station_id:t},H(this,`config-changed`,{config:this._config})}_carColorFixedChanged(e){let t=e.target;if(!t)return;let n=t.value;this._config.car_color_fixed!==n&&(this._config={...this._config,car_color_fixed:n},H(this,`config-changed`,{config:this._config}))}willUpdate(e){super.willUpdate(e),e.has(`hass`)&&U(this.hass?.language)}render(){if(!this._config)return M`<p>${W(`common.loading`)}</p>`;let e=this._config.entity,t=(e?this.hass?.states[e]:void 0)?.attributes?.stations??[],n=this._config.station_id??``,r={...Ot,...this._config},i=!!e&&!!this.hass&&!this.hass.states[e];return M`
+      <div class="editor">
+        ${this.hass?M`<ha-form
+              .hass=${this.hass}
+              .data=${r}
+              .schema=${kt}
+              .computeLabel=${wt}
+              @value-changed=${this._formChanged}
+            ></ha-form>`:P}
+        ${i?M`<ha-alert alert-type="error">
+              ${W(`editor.entity_missing`)}
+            </ha-alert>`:P}
+
+        <div class="editor-section">
+          <div class="section-header">
+            ${W(`parking.editor_station_heading`)}
+          </div>
+          <div class="editor-hint">
+            ${W(`parking.pick_station_hint`)}
+          </div>
+          ${e?t.length===0?M`<div class="editor-hint editor-hint--muted">
+                ${W(`editor.pin_no_stations_yet`)}
+              </div>`:M`
+                <div class="pin-list">
+                  ${t.map(e=>{let t=e.stationId===n,r=typeof e.distance==`number`?`${e.distance.toFixed(2)} km`:``;return M`
+                      <button
+                        type="button"
+                        class=${t?`pin-row pinned`:`pin-row`}
+                        @click=${()=>this._selectStation(e.stationId)}
+                      >
+                        <ha-icon
+                          icon=${t?`mdi:radiobox-marked`:`mdi:radiobox-blank`}
+                        ></ha-icon>
+                        <span class="pin-label">${e.label}</span>
+                        <span class="pin-meta">${r}</span>
+                      </button>
+                    `})}
+                </div>
+              `:M`<div class="editor-hint editor-hint--muted">
+                ${W(`editor.pin_select_sensor_first`)}
+              </div>`}
+          ${n&&!t.some(e=>e.stationId===n)?M`<div class="editor-hint editor-hint--muted">
+                ${W(`parking.station_not_in_range`)}: ${n}
+              </div>`:P}
+        </div>
+
+        ${this.hass?M`<ha-form
+              .hass=${this.hass}
+              .data=${r}
+              .schema=${this._appearanceSchema()}
+              .computeLabel=${wt}
+              @value-changed=${this._formChanged}
+            ></ha-form>`:P}
+
+        ${this._config.car_color_mode===`fixed`?M`<div class="editor-section">
+              <div class="section-header">
+                ${W(`editor.car_color_pick`)}
+              </div>
+              <div class="toggle-row">
+                <span>${W(`editor.car_color_pick`)}</span>
+                <label
+                  class="color-swatch"
+                  style=${`--swatch-color: ${this._config.car_color_fixed||`#1d4ed8`};`}
+                >
+                  <ha-icon
+                    icon="mdi:palette-swatch-variant"
+                    aria-hidden="true"
+                  ></ha-icon>
+                  <span class="color-swatch-hex"
+                    >${(this._config.car_color_fixed||`#1d4ed8`).toUpperCase()}</span
+                  >
+                  <input
+                    type="color"
+                    class="color-swatch-input"
+                    .value=${this._config.car_color_fixed||`#1d4ed8`}
+                    aria-label=${W(`editor.car_color_pick`)}
+                    @input=${this._carColorFixedChanged}
+                    @change=${this._carColorFixedChanged}
+                  />
+                </label>
+              </div>
+            </div>`:P}
+
+        <div class="editor-section">
+          <div class="editor-hint">${W(`editor.hint_compliance`)}</div>
+        </div>
+      </div>
+    `}static{this.styles=lt}};Y([B({attribute:!1})],Z.prototype,`hass`,void 0),Y([V()],Z.prototype,`_config`,void 0),Z=Y([z(`ladestellen-austria-parking-card-editor`)],Z),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-parking-card`,name:`Ladestellen Austria — Parking`,description:`Single station, points rendered as parking slots viewed from above.`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:(e,t)=>!t.startsWith(`sensor.`)||e?.entities?.[t]?.platform!==`ladestellen_austria`?null:{config:{type:`custom:ladestellen-austria-parking-card`,entity:t}}});let Q=class extends R{constructor(...e){super(...e),this._revealedSlots=new Set,this._versionMismatch=null,this._versionCheckDone=!1}static getConfigElement(){return document.createElement(`ladestellen-austria-parking-card-editor`)}static getStubConfig(e,t){return{entity:t.find(e=>e.startsWith(`sensor.`)&&e.includes(`ladestelle`))??``,station_id:``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));if(e.station_id!==void 0&&typeof e.station_id!=`string`)throw Error(W(`common.invalid_station_id`));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`,...e}}shouldUpdate(e){if(e.has(`config`)||e.has(`_revealedSlots`)||e.has(`_versionMismatch`))return!0;let t=e.get(`hass`);return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:`auto`,min_columns:4,min_rows:3}}willUpdate(e){super.willUpdate(e),e.has(`hass`)&&U(this.hass?.language)}firstUpdated(e){this._maybeRunVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._maybeRunVersionCheck()}_maybeRunVersionCheck(){!this._versionCheckDone&&this.hass&&(this._versionCheckDone=!0,nt(this.hass).then(e=>{this.isConnected&&e&&(this._versionMismatch=e)}))}render(){if(!this.hass||!this.config)return M`<ha-card>
+        <div class="card-content">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config?.asphalt_style??`default`}
+            data-paint-width=${this.config?.paint_width??`medium`}
+            data-icon-paint=${this.config?.icon_paint_mode??`default`}
+          >
+            ${G(this._versionMismatch)}
+            <div class="empty-state">${W(`common.loading`)}</div>
+          </div>
+        </div>
+      </ha-card>`;let e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return M`<ha-card>
+        <div class="card-content">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config.asphalt_style??`default`}
+            data-paint-width=${this.config.paint_width??`medium`}
+            data-icon-paint=${this.config.icon_paint_mode??`default`}
+          >
+            ${G(this._versionMismatch)}
+            <div class="empty-state">${W(`card.no_entity`)}</div>
+          </div>
+          ${K(this.hass,void 0,this.config?.logo_adapt_to_theme===!0)}
+        </div>
+      </ha-card>`;let t=e.attributes.stations??[],n=this.config.station_id??``,r=t.find(e=>e.stationId===n),i=this.config.name;if(!n||!r)return M`<ha-card>
+        <div class="card-content">
+          <div
+            class="wrap"
+            data-asphalt-style=${this.config.asphalt_style??`default`}
+            data-paint-width=${this.config.paint_width??`medium`}
+            data-icon-paint=${this.config.icon_paint_mode??`default`}
+          >
+            ${G(this._versionMismatch)}
+            ${i&&!this.config.hide_header?M`<header class="header">
+                  <div class="icon-tile" aria-hidden="true">
+                    <ha-icon icon="mdi:ev-station"></ha-icon>
+                  </div>
+                  <div class="header-text">
+                    <h3 class="title">${i}</h3>
+                  </div>
+                </header>`:P}
+            <div class="empty-state">
+              ${W(n?`parking.station_not_found`:`parking.no_station_selected`)}
+            </div>
+          </div>
+          ${K(this.hass,e.attributes.attribution,this.config.logo_adapt_to_theme===!0)}
+        </div>
+      </ha-card>`;let a=r.points??[],o=a.filter(e=>mt(e.status)===`ok`).length,s=a.length,c=W(`parking.available_count`).replaceAll(`{avail}`,String(o)).replaceAll(`{total}`,String(s)),l=i??r.label,u=i?r.label:``;return M`
+      <ha-card>
+        <div class="card-content">
+          <div
+            class="wrap"
+            style="--lade-accent: var(--primary-color);"
+            data-asphalt-style=${this.config.asphalt_style??`default`}
+            data-paint-width=${this.config.paint_width??`medium`}
+            data-icon-paint=${this.config.icon_paint_mode??`default`}
+          >
+            ${G(this._versionMismatch)}
+            ${this.config.hide_header?P:M`<header class="header">
+                  <div class="icon-tile" aria-hidden="true">
+                    <ha-icon icon="mdi:ev-station"></ha-icon>
+                  </div>
+                  <div class="header-text">
+                    <h3 class="title">${l}</h3>
+                    ${u?M`<p class="subtitle">${u}</p>`:P}
+                  </div>
+                  ${this.config.show_free_count===!1?P:M`<div
+                        class=${o>0?`header-count has-free`:`header-count`}
+                        aria-label=${c}
+                      >
+                        <div class="header-count-value">
+                          <span
+                            class="header-count-num"
+                            role="status"
+                            aria-live="polite"
+                            >${o}</span
+                          >
+                          <span class="header-count-of">/ ${s}</span>
+                        </div>
+                        <div class="header-count-label">
+                          ${W(`parking.slot_status_free`)}
+                        </div>
+                      </div>`}
+                </header>`}
+            ${a.length===0?M`<div class="empty-state">
+                  ${W(`parking.no_points`)}
+                </div>`:M`<div class="rack-block">
+                  <div
+                    class="parking-lot"
+                    role="list"
+                    aria-label=${c}
+                  >
+                    ${a.map(e=>this._renderSlot(e))}
+                  </div>
+                </div>`}
+          </div>
+          ${K(this.hass,e.attributes.attribution,this.config.logo_adapt_to_theme===!0)}
+        </div>
+      </ha-card>
+    `}_renderSlot(e){let{bucket:t,isAvailable:n,isBusy:r,isWarn:i,overlay:a,showCar:o,showOverlayIcon:s}=vt(e),c=pt(e),l=St(e),u=yt(e.capacityKw),d=ht(e.status),f=this._slotStatusBucket(t),p=gt(e.status),m=o||s,h=m&&this._revealedSlots.has(e.evseId),g=n?`is-available`:r?`is-busy`:i?`is-warn`:`is-unknown`,_=[c?c.toUpperCase():null,e.capacityKw?`${u} kW`:null,l&&l!==`–`?l:null,d].filter(Boolean).join(` · `),v=o?this._carColor(e.evseId):null,y=[`parking-slot`,g,m?`has-overlay`:``,o?`has-car`:``,s?`has-icon`:``,a?.bgTint?`slot-tint-${a.bgTint}`:``,h?`is-revealed`:``].filter(Boolean).join(` `);return M`
+      <button
+        type="button"
+        class=${y}
+        data-status=${t}
+        role="listitem"
+        tabindex=${m?`0`:`-1`}
+        aria-label=${_}
+        aria-pressed=${m?h?`true`:`false`:P}
+        title=${`${e.evseId??``} · ${d}`.trim()}
+        @click=${t=>{t.preventDefault(),m&&this._toggleSlot(e.evseId)}}
+      >
+        ${o&&v?M`<span
+              class="slot-car"
+              aria-hidden="true"
+              style=${`--slot-car-color: ${v};`}
+            >
+              ${Dt()}
+            </span>`:P}
+        ${a?M`<span
+              class="slot-overlay-icon tone-${a.tone}"
               aria-hidden="true"
             >
-              <ha-icon icon=${r.icon}></ha-icon>
-            </span>`:B}
+              <ha-icon icon=${a.icon}></ha-icon>
+            </span>`:P}
         <span class="slot-inner">
-          ${c?W`<span
+          ${c?M`<span
                 class="slot-power-badge"
                 data-type=${c}
                 >${c.toUpperCase()}</span
-              >`:B}
+              >`:P}
           <span class="slot-kw">
-            <span class="slot-kw-num">${h}</span
+            <span class="slot-kw-num">${u}</span
             ><span class="slot-kw-unit">kW</span>
           </span>
-          <span class="slot-connector">${d}</span>
-          <span class="slot-status-word slot-status-${u}"
-            >${this._slotStatusWord(g,p)}</span
+          <span class="slot-connector">${l}</span>
+          <span class="slot-status-word slot-status-${f}"
+            >${this._slotStatusWord(p,d)}</span
           >
         </span>
       </button>
-    `}_slotStatusBucket(e){switch(e){case"ok":return"free";case"busy":return"busy";case"warn":return"warn";default:return"unknown"}}_slotStatusWord(e,t){const i=`parking.slot_status_${e}`,a=Le(i);return a===i?t:a}_toggleSlot(e){if(!e)return;const t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){const t=this.config?.car_color_mode??"random";if("theme"===t)return"var(--primary-color)";if("fixed"===t)return this.config?.car_color_fixed||"var(--primary-color)";const i=["#e63946","#1d4ed8","#15803d","#facc15","#fb923c","#ec4899","#0e7490","#6b21a8","#1f2937","#e5e7eb"],a=e??"";let n=0;for(let e=0;e<a.length;e++)n=31*n+a.charCodeAt(e)>>>0;return i[n%i.length]??"#1f2937"}static{this.styles=Ye}constructor(...e){super(...e),this._revealedSlots=new Set,this._versionMismatch=null,this._versionCheckDone=!1}}function vt(e,t,i,a){var n,o=arguments.length,r=o<3?t:a;if("object"==typeof Reflect&&"function"==typeof Reflect.decorate)r=Reflect.decorate(e,t,i,a);else for(var s=e.length-1;s>=0;s--)(n=e[s])&&(r=(o<3?n(r):o>3?n(t,i,r):n(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r}mt([he({attribute:!1})],ft.prototype,"hass",void 0),mt([pe()],ft.prototype,"config",void 0),mt([pe()],ft.prototype,"_revealedSlots",void 0),mt([pe()],ft.prototype,"_versionMismatch",void 0),ft=mt([le("ladestellen-austria-parking-card")],ft),window.customCards=window.customCards??[],window.customCards.push({type:"ladestellen-austria-card",name:"Ladestellen Austria",description:"Nearby EV charging stations, powered by E-Control Austria",preview:!0,documentationURL:"https://github.com/rolandzeiner/ladestellen-austria",getEntitySuggestion:(e,t)=>t.startsWith("sensor.")?"ladestellen_austria"!==e?.entities?.[t]?.platform?null:{config:{type:"custom:ladestellen-austria-card",entity:t}}:null});const _t={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},bt={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};class yt extends re{static getConfigElement(){return document.createElement("ladestellen-austria-card-editor")}static getStubConfig(e,t){const i=t.find(e=>e.startsWith("sensor.")&&e.includes("ladestelle"));return{entity:i??""}}setConfig(e){if(!e||"object"!=typeof e)throw new Error(Le("common.invalid_configuration"));if(void 0!==e.entity&&"string"!=typeof e.entity)throw new Error(Le("common.invalid_entity"));this.config={name:"Ladestellen Austria",max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(e.has("config")||e.has("_expanded")||e.has("_versionMismatch"))return!0;const t=e.get("hass");return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){const e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:"auto",min_columns:6,min_rows:3}}willUpdate(e){super.willUpdate(e),e.has("hass")&&Me(this.hass?.language)}firstUpdated(e){this._maybeRunVersionCheck()}updated(e){super.updated(e),e.has("hass")&&this._maybeRunVersionCheck()}_maybeRunVersionCheck(){!this._versionCheckDone&&this.hass&&(this._versionCheckDone=!0,Ne(this.hass).then(e=>{this.isConnected&&e&&(this._versionMismatch=e)}))}render(){if(!this.config||!this.hass)return W`<ha-card>
+    `}_slotStatusBucket(e){switch(e){case`ok`:return`free`;case`busy`:return`busy`;case`warn`:return`warn`;case`unknown`:return`unknown`;default:return`unknown`}}_slotStatusWord(e,t){let n=`parking.slot_status_${e}`,r=W(n);return r===n?t:r}_toggleSlot(e){if(!e)return;let t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){let t=this.config?.car_color_mode??`random`;if(t===`theme`)return`var(--primary-color)`;if(t===`fixed`)return this.config?.car_color_fixed||`var(--primary-color)`;let n=[`#e63946`,`#1d4ed8`,`#15803d`,`#facc15`,`#fb923c`,`#ec4899`,`#0e7490`,`#6b21a8`,`#1f2937`,`#e5e7eb`],r=e??``,i=0;for(let e=0;e<r.length;e++)i=i*31+r.charCodeAt(e)>>>0;return n[i%n.length]??`#1f2937`}static{this.styles=ft}};Y([B({attribute:!1})],Q.prototype,`hass`,void 0),Y([V()],Q.prototype,`config`,void 0),Y([V()],Q.prototype,`_revealedSlots`,void 0),Y([V()],Q.prototype,`_versionMismatch`,void 0),Q=Y([z(`ladestellen-austria-parking-card`)],Q),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-card`,name:`Ladestellen Austria`,description:`Nearby EV charging stations, powered by E-Control Austria`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:(e,t)=>!t.startsWith(`sensor.`)||e?.entities?.[t]?.platform!==`ladestellen_austria`?null:{config:{type:`custom:ladestellen-austria-card`,entity:t}}});const jt={MONDAY:0,TUESDAY:1,WEDNESDAY:2,THURSDAY:3,FRIDAY:4,SATURDAY:5,SUNDAY:6},Mt={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};let $=class extends R{constructor(...e){super(...e),this._expanded=new Set,this._versionMismatch=null,this._versionCheckDone=!1}static getConfigElement(){return document.createElement(`ladestellen-austria-card-editor`)}static getStubConfig(e,t){return{entity:t.find(e=>e.startsWith(`sensor.`)&&e.includes(`ladestelle`))??``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));this.config={name:`Ladestellen Austria`,max_stations:10,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){if(e.has(`config`)||e.has(`_expanded`)||e.has(`_versionMismatch`))return!0;let t=e.get(`hass`);return!t||!this.config.entity||t.states[this.config.entity]!==this.hass.states[this.config.entity]}getCardSize(){let e=this.config?.max_stations??10;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:`auto`,min_columns:6,min_rows:3}}willUpdate(e){super.willUpdate(e),e.has(`hass`)&&U(this.hass?.language)}firstUpdated(e){this._maybeRunVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._maybeRunVersionCheck()}_maybeRunVersionCheck(){!this._versionCheckDone&&this.hass&&(this._versionCheckDone=!0,nt(this.hass).then(e=>{this.isConnected&&e&&(this._versionMismatch=e)}))}render(){if(!this.config||!this.hass)return M`<ha-card>
         <div class="card-content">
           <div class="wrap">
-            <div class="empty-state">${Le("common.loading")}</div>
+            <div class="empty-state">${W(`common.loading`)}</div>
           </div>
         </div>
-      </ha-card>`;const e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return W`
+      </ha-card>`;let e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return M`
         <ha-card>
           <div class="card-content">
             <div class="wrap">
-              <div class="empty-state">${Le("card.no_entity")}</div>
+              <div class="empty-state">${W(`card.no_entity`)}</div>
             </div>
-            ${Fe(this.hass,void 0,!0===this.config?.logo_adapt_to_theme)}
+            ${K(this.hass,void 0,this.config?.logo_adapt_to_theme===!0)}
           </div>
         </ha-card>
-      `;const t=e.attributes.stations??[],i=!0===e.attributes.live_status_available,a=!0===e.attributes.dynamic_mode,n=e.attributes.dynamic_entity??null,o=a?[]:this.config.pinned_station_ids??[],r=this._collectPinnedItems(o,t),s=new Set(r.filter(e=>"live"===e.kind).map(e=>e.stationId)),l=t.filter(e=>!s.has(e.stationId)),c=this._filterStations(l),d=this._sortStations(c),h=t[0],p=Math.max(1,this.config.max_stations??10),u=[...r,...d.map(e=>({kind:"live",station:e}))],g=u.slice(0,p),m=g.filter(e=>"live"===e.kind).map(e=>e.station),f=m.length>0?m[m.length-1]:void 0,v=!1!==this.config.show_hero,_=this.config.name&&this.config.name.trim()?this.config.name:"Ladestellen Austria",b=h?this._heroCity(h):"";return W`
+      `;let t=e.attributes.stations??[],n=e.attributes.live_status_available===!0,r=e.attributes.dynamic_mode===!0,i=e.attributes.dynamic_entity??null,a=r?[]:this.config.pinned_station_ids??[],o=this._collectPinnedItems(a,t),s=new Set(o.filter(e=>e.kind===`live`).map(e=>e.stationId)),c=t.filter(e=>!s.has(e.stationId)),l=this._filterStations(c),u=this._sortStations(l),d=t[0],f=Math.max(1,this.config.max_stations??10),p=[...o,...u.map(e=>({kind:`live`,station:e}))].slice(0,f),m=p.filter(e=>e.kind===`live`).map(e=>e.station),h=m.length>0?m[m.length-1]:void 0,g=this.config.show_hero!==!1,_=this.config.name&&this.config.name.trim()?this.config.name:`Ladestellen Austria`,v=d?this._heroCity(d):``;return M`
       <ha-card>
         <div class="card-content">
           <div class="wrap">
-            ${Ue(this._versionMismatch)}
-            ${this.config.hide_header?B:W`<header class="header">
+            ${G(this._versionMismatch)}
+            ${this.config.hide_header?P:M`<header class="header">
                   <div class="icon-tile" aria-hidden="true">
                     <ha-icon icon="mdi:ev-station"></ha-icon>
                   </div>
                   <div class="header-text">
                     <h2 class="title">${_}</h2>
-                    ${b?W`<p class="subtitle">${b}</p>`:B}
+                    ${v?M`<p class="subtitle">${v}</p>`:P}
                   </div>
                 </header>`}
-            ${v?this._renderHero(h,f,c.length,t.length):B}
-            ${a&&n?W`<div class="flags">
+            ${g?this._renderHero(d,h,l.length,t.length):P}
+            ${r&&i?M`<div class="flags">
                   <span class="flag">
                     <ha-icon
                       icon="mdi:crosshairs-gps"
                       aria-hidden="true"
                     ></ha-icon>
                     <span
-                      >${Le("card.dynamic_follows_entity").replace("{entity}",n)}</span
+                      >${W(`card.dynamic_follows_entity`).replace(`{entity}`,i)}</span
                     >
                   </span>
-                </div>`:B}
-            ${g.length>0?W`<ul class="stations" role="list">
-                  ${g.map(e=>"live"===e.kind?this._renderStation(e.station,i,s.has(e.station.stationId)):this._renderOrphanPin(e.id))}
-                </ul>`:W`<div class="empty-state">
-                  ${Le("card.no_stations")}
+                </div>`:P}
+            ${p.length>0?M`<ul class="stations" role="list">
+                  ${p.map(e=>e.kind===`live`?this._renderStation(e.station,n,s.has(e.station.stationId)):this._renderOrphanPin(e.id))}
+                </ul>`:M`<div class="empty-state">
+                  ${W(`card.no_stations`)}
                 </div>`}
           </div>
-          ${Fe(this.hass,e.attributes.attribution,!0===this.config.logo_adapt_to_theme)}
+          ${K(this.hass,e.attributes.attribution,this.config.logo_adapt_to_theme===!0)}
         </div>
       </ha-card>
-    `}_sortStations(e){return[...e].sort((e,t)=>{if(this.config.sort_by_power){const i=Math.max(0,...(e.points??[]).map(e=>e.capacityKw??0)),a=Math.max(0,...(t.points??[]).map(e=>e.capacityKw??0));if(a!==i)return a-i}else{const i=e.distance??1/0,a=t.distance??1/0;if(i!==a)return i-a}const i=this._stationHasFree(e);return i!==this._stationHasFree(t)?i?-1:1:(e.distance??1/0)-(t.distance??1/0)})}_stationHasFree(e){return"ACTIVE"===e.stationStatus&&(e.points??[]).some(e=>"AVAILABLE"===qe(e.status))}_collectPinnedItems(e,t){const i=new Map(t.map(e=>[e.stationId,e])),a=new Set,n=[];for(const t of e){if(a.has(t))continue;a.add(t);const e=i.get(t);e?n.push({kind:"live",station:e,stationId:e.stationId}):n.push({kind:"orphan",id:t})}return n}_unpinStation(e){const t=(this.config.pinned_station_ids??[]).filter(t=>t!==e);ue(this,"config-changed",{config:{...this.config,pinned_station_ids:t}})}_renderOrphanPin(e){return W`
+    `}_sortStations(e){return[...e].sort((e,t)=>{if(this.config.sort_by_power){let n=Math.max(0,...(e.points??[]).map(e=>e.capacityKw??0)),r=Math.max(0,...(t.points??[]).map(e=>e.capacityKw??0));if(r!==n)return r-n}else{let n=e.distance??1/0,r=t.distance??1/0;if(n!==r)return n-r}let n=this._stationHasFree(e);return n===this._stationHasFree(t)?(e.distance??1/0)-(t.distance??1/0):n?-1:1})}_stationHasFree(e){return e.stationStatus===`ACTIVE`&&(e.points??[]).some(e=>q(e.status)===`AVAILABLE`)}_collectPinnedItems(e,t){let n=new Map(t.map(e=>[e.stationId,e])),r=new Set,i=[];for(let t of e){if(r.has(t))continue;r.add(t);let e=n.get(t);e?i.push({kind:`live`,station:e,stationId:e.stationId}):i.push({kind:`orphan`,id:t})}return i}_unpinStation(e){let t=(this.config.pinned_station_ids??[]).filter(t=>t!==e),n={...this.config,pinned_station_ids:t};H(this,`config-changed`,{config:n})}_renderOrphanPin(e){return M`
       <li class="station is-orphan" role="listitem">
         <div class="station-body">
           <ha-icon
@@ -2369,14 +2411,14 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
           <div class="station-main">
             <div class="row-secondary">
               <span class="station-name"
-                >${Le("card.orphan_pin_title")}</span
+                >${W(`card.orphan_pin_title`)}</span
               >
             </div>
             <div class="orphan-id">${e}</div>
           </div>
           <div class="station-actions">
             <ha-icon-button
-              .label=${Le("card.unpin")}
+              .label=${W(`card.unpin`)}
               @click=${t=>{t.stopPropagation(),this._unpinStation(e)}}
             >
               <ha-icon icon="mdi:close"></ha-icon>
@@ -2384,75 +2426,75 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
           </div>
         </div>
       </li>
-    `}_filterStations(e){const t=this.config.only_available??!1,i=this.config.only_free??!1,a=this.config.only_open??!1,n=this.config.connector_types??[],o=this.config.amenities??[],r=this.config.payment_methods??[];if(!t&&!i&&!a&&0===n.length&&0===o.length&&0===r.length)return e;const s=new Date,l=this.hass?.config?.time_zone??"Europe/Vienna";return e.filter(e=>{if(t){const t="ACTIVE"===e.stationStatus&&(e.points??[]).some(e=>"AVAILABLE"===qe(e.status));if(!t)return!1}if(i){const t=(e.points??[]).some(e=>e.freeOfCharge);if(!t)return!1}if(a){if(!1===this._isOpenNow(e.openingHours,s,l))return!1}if(n.length>0){const t=new Set((e.points??[]).flatMap(e=>(e.connectorType??[]).map(e=>at(e.consumerName,e.key)))),i=n.some(e=>t.has(e));if(!i)return!1}if(o.length>0){if(!o.every(t=>this._stationHasAmenity(e,t)))return!1}if(r.length>0){const t=new Set((e.points??[]).flatMap(e=>e.authenticationMode??[])),i=r.some(e=>t.has(e));if(!i)return!1}return!0})}_stationHasAmenity(e,t){switch(t){case"green_energy":return Boolean(e.greenEnergy);case"austrian_ecolabel":return Boolean(e.austrianEcoLabel);case"free_parking":return Boolean(e.freeParking);case"roofed_parking":return Boolean(e.roofedParking);case"illuminated_parking":return Boolean(e.illuminatedParking);case"barrier_free":return(e.barrierFreeParkingPlaces??0)>0;case"catering":return Boolean(e.cateringService);case"bathrooms":return Boolean(e.bathroomsAvailable);case"resting":return Boolean(e.restingFacilities);default:return!1}}_renderHero(e,t,i,a){if(!e)return W`<section class="hero hero--empty">
-        <span aria-live="polite">${Le("card.no_stations")}</span>
-      </section>`;const n=this._formatKm(e.distance),o=this._heroCity(e),r=t?this._formatKm(t.distance):n,s=Le("card.hero_range").replaceAll("{min}",this._formatKm(e.distance)).replaceAll("{max}",r),l=i===a?Le("card.hero_count").replaceAll("{count}",String(i)):Le("card.hero_count_filtered").replaceAll("{filtered}",String(i)).replaceAll("{total}",String(a));return W`
+    `}_filterStations(e){let t=this.config.only_available??!1,n=this.config.only_free??!1,r=this.config.only_open??!1,i=this.config.connector_types??[],a=this.config.amenities??[],o=this.config.payment_methods??[];if(!t&&!n&&!r&&i.length===0&&a.length===0&&o.length===0)return e;let s=new Date,c=this.hass?.config?.time_zone??`Europe/Vienna`;return e.filter(e=>{if(t&&!(e.stationStatus===`ACTIVE`&&(e.points??[]).some(e=>q(e.status)===`AVAILABLE`))||n&&!(e.points??[]).some(e=>e.freeOfCharge)||r&&this._isOpenNow(e.openingHours,s,c)===!1)return!1;if(i.length>0){let t=new Set((e.points??[]).flatMap(e=>(e.connectorType??[]).map(e=>xt(e.consumerName,e.key))));if(!i.some(e=>t.has(e)))return!1}if(a.length>0&&!a.every(t=>this._stationHasAmenity(e,t)))return!1;if(o.length>0){let t=new Set((e.points??[]).flatMap(e=>e.authenticationMode??[]));if(!o.some(e=>t.has(e)))return!1}return!0})}_stationHasAmenity(e,t){switch(t){case`green_energy`:return!!e.greenEnergy;case`austrian_ecolabel`:return!!e.austrianEcoLabel;case`free_parking`:return!!e.freeParking;case`roofed_parking`:return!!e.roofedParking;case`illuminated_parking`:return!!e.illuminatedParking;case`barrier_free`:return(e.barrierFreeParkingPlaces??0)>0;case`catering`:return!!e.cateringService;case`bathrooms`:return!!e.bathroomsAvailable;case`resting`:return!!e.restingFacilities;default:return!1}}_renderHero(e,t,n,r){if(!e)return M`<section class="hero hero--empty">
+        <span aria-live="polite">${W(`card.no_stations`)}</span>
+      </section>`;let i=this._formatKm(e.distance),a=this._heroCity(e),o=t?this._formatKm(t.distance):i,s=W(`card.hero_range`).replaceAll(`{min}`,this._formatKm(e.distance)).replaceAll(`{max}`,o),c=n===r?W(`card.hero_count`).replaceAll(`{count}`,String(n)):W(`card.hero_count_filtered`).replaceAll(`{filtered}`,String(n)).replaceAll(`{total}`,String(r));return M`
       <section class="hero">
         <div class="metric">
           <div class="metric-value">
-            <span class="metric-num" aria-live="polite">${n}</span>
+            <span class="metric-num" aria-live="polite">${i}</span>
             <span class="metric-of">km</span>
           </div>
-          <div class="metric-label">${o}</div>
+          <div class="metric-label">${a}</div>
         </div>
         <div class="chip-row">
           <span class="chip">${s}</span>
-          <span class="chip muted">${l}</span>
+          <span class="chip muted">${c}</span>
         </div>
       </section>
-    `}_heroCity(e){return e.city||e.label||""}_renderStation(e,t,i=!1){const a=e.points??[],n=a.some(e=>(e.electricityType??[]).includes("DC")),o=a.reduce((e,t)=>Math.max(e,t.capacityKw??0),0),r=Array.from(new Set(a.flatMap(e=>(e.connectorType??[]).map(e=>at(e.consumerName,e.key))))),s=r.slice(0,3),l=r.length-s.length,c=this._priceText(a),d=a.some(e=>e.freeOfCharge),h=a.length,p=a.filter(e=>"AVAILABLE"===qe(e.status)).length,u="ACTIVE"===e.stationStatus,g=this.hass?.config?.time_zone??"Europe/Vienna",m=this._isOpenNow(e.openingHours,new Date,g),f=this._statusLevel(t,u,a,m),v=this._expanded.has(e.stationId),_=e.location,b=_?ot(`https://www.google.com/maps/search/?api=1&query=${_.lat},${_.lon}`):"",y=this.config?.show_amenities??!0,w=this.config?.show_pricing??!0,x=["station",v?"expanded":"",i?"is-pinned":"","inactive"===f?"is-inactive":""].filter(Boolean).join(" "),k=[[e.postCode,e.city].filter(Boolean).join(" "),Number.isFinite(e.distance)?`${this._formatKm(e.distance)} km`:""].filter(Boolean).join(" · "),$=`station-panel-${e.stationId}`;return W`
+    `}_heroCity(e){return e.city||e.label||``}_renderStation(e,t,n=!1){let r=e.points??[],i=r.some(e=>(e.electricityType??[]).includes(`DC`)),a=r.reduce((e,t)=>Math.max(e,t.capacityKw??0),0),o=Array.from(new Set(r.flatMap(e=>(e.connectorType??[]).map(e=>xt(e.consumerName,e.key))))),s=o.slice(0,3),c=o.length-s.length,l=this._priceText(r),u=r.some(e=>e.freeOfCharge),d=r.length,f=r.filter(e=>q(e.status)===`AVAILABLE`).length,p=e.stationStatus===`ACTIVE`,m=this.hass?.config?.time_zone??`Europe/Vienna`,h=this._isOpenNow(e.openingHours,new Date,m),g=this._statusLevel(t,p,r,h),_=this._expanded.has(e.stationId),v=e.location,y=v?Ct(`https://www.google.com/maps/search/?api=1&query=${v.lat},${v.lon}`):``,ee=this.config?.show_amenities??!0,b=this.config?.show_pricing??!0,x=[`station`,_?`expanded`:``,n?`is-pinned`:``,g===`inactive`?`is-inactive`:``].filter(Boolean).join(` `),S=[[e.postCode,e.city].filter(Boolean).join(` `),Number.isFinite(e.distance)?`${this._formatKm(e.distance)} km`:``].filter(Boolean).join(` · `),C=`station-panel-${e.stationId}`;return M`
       <li
         class=${x}
         @click=${()=>this._toggle(e.stationId)}
         @keydown=${t=>this._onKey(t,e.stationId)}
         tabindex="0"
         role="button"
-        aria-expanded=${v?"true":"false"}
-        aria-controls=${$}
+        aria-expanded=${_?`true`:`false`}
+        aria-controls=${C}
       >
         <div class="station-body">
           <span
-            class=${`status-dot status-${f}`}
+            class=${`status-dot status-${g}`}
             role="img"
-            aria-label=${this._statusAria(f,p,h)}
+            aria-label=${this._statusAria(g,f,d)}
           ></span>
           <div class="station-main">
             <div class="row-primary">
-              ${o>0?W`<span class=${n?"metric-kw dc":"metric-kw"}>
-                    <span class="kw-num">${o}</span
+              ${a>0?M`<span class=${i?`metric-kw dc`:`metric-kw`}>
+                    <span class="kw-num">${a}</span
                     ><span class="kw-unit">kW</span>
-                  </span>`:B}
-              ${w&&c?W`<span
-                    class=${d?"metric-price free":"metric-price"}
-                    >${c}</span
-                  >`:B}
-              ${s.map(e=>W`<span class="chip muted">${e}</span>`)}
-              ${l>0?W`<span class="chip muted">+${l}</span>`:B}
-              ${i?W`<span class="chip pin" title=${Le("card.pinned")}>
+                  </span>`:P}
+              ${b&&l?M`<span
+                    class=${u?`metric-price free`:`metric-price`}
+                    >${l}</span
+                  >`:P}
+              ${s.map(e=>M`<span class="chip muted">${e}</span>`)}
+              ${c>0?M`<span class="chip muted">+${c}</span>`:P}
+              ${n?M`<span class="chip pin" title=${W(`card.pinned`)}>
                     <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
-                    <span>${Le("card.pinned")}</span>
-                  </span>`:B}
+                    <span>${W(`card.pinned`)}</span>
+                  </span>`:P}
             </div>
             <div class="row-secondary">
               <span class="station-name" lang="de">${e.label}</span>
-              ${k?W`<span class="station-loc" lang="de">${k}</span>`:B}
+              ${S?M`<span class="station-loc" lang="de">${S}</span>`:P}
             </div>
           </div>
           <div class="station-actions">
-            ${b?W`<a
+            ${y?M`<a
                   class="icon-action"
-                  href=${b}
+                  href=${y}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label=${`${Le("card.open_in_maps")}: ${e.label}`}
-                  title=${Le("card.open_in_maps")}
+                  aria-label=${`${W(`card.open_in_maps`)}: ${e.label}`}
+                  title=${W(`card.open_in_maps`)}
                   @click=${e=>e.stopPropagation()}
                 >
                   <ha-icon
                     icon="mdi:map-marker-outline"
                     aria-hidden="true"
                   ></ha-icon>
-                </a>`:B}
+                </a>`:P}
             <ha-icon
               class="chevron"
               icon="mdi:chevron-down"
@@ -2460,74 +2502,74 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
             ></ha-icon>
           </div>
         </div>
-        ${this._renderStationDetail(e,m,y,b,v,$)}
+        ${this._renderStationDetail(e,h,ee,y,_,C)}
       </li>
-    `}_renderStationDetail(e,t,i,a,n,o){const r=this._amenityItems(e),s=e.points??[],l=this._address(e),c=this._paymentChips(s),d=this._feesLine(s),h=e.operatorName||e.owner||"";return W`
+    `}_renderStationDetail(e,t,n,r,i,a){let o=this._amenityItems(e),s=e.points??[],c=this._address(e),l=this._paymentChips(s),u=this._feesLine(s),d=e.operatorName||e.owner||``;return M`
       <div
         class="detail"
-        id=${o}
+        id=${a}
         role="region"
-        aria-hidden=${n?"false":"true"}
-        ?inert=${!n}
+        aria-hidden=${i?`false`:`true`}
+        ?inert=${!i}
       >
         <div class="detail-inner">
-        ${h?W`<div class="operator-line">
+        ${d?M`<div class="operator-line">
               <span class="detail-label">
-                ${Le("card.operator_heading")}
+                ${W(`card.operator_heading`)}
               </span>
-              <span class="operator-name" lang="de">${h}</span>
-            </div>`:B}
-        ${e.description?W`<div class="station-note">
+              <span class="operator-name" lang="de">${d}</span>
+            </div>`:P}
+        ${e.description?M`<div class="station-note">
               <ha-icon
                 icon="mdi:information-outline"
                 aria-hidden="true"
               ></ha-icon>
               <span>${e.description}</span>
-            </div>`:B}
-        ${s.length>0?W`<div class="rack-block">
+            </div>`:P}
+        ${s.length>0?M`<div class="rack-block">
               <div class="detail-label">
-                ${Le("card.charging_points_heading")}
+                ${W(`card.charging_points_heading`)}
               </div>
               ${this._renderRack(s)}
-              ${d?W`<div class="fees-line">${d}</div>`:B}
-            </div>`:B}
+              ${u?M`<div class="fees-line">${u}</div>`:P}
+            </div>`:P}
         ${this._renderOpeningHoursSection(e.openingHours,t)}
-        ${c.length>0?W`<div class="detail-section">
+        ${l.length>0?M`<div class="detail-section">
               <div class="detail-label">
-                ${Le("card.payment_heading")}
+                ${W(`card.payment_heading`)}
               </div>
               <div class="chip-row">
-                ${c.map(e=>W`
+                ${l.map(e=>M`
                     <span class="chip muted" title=${e.label}>
                       <ha-icon icon=${e.icon} aria-hidden="true"></ha-icon>
                       <span>${e.label}</span>
                     </span>
                   `)}
               </div>
-            </div>`:B}
-        ${i&&r.length>0?W`<div class="detail-section">
+            </div>`:P}
+        ${n&&o.length>0?M`<div class="detail-section">
               <div class="detail-label">
-                ${Le("card.amenities_heading")}
+                ${W(`card.amenities_heading`)}
               </div>
               <div class="chip-row">
-                ${r.map(e=>W`
+                ${o.map(e=>M`
                     <span class="chip muted" title=${e.label}>
                       <ha-icon icon=${e.icon} aria-hidden="true"></ha-icon>
                       <span>${e.label}</span>
                     </span>
                   `)}
               </div>
-            </div>`:B}
-        ${l?W`<div class="detail-section">
+            </div>`:P}
+        ${c?M`<div class="detail-section">
               <div class="detail-label">
-                ${Le("card.address_heading")}
+                ${W(`card.address_heading`)}
               </div>
-              <div class="detail-text" lang="de">${l}</div>
-            </div>`:B}
+              <div class="detail-text" lang="de">${c}</div>
+            </div>`:P}
         <div class="actions">
-          ${a?W`<a
+          ${r?M`<a
                 class="btn-primary"
-                href=${a}
+                href=${r}
                 target="_blank"
                 rel="noopener noreferrer"
                 @click=${e=>e.stopPropagation()}
@@ -2536,9 +2578,9 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
                   icon="mdi:map-marker-radius-outline"
                   aria-hidden="true"
                 ></ha-icon>
-                <span>${Le("card.open_in_maps")}</span>
-              </a>`:B}
-          ${(()=>{const t=ot(e.website);return t?W`<a
+                <span>${W(`card.open_in_maps`)}</span>
+              </a>`:P}
+          ${(()=>{let t=Ct(e.website);return t?M`<a
                   class="btn-secondary"
                   href=${t}
                   target="_blank"
@@ -2546,17 +2588,17 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
                   @click=${e=>e.stopPropagation()}
                 >
                   <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
-                  <span>${Le("card.website")}</span>
-                </a>`:B})()}
-          ${e.phoneNumber?W`<a
+                  <span>${W(`card.website`)}</span>
+                </a>`:P})()}
+          ${e.phoneNumber?M`<a
                 class="btn-secondary"
-                href=${`tel:${e.phoneCountryCode??""}${e.phoneNumber}`}
+                href=${`tel:${e.phoneCountryCode??``}${e.phoneNumber}`}
                 @click=${e=>e.stopPropagation()}
               >
                 <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
-                <span>${Le("card.call")}</span>
-              </a>`:B}
-          ${(()=>{const t=ot(e.priceUrl);return t?W`<a
+                <span>${W(`card.call`)}</span>
+              </a>`:P}
+          ${(()=>{let t=Ct(e.priceUrl);return t?M`<a
                   class="btn-secondary"
                   href=${t}
                   target="_blank"
@@ -2567,62 +2609,62 @@ const e=globalThis,t=e.ShadowRoot&&(void 0===e.ShadyCSS||e.ShadyCSS.nativeShadow
                     icon="mdi:cash-multiple"
                     aria-hidden="true"
                   ></ha-icon>
-                  <span>${Le("card.tariff")}</span>
-                </a>`:B})()}
+                  <span>${W(`card.tariff`)}</span>
+                </a>`:P})()}
         </div>
         </div>
       </div>
-    `}_renderRack(e){return W`
+    `}_renderRack(e){return M`
       <div class="rack">
         ${e.map(e=>this._renderRackSlot(e))}
       </div>
-    `}_renderRackSlot(e){const t=Ke(e),{bucket:i,overlay:a}=Qe(e),n=this._pointTooltip(e),o=this._pointAriaLabel(e,t),r=t?W`<span class="power-badge" data-type=${t}
+    `}_renderRackSlot(e){let t=pt(e),{bucket:n,overlay:r}=vt(e),i=this._pointTooltip(e),a=this._pointAriaLabel(e,t),o=t?M`<span class="power-badge" data-type=${t}
           >${t.toUpperCase()}</span
-        >`:B;if(a){const e=a.bgTint?`rack-slot slot-tint-${a.bgTint}`:"rack-slot";return W`
+        >`:P;if(r){let e=r.bgTint?`rack-slot slot-tint-${r.bgTint}`:`rack-slot`;return M`
         <div
           class=${e}
           role="group"
-          aria-label=${o}
-          data-status=${i}
-          title=${n}
+          aria-label=${a}
+          data-status=${n}
+          title=${i}
         >
           <ha-icon
-            class=${`rack-overlay-icon tone-${a.tone}`}
-            icon=${a.icon}
+            class=${`rack-overlay-icon tone-${r.tone}`}
+            icon=${r.icon}
           ></ha-icon>
         </div>
-      `}const s=nt(e),l=et(e.capacityKw);return W`
+      `}let s=St(e),c=yt(e.capacityKw);return M`
       <div
         class="rack-slot"
         role="group"
-        aria-label=${o}
-        data-status=${i}
-        title=${n}
+        aria-label=${a}
+        data-status=${n}
+        title=${i}
       >
-        <span class="rack-dot" data-status=${i}></span>
-        ${r}
+        <span class="rack-dot" data-status=${n}></span>
+        ${o}
         <span class="rack-kw">
-          <span class="rack-kw-num">${l}</span
+          <span class="rack-kw-num">${c}</span
           ><span class="rack-kw-unit">kW</span>
         </span>
         <span class="rack-connector">${s}</span>
       </div>
-    `}_pointAriaLabel(e,t){const i=[];t&&i.push(t.toUpperCase()),e.capacityKw&&i.push(`${et(e.capacityKw)} kW`);const a=nt(e);a&&"–"!==a&&i.push(a);const n=Xe(e.status);return n&&i.push(n),i.join(" · ")}_pointTooltip(e){const t=[`${e.evseId??""} · ${Xe(e.status)}`.trim()],i=e.startFeeCent??0;i>0&&t.push(`${Le("card.start_fee_label")}: ${tt(i)} €`);const a=e.blockingFeeCentMin??0,n=e.blockingFeeFromMinute??0;return a>0&&n>0&&t.push(`${it(a)} ${Le("card.blocking_fee_label").replaceAll("{from}",String(n))}`),t.join(" · ")}_renderOpeningHoursSection(e,t){if(!e||0===e.length)return B;const i=this._formatOpeningHours(e);if(0===i.length)return B;const a=!0===t?"flag ok":!1===t?"flag warn":null,n=!0===t?"mdi:clock-check-outline":!1===t?"mdi:clock-alert-outline":null,o=!0===t?Le("card.open_now"):!1===t?Le("card.closed_now"):null;return W`
+    `}_pointAriaLabel(e,t){let n=[];t&&n.push(t.toUpperCase()),e.capacityKw&&n.push(`${yt(e.capacityKw)} kW`);let r=St(e);r&&r!==`–`&&n.push(r);let i=ht(e.status);return i&&n.push(i),n.join(` · `)}_pointTooltip(e){let t=[`${e.evseId??``} · ${ht(e.status)}`.trim()],n=e.startFeeCent??0;n>0&&t.push(`${W(`card.start_fee_label`)}: ${J(n)} €`);let r=e.blockingFeeCentMin??0,i=e.blockingFeeFromMinute??0;return r>0&&i>0&&t.push(`${bt(r)} ${W(`card.blocking_fee_label`).replaceAll(`{from}`,String(i))}`),t.join(` · `)}_renderOpeningHoursSection(e,t){if(!e||e.length===0)return P;let n=this._formatOpeningHours(e);if(n.length===0)return P;let r=t===!0?`flag ok`:t===!1?`flag warn`:null,i=t===!0?`mdi:clock-check-outline`:t===!1?`mdi:clock-alert-outline`:null,a=t===!0?W(`card.open_now`):t===!1?W(`card.closed_now`):null;return M`
       <div class="detail-section">
         <div class="detail-label">
-          ${Le("card.opening_hours_heading")}
+          ${W(`card.opening_hours_heading`)}
         </div>
         <div class="hours-row">
           <dl class="hours-lines">
-            ${i.map(e=>W`<div class="hours-line">
+            ${n.map(e=>M`<div class="hours-line">
                 <dt class="hours-day">${e.day}</dt>
                 <dd class="hours-time">${e.time}</dd>
               </div>`)}
           </dl>
-          ${o&&a&&n?W`<span class=${a}>
-                <ha-icon icon=${n} aria-hidden="true"></ha-icon>
-                <span>${o}</span>
-              </span>`:B}
+          ${a&&r&&i?M`<span class=${r}>
+                <ha-icon icon=${i} aria-hidden="true"></ha-icon>
+                <span>${a}</span>
+              </span>`:P}
         </div>
       </div>
-    `}_formatOpeningHours(e){const t=[];for(const i of e){const e=this._formatSingleRange(i);e&&t.push(e)}return t}_formatSingleRange(e){const t=this._shortDay(e.fromWeekday),i=this._shortDay(e.toWeekday);if(!t||!i)return null;const a="00:00"===e.fromTime&&("23:59"===e.toTime||"24:00"===e.toTime);return{day:e.fromWeekday===e.toWeekday?t:`${t}–${i}`,time:a?Le("card.always_open_short"):`${e.fromTime}–${e.toTime}`}}_shortDay(e){switch((e??"").toUpperCase()){case"MONDAY":return Le("weekday.mo");case"TUESDAY":return Le("weekday.tu");case"WEDNESDAY":return Le("weekday.we");case"THURSDAY":return Le("weekday.th");case"FRIDAY":return Le("weekday.fr");case"SATURDAY":return Le("weekday.sa");case"SUNDAY":return Le("weekday.su");default:return""}}_isOpenNow(e,t,i){if(!e||0===e.length)return null;const a=this._minuteOfWeek(t,i);if(null==a)return null;for(const t of e){const e=this._hoursToMow(t.fromWeekday,t.fromTime),i=this._hoursToMow(t.toWeekday,t.toTime);if(null!=e&&null!=i)if(e<=i){if(a>=e&&a<=i)return!0}else if(a>=e||a<=i)return!0}return!1}_minuteOfWeek(e,t){try{const i=new Intl.DateTimeFormat("en-US",{timeZone:t,weekday:"short",hour:"2-digit",minute:"2-digit",hour12:!1}).formatToParts(e),a=i.find(e=>"weekday"===e.type)?.value??"",n=i.find(e=>"hour"===e.type)?.value??"",o=i.find(e=>"minute"===e.type)?.value??"",r=bt[a];if(void 0===r)return null;let s=parseInt(n,10);const l=parseInt(o,10);return Number.isFinite(s)&&Number.isFinite(l)?(24===s&&(s=0),1440*r+60*s+l):null}catch{return null}}_hoursToMow(e,t){const i=_t[(e??"").toUpperCase()];if(void 0===i)return null;const[a,n]=(t??"").split(":"),o=parseInt(a??"",10),r=parseInt(n??"",10);return Number.isFinite(o)&&Number.isFinite(r)?1440*i+60*o+r:null}_paymentChips(e){const t=new Set,i=[];for(const a of e)for(const e of a.authenticationMode??[]){if(t.has(e))continue;t.add(e);const a=this._authLabel(e);a&&i.push(a)}return i}_authLabel(e){switch(e){case"APP":return{icon:"mdi:cellphone",label:Le("auth.app")};case"QR":return{icon:"mdi:qrcode",label:Le("auth.qr")};case"RFID_READER":return{icon:"mdi:credit-card-wireless-outline",label:Le("auth.rfid")};case"CHARGING_CONTRACT":return{icon:"mdi:handshake-outline",label:Le("auth.contract")};case"DEBIT_CARD":return{icon:"mdi:credit-card-outline",label:Le("auth.debit")};case"CREDIT_CARD":return{icon:"mdi:credit-card",label:Le("auth.credit")};case"CONTACTLESS_CARD_SUPPORT":return{icon:"mdi:contactless-payment",label:Le("auth.contactless")};default:return null}}_feesLine(e){const t=e.map(e=>e.startFeeCent??0).filter(e=>e>0),i=e.map(e=>({cent:e.blockingFeeCentMin??0,fromMin:e.blockingFeeFromMinute??0})).filter(e=>e.cent>0&&e.fromMin>0),a=[];if(t.length>0){const e=Math.max(...t);a.push(`+ ${tt(e)} € ${Le("card.start_fee_label")}`)}if(i.length>0){const e=Math.max(...i.map(e=>e.cent)),t=Math.min(...i.map(e=>e.fromMin));a.push(`${it(e)} ${Le("card.blocking_fee_label").replaceAll("{from}",String(t))}`)}return a.length>0?a.join(", "):null}_statusLevel(e,t,i,a=null){if(!t)return"inactive";if(!1===a)return"inactive";const n=i.length;if(!e||0===n)return"unknown";let o=0,r=0,s=0;for(const e of i){const t=qe(e.status);"AVAILABLE"===t?o++:"CHARGING"===t||"OCCUPIED"===t||"RESERVED"===t||"BLOCKED"===t?r++:"OUTOFORDER"!==t&&"FAULTED"!==t&&"INOPERATIVE"!==t&&"UNAVAILABLE"!==t||s++}return 0===o?0===r&&s>0?"inactive":"busy":o<n?"partial":"ok"}_statusAria(e,t,i){return"inactive"===e?Le("card.inactive"):"unknown"===e?Le("card.status_unknown"):`${t} / ${i} ${Le("card.live_suffix")}`}_toggle(e){const t=new Set(this._expanded);t.has(e)?t.delete(e):t.add(e),this._expanded=t}_onKey(e,t){"Enter"!==e.key&&" "!==e.key||(e.preventDefault(),this._toggle(t))}_priceText(e){if(0===e.length)return"";if(e.some(e=>e.freeOfCharge))return Le("card.gratis");const t=e.filter(e=>!e.freeOfCharge&&e.priceCentKwh>0).map(e=>e.priceCentKwh);if(t.length>0)return`${tt(Math.min(...t))} €/kWh`;const i=e.filter(e=>!e.freeOfCharge&&e.priceCentMin>0).map(e=>e.priceCentMin);return i.length>0?`${tt(Math.min(...i))} €/min`:""}_address(e){const t=[];e.street&&t.push(e.street);const i=[e.postCode,e.city].filter(Boolean).join(" ");return i&&t.push(i),t.join(", ")}_amenityItems(e){return[{flag:e.greenEnergy,icon:"mdi:leaf",label:Le("amenities.green_energy")},{flag:e.austrianEcoLabel,icon:"mdi:certificate-outline",label:Le("amenities.austrian_ecolabel")},{flag:e.freeParking,icon:"mdi:parking",label:Le("amenities.free_parking")},{flag:e.roofedParking,icon:"mdi:home-roof",label:Le("amenities.roofed_parking")},{flag:e.illuminatedParking,icon:"mdi:lightbulb-outline",label:Le("amenities.illuminated_parking")},{flag:(e.barrierFreeParkingPlaces??0)>0,icon:"mdi:wheelchair-accessibility",label:Le("amenities.barrier_free")},{flag:e.cateringService,icon:"mdi:silverware-fork-knife",label:Le("amenities.catering")},{flag:e.bathroomsAvailable,icon:"mdi:toilet",label:Le("amenities.bathrooms")},{flag:e.restingFacilities,icon:"mdi:sofa",label:Le("amenities.resting")}].filter(e=>e.flag)}_formatKm(e){const t="number"==typeof e?e:parseFloat(String(e??""));if(!Number.isFinite(t))return"–";try{return new Intl.NumberFormat("de-AT",{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}static{this.styles=Ze}constructor(...e){super(...e),this._expanded=new Set,this._versionMismatch=null,this._versionCheckDone=!1}}vt([he({attribute:!1})],yt.prototype,"hass",void 0),vt([pe()],yt.prototype,"config",void 0),vt([pe()],yt.prototype,"_expanded",void 0),vt([pe()],yt.prototype,"_versionMismatch",void 0),yt=vt([le("ladestellen-austria-card")],yt);export{yt as LadestellenAustriaCard};
+    `}_formatOpeningHours(e){let t=[];for(let n of e){let e=this._formatSingleRange(n);e&&t.push(e)}return t}_formatSingleRange(e){let t=this._shortDay(e.fromWeekday),n=this._shortDay(e.toWeekday);if(!t||!n)return null;let r=e.fromTime===`00:00`&&(e.toTime===`23:59`||e.toTime===`24:00`);return{day:e.fromWeekday===e.toWeekday?t:`${t}–${n}`,time:r?W(`card.always_open_short`):`${e.fromTime}–${e.toTime}`}}_shortDay(e){switch((e??``).toUpperCase()){case`MONDAY`:return W(`weekday.mo`);case`TUESDAY`:return W(`weekday.tu`);case`WEDNESDAY`:return W(`weekday.we`);case`THURSDAY`:return W(`weekday.th`);case`FRIDAY`:return W(`weekday.fr`);case`SATURDAY`:return W(`weekday.sa`);case`SUNDAY`:return W(`weekday.su`);default:return``}}_isOpenNow(e,t,n){if(!e||e.length===0)return null;let r=this._minuteOfWeek(t,n);if(r==null)return null;for(let t of e){let e=this._hoursToMow(t.fromWeekday,t.fromTime),n=this._hoursToMow(t.toWeekday,t.toTime);if(e!=null&&n!=null){if(e<=n){if(r>=e&&r<=n)return!0}else if(r>=e||r<=n)return!0}}return!1}_minuteOfWeek(e,t){try{let n=new Intl.DateTimeFormat(`en-US`,{timeZone:t,weekday:`short`,hour:`2-digit`,minute:`2-digit`,hour12:!1}).formatToParts(e),r=n.find(e=>e.type===`weekday`)?.value??``,i=n.find(e=>e.type===`hour`)?.value??``,a=n.find(e=>e.type===`minute`)?.value??``,o=Mt[r];if(o===void 0)return null;let s=parseInt(i,10),c=parseInt(a,10);return!Number.isFinite(s)||!Number.isFinite(c)?null:(s===24&&(s=0),o*1440+s*60+c)}catch{return null}}_hoursToMow(e,t){let n=jt[(e??``).toUpperCase()];if(n===void 0)return null;let[r,i]=(t??``).split(`:`),a=parseInt(r??``,10),o=parseInt(i??``,10);return!Number.isFinite(a)||!Number.isFinite(o)?null:n*1440+a*60+o}_paymentChips(e){let t=new Set,n=[];for(let r of e)for(let e of r.authenticationMode??[]){if(t.has(e))continue;t.add(e);let r=this._authLabel(e);r&&n.push(r)}return n}_authLabel(e){switch(e){case`APP`:return{icon:`mdi:cellphone`,label:W(`auth.app`)};case`QR`:return{icon:`mdi:qrcode`,label:W(`auth.qr`)};case`RFID_READER`:return{icon:`mdi:credit-card-wireless-outline`,label:W(`auth.rfid`)};case`CHARGING_CONTRACT`:return{icon:`mdi:handshake-outline`,label:W(`auth.contract`)};case`DEBIT_CARD`:return{icon:`mdi:credit-card-outline`,label:W(`auth.debit`)};case`CREDIT_CARD`:return{icon:`mdi:credit-card`,label:W(`auth.credit`)};case`CONTACTLESS_CARD_SUPPORT`:return{icon:`mdi:contactless-payment`,label:W(`auth.contactless`)};default:return null}}_feesLine(e){let t=e.map(e=>e.startFeeCent??0).filter(e=>e>0),n=e.map(e=>({cent:e.blockingFeeCentMin??0,fromMin:e.blockingFeeFromMinute??0})).filter(e=>e.cent>0&&e.fromMin>0),r=[];if(t.length>0){let e=Math.max(...t);r.push(`+ ${J(e)} € ${W(`card.start_fee_label`)}`)}if(n.length>0){let e=Math.max(...n.map(e=>e.cent)),t=Math.min(...n.map(e=>e.fromMin));r.push(`${bt(e)} ${W(`card.blocking_fee_label`).replaceAll(`{from}`,String(t))}`)}return r.length>0?r.join(`, `):null}_statusLevel(e,t,n,r=null){if(!t||r===!1)return`inactive`;let i=n.length;if(!e||i===0)return`unknown`;let a=0,o=0,s=0;for(let e of n){let t=q(e.status);t===`AVAILABLE`?a++:t===`CHARGING`||t===`OCCUPIED`||t===`RESERVED`||t===`BLOCKED`?o++:(t===`OUTOFORDER`||t===`FAULTED`||t===`INOPERATIVE`||t===`UNAVAILABLE`)&&s++}return a===0?o===0&&s>0?`inactive`:`busy`:a<i?`partial`:`ok`}_statusAria(e,t,n){return e===`inactive`?W(`card.inactive`):e===`unknown`?W(`card.status_unknown`):`${t} / ${n} ${W(`card.live_suffix`)}`}_toggle(e){let t=new Set(this._expanded);t.has(e)?t.delete(e):t.add(e),this._expanded=t}_onKey(e,t){(e.key===`Enter`||e.key===` `)&&(e.preventDefault(),this._toggle(t))}_priceText(e){if(e.length===0)return``;if(e.some(e=>e.freeOfCharge))return W(`card.gratis`);let t=e.filter(e=>!e.freeOfCharge&&e.priceCentKwh>0).map(e=>e.priceCentKwh);if(t.length>0)return`${J(Math.min(...t))} €/kWh`;let n=e.filter(e=>!e.freeOfCharge&&e.priceCentMin>0).map(e=>e.priceCentMin);return n.length>0?`${J(Math.min(...n))} €/min`:``}_address(e){let t=[];e.street&&t.push(e.street);let n=[e.postCode,e.city].filter(Boolean).join(` `);return n&&t.push(n),t.join(`, `)}_amenityItems(e){return[{flag:e.greenEnergy,icon:`mdi:leaf`,label:W(`amenities.green_energy`)},{flag:e.austrianEcoLabel,icon:`mdi:certificate-outline`,label:W(`amenities.austrian_ecolabel`)},{flag:e.freeParking,icon:`mdi:parking`,label:W(`amenities.free_parking`)},{flag:e.roofedParking,icon:`mdi:home-roof`,label:W(`amenities.roofed_parking`)},{flag:e.illuminatedParking,icon:`mdi:lightbulb-outline`,label:W(`amenities.illuminated_parking`)},{flag:(e.barrierFreeParkingPlaces??0)>0,icon:`mdi:wheelchair-accessibility`,label:W(`amenities.barrier_free`)},{flag:e.cateringService,icon:`mdi:silverware-fork-knife`,label:W(`amenities.catering`)},{flag:e.bathroomsAvailable,icon:`mdi:toilet`,label:W(`amenities.bathrooms`)},{flag:e.restingFacilities,icon:`mdi:sofa`,label:W(`amenities.resting`)}].filter(e=>e.flag)}_formatKm(e){let t=typeof e==`number`?e:parseFloat(String(e??``));if(!Number.isFinite(t))return`–`;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}static{this.styles=dt}};Y([B({attribute:!1})],$.prototype,`hass`,void 0),Y([V()],$.prototype,`config`,void 0),Y([V()],$.prototype,`_expanded`,void 0),Y([V()],$.prototype,`_versionMismatch`,void 0),$=Y([z(`ladestellen-austria-card`)],$);export{$ as LadestellenAustriaCard};

@@ -30,6 +30,11 @@ Bump `manifest.json` `version` and `src/const.ts` `CARD_VERSION` **in the same c
 
 ## Tooling & config
 
+- `rolldown.config.mjs` — the card build. Rolldown does transpilation, minification, module resolution and JSON natively, so the card's whole `devDependencies` is `rolldown` + `typescript`; the `@rollup/plugin-*` stack and `@swc/core` were **deleted** in the 2026-09 migration, not replaced. Three things there fail silently if you change them:
+  - The banner must be a **legal** comment — `/*! ... */` — with `comments: { legal: true }`. A `//` banner is stripped by the minifier and nothing tells you; only the built file's first bytes do.
+  - **`dropConsole` stays `false`.** Rolldown's option is a boolean, not terser's per-method array, so it is all-or-nothing — and most `console.*` calls here sit in `catch` blocks where dropping them turns a caught error into a silent one.
+  - **Decorators are not configured.** Rolldown reads `tsconfig.json` itself and enables Lit's legacy decorators from it. If that ever regresses, class fields overwrite Lit's accessors and reactivity dies while the build stays green — diff a built bundle's Lit reactive-property list to catch it.
+- **Rolldown does not type-check.** `npx tsc --noEmit` is the only thing between a type error and a green build, which is why the gate runs it as its own step.
 - `pyproject.toml` is the source of truth for ruff, mypy, and coverage rules — change them here, not in CI flags.
   - **`target-version` tracks the oldest Python we support, never the one CI runs.** `hacs.json` promises HA ≥ 2025.1.0, which runs on Python 3.12, so `target-version = "py312"` — even though the venv and CI are on 3.14. Pointing it at the CI interpreter lets ruff rewrite code into syntax our users cannot parse and then stay silent about it; that is how wiener-linien-austria v1.7.1 shipped a SyntaxError. The `compile-floor-python` CI job byte-compiles the shipped package on 3.12 as an independent backstop. Raise all three together or not at all.
 - `ATTRIBUTION` is the canonical data-source statement; it must stay in sync with `const.ATTRIBUTION` (the value every sensor emits).
@@ -58,7 +63,7 @@ Commit the updated `.ambr` file alongside the code change so the diff is reviewa
 pytest tests/ -v
 mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
 ruff check .
-npx tsc --noEmit            # rollup's TS plugin is more permissive than tsc
+npx tsc --noEmit            # rolldown does not type-check at all
 npm run build
 ```
 
