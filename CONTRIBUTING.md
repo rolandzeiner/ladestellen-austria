@@ -26,7 +26,7 @@ For iterating against a live HA container, `./scripts/dev-push.sh` rebuilds the 
 
 Bump `manifest.json` `version` and `src/const.ts` `CARD_VERSION` **in the same commit** — `const.py` reads `CARD_VERSION` from the manifest, and `tests/test_card_version.py` asserts the TS constant matches byte-for-byte. If they drift, users get an infinite reload-banner loop.
 
-`README.md` badge + `manifest.json` stay at the clean (non-beta) version; `src/const.ts` can carry a `-beta-N` suffix during development.
+There is no dev-time suffix. A pre-release carries the same version as the eventual final release; the GitHub `--prerelease` flag and the target branch are what distinguish them. The README badge is a dynamic release badge, so it needs no edit.
 
 ## Tooling & config
 
@@ -63,6 +63,7 @@ Commit the updated `.ambr` file alongside the code change so the diff is reviewa
 pytest tests/ -v
 mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
 ruff check .
+ruff format --check .       # separate: `ruff check` never inspects formatting
 npx tsc --noEmit            # rolldown does not type-check at all
 npm run build
 ```

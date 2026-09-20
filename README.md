@@ -163,17 +163,9 @@ template:
 
 ## Development
 
-Cards are TypeScript + Lit 3 + Rolldown, single bundle at `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`. End users install via HACS and never run `npm`; contributors do:
+The card ships pre-built, so installing via HACS needs no Node or Python tooling.
 
-```bash
-npm install && npm run build      # production bundle
-npm run dev                       # watch mode
-ruff check .
-mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
-python3 -m pytest tests/ -v
-```
-
-`src/const.ts` and `custom_components/ladestellen_austria/const.py` both carry `CARD_VERSION` — they must stay byte-identical, otherwise the frontend version check loops on a reload banner. Bump both together.
+To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, the card build (TypeScript + Lit 3 + Rolldown), version-sync rules, and the verification gate.
 
 ## Attribution
 
