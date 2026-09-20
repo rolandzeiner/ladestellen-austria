@@ -34,6 +34,12 @@ import {
 } from "./shared-render";
 import { cardStyles } from "./styles";
 import {
+  filterStations,
+  isOpenNow,
+  statusLevel,
+  type StatusLevel,
+} from "./station-logic";
+import {
   formatCent,
   formatEuro,
   formatKw,
@@ -73,28 +79,6 @@ window.customCards.push({
 });
 
 const DEFAULT_MAX_STATIONS = 10;
-
-type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
-
-const WEEKDAY_NAME_TO_IDX: Record<string, number> = {
-  MONDAY: 0,
-  TUESDAY: 1,
-  WEDNESDAY: 2,
-  THURSDAY: 3,
-  FRIDAY: 4,
-  SATURDAY: 5,
-  SUNDAY: 6,
-};
-
-const WEEKDAY_SHORT_TO_IDX: Record<string, number> = {
-  Mon: 0,
-  Tue: 1,
-  Wed: 2,
-  Thu: 3,
-  Fri: 4,
-  Sat: 5,
-  Sun: 6,
-};
 
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
@@ -508,102 +492,16 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _filterStations(stations: Station[]): Station[] {
-    const onlyAvailable = this.config.only_available ?? false;
-    const onlyFree = this.config.only_free ?? false;
-    const onlyOpen = this.config.only_open ?? false;
-    const wantedTokens = this.config.connector_types ?? [];
-    const wantedAmenities = this.config.amenities ?? [];
-    const wantedPayments = this.config.payment_methods ?? [];
-    if (
-      !onlyAvailable &&
-      !onlyFree &&
-      !onlyOpen &&
-      wantedTokens.length === 0 &&
-      wantedAmenities.length === 0 &&
-      wantedPayments.length === 0
-    ) {
-      return stations;
-    }
-    // Cache now + tz once for the only-open sweep; _isOpenNow is a
+    // Cache now + tz once for the only-open sweep; isOpenNow is a
     // per-station call so we don't want to rebuild Date/tz in the loop.
-    const now = new Date();
-    const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
-    return stations.filter((s) => {
-      if (onlyAvailable) {
-        const hasActive =
-          s.stationStatus === "ACTIVE" &&
-          (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
-        if (!hasActive) return false;
-      }
-      if (onlyFree) {
-        const hasFree = (s.points ?? []).some((p) => p.freeOfCharge);
-        if (!hasFree) return false;
-      }
-      if (onlyOpen) {
-        // Stations with no opening-hours data (isOpenNow === null) are
-        // treated as "presumed open" — filtering them out would hide
-        // stations that are almost certainly accessible just because
-        // the operator hasn't bothered to publish hours.
-        const open = this._isOpenNow(s.openingHours, now, tz);
-        if (open === false) return false;
-      }
-      if (wantedTokens.length > 0) {
-        const stationTokens = new Set(
-          (s.points ?? []).flatMap((p) =>
-            (p.connectorType ?? []).map((c) =>
-              shortConnector(c.consumerName, c.key),
-            ),
-          ),
-        );
-        const match = wantedTokens.some((t) => stationTokens.has(t));
-        if (!match) return false;
-      }
-      if (wantedAmenities.length > 0) {
-        // AND semantics — the station must carry every selected
-        // amenity flag. Narrowing is what users expect from an
-        // amenity filter (I need barrier-free AND roofed).
-        const everyMatch = wantedAmenities.every((key) =>
-          this._stationHasAmenity(s, key),
-        );
-        if (!everyMatch) return false;
-      }
-      if (wantedPayments.length > 0) {
-        // OR semantics — any point accepting any selected payment
-        // method is enough. You only need one working payment option.
-        const stationModes = new Set(
-          (s.points ?? []).flatMap((p) => p.authenticationMode ?? []),
-        );
-        const anyMatch = wantedPayments.some((m) => stationModes.has(m));
-        if (!anyMatch) return false;
-      }
-      return true;
-    });
+    return filterStations(
+      stations,
+      this.config,
+      new Date(),
+      this.hass?.config?.time_zone ?? "Europe/Vienna",
+    );
   }
 
-  private _stationHasAmenity(station: Station, key: string): boolean {
-    switch (key) {
-      case "green_energy":
-        return Boolean(station.greenEnergy);
-      case "austrian_ecolabel":
-        return Boolean(station.austrianEcoLabel);
-      case "free_parking":
-        return Boolean(station.freeParking);
-      case "roofed_parking":
-        return Boolean(station.roofedParking);
-      case "illuminated_parking":
-        return Boolean(station.illuminatedParking);
-      case "barrier_free":
-        return (station.barrierFreeParkingPlaces ?? 0) > 0;
-      case "catering":
-        return Boolean(station.cateringService);
-      case "bathrooms":
-        return Boolean(station.bathroomsAvailable);
-      case "resting":
-        return Boolean(station.restingFacilities);
-      default:
-        return false;
-    }
-  }
 
   // Footer rendering lives in shared-render.ts; both cards share it.
 
@@ -685,12 +583,12 @@ export class LadestellenAustriaCard extends LitElement {
     ).length;
     const stationActive = station.stationStatus === "ACTIVE";
     const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
-    const isOpenNow = this._isOpenNow(station.openingHours, new Date(), tz);
-    const level = this._statusLevel(
+    const openNow = isOpenNow(station.openingHours, new Date(), tz);
+    const level = statusLevel(
       liveAvailable,
       stationActive,
       points,
-      isOpenNow,
+      openNow,
     );
 
     const expanded = this._expanded.has(station.stationId);
@@ -804,7 +702,7 @@ export class LadestellenAustriaCard extends LitElement {
         </div>
         ${this._renderStationDetail(
           station,
-          isOpenNow,
+          openNow,
           showAmenities,
           mapsUrl,
           expanded,
@@ -1180,67 +1078,6 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  // Is the station inside any of its opening ranges at `now` (in `tz`)?
-  // Returns null when hours are missing or unparseable — callers can then
-  // treat the closed-now signal as unknown. Ranges that wrap the week
-  // boundary (from > to) are handled via OR, matching the behaviour a
-  // single 7-day schedule expects.
-  private _isOpenNow(
-    hours: OpeningHours[] | undefined,
-    now: Date,
-    tz: string,
-  ): boolean | null {
-    if (!hours || hours.length === 0) return null;
-    const nowMow = this._minuteOfWeek(now, tz);
-    if (nowMow == null) return null;
-    for (const h of hours) {
-      const fromMow = this._hoursToMow(h.fromWeekday, h.fromTime);
-      const toMow = this._hoursToMow(h.toWeekday, h.toTime);
-      if (fromMow == null || toMow == null) continue;
-      if (fromMow <= toMow) {
-        if (nowMow >= fromMow && nowMow <= toMow) return true;
-      } else {
-        if (nowMow >= fromMow || nowMow <= toMow) return true;
-      }
-    }
-    return false;
-  }
-
-  private _minuteOfWeek(now: Date, tz: string): number | null {
-    try {
-      const fmt = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const parts = fmt.formatToParts(now);
-      const wk = parts.find((p) => p.type === "weekday")?.value ?? "";
-      const hr = parts.find((p) => p.type === "hour")?.value ?? "";
-      const mn = parts.find((p) => p.type === "minute")?.value ?? "";
-      const weekday = WEEKDAY_SHORT_TO_IDX[wk];
-      if (weekday === undefined) return null;
-      let hour = parseInt(hr, 10);
-      const minute = parseInt(mn, 10);
-      if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
-      // Safari with hour12:false occasionally reports "24" for midnight.
-      if (hour === 24) hour = 0;
-      return weekday * 1440 + hour * 60 + minute;
-    } catch {
-      return null;
-    }
-  }
-
-  private _hoursToMow(dayName: string, time: string): number | null {
-    const day = WEEKDAY_NAME_TO_IDX[(dayName ?? "").toUpperCase()];
-    if (day === undefined) return null;
-    const [hStr, mStr] = (time ?? "").split(":");
-    const h = parseInt(hStr ?? "", 10);
-    const m = parseInt(mStr ?? "", 10);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-    return day * 1440 + h * 60 + m;
-  }
 
   private _paymentChips(
     points: Point[],
@@ -1326,50 +1163,6 @@ export class LadestellenAustriaCard extends LitElement {
     return parts.length > 0 ? parts.join(", ") : null;
   }
 
-  private _statusLevel(
-    liveAvailable: boolean,
-    stationActive: boolean,
-    points: Point[],
-    isOpenNow: boolean | null = null,
-  ): StatusLevel {
-    if (!stationActive) return "inactive";
-    // Closed-now greys the row dot regardless of live count — a station
-    // with 4/4 free but closed is not actionable. Null isOpenNow means no
-    // opening-hours data; treat as always-open for row-status purposes.
-    if (isOpenNow === false) return "inactive";
-    const total = points.length;
-    if (!liveAvailable || total === 0) return "unknown";
-    let avail = 0;
-    let busy = 0;
-    let warn = 0;
-    for (const p of points) {
-      const s = normStatus(p.status);
-      if (s === "AVAILABLE") avail++;
-      else if (
-        s === "CHARGING" ||
-        s === "OCCUPIED" ||
-        s === "RESERVED" ||
-        s === "BLOCKED"
-      )
-        busy++;
-      else if (
-        s === "OUTOFORDER" ||
-        s === "FAULTED" ||
-        s === "INOPERATIVE" ||
-        s === "UNAVAILABLE"
-      )
-        warn++;
-    }
-    if (avail === 0) {
-      // Distinguish "nobody free because the whole station is broken" from
-      // "nobody free because everyone's charging". The former reads inactive
-      // (grey) — the station isn't actionable. The latter stays busy (red).
-      if (busy === 0 && warn > 0) return "inactive";
-      return "busy";
-    }
-    if (avail < total) return "partial";
-    return "ok";
-  }
 
   private _statusAria(
     level: StatusLevel,
