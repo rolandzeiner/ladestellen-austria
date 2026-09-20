@@ -1,7 +1,8 @@
-// Shared render helpers used by both cards: version-banner, footer,
-// and the WS card-version probe live here so neither card carries its
-// own copy. Pure functions — the cards keep their own @state and call
-// these from render() / event handlers.
+// Shared render helpers used by both cards: the version banner and the
+// attribution footer live here so neither card carries its own copy.
+// Pure functions — the cards keep their own @state and call these from
+// render() / event handlers. Lifecycle helpers (language sync, the
+// version probe, the shouldUpdate tail) live in card-lifecycle.ts.
 //
 // ATTRIBUTION_REQUIRED is the verbatim §3d clause from the
 // ladestellen.at ToU — single source of truth for both cards.
@@ -9,7 +10,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 
 import type { HomeAssistant } from "./types";
-import { CARD_VERSION } from "./const";
 import { localize } from "./localize/localize";
 
 // §3d of the ladestellen.at Terms of Use requires this exact string
@@ -17,28 +17,6 @@ import { localize } from "./localize/localize";
 //   "Datenquelle: E-Control"
 // Do not edit; bumping it requires re-reading the ToU.
 const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
-
-/**
- * Probe the backend's card-version WebSocket command. Returns the
- * server-reported version when it differs from CARD_VERSION (i.e.
- * banner should appear), or null otherwise. Silent on transport error
- * — older HA installs without the handler simply don't surface a
- * mismatch, which is correct (cache-buster URL still applies).
- */
-export async function checkCardVersionWS(
-  hass: HomeAssistant | undefined,
-): Promise<string | null> {
-  if (!hass?.callWS) return null;
-  try {
-    const r = await hass.callWS<{ version?: string }>({
-      type: "ladestellen_austria/card_version",
-    });
-    if (r?.version && r.version !== CARD_VERSION) return r.version;
-  } catch {
-    // Silent: older backend without the WS handler.
-  }
-  return null;
-}
 
 /**
  * Best-effort cache-storage wipe followed by a hard reload. The reload

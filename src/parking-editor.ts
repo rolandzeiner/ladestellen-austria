@@ -22,7 +22,8 @@ import {
   type Station,
 } from "./types";
 import { editorStyles } from "./styles";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { syncCardLanguage } from "./card-lifecycle";
 import { computeFormLabel } from "./utils";
 
 // ha-form's TS types aren't shipped on a stable channel by HA core, so
@@ -233,12 +234,7 @@ export class LadestellenAustriaParkingCardEditor
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    // Lit forbids side-effects in render(); push hass.language into the
-    // localize() helper here whenever hass changes. Mirrors the cards'
-    // pattern in ladestellen-austria-card.ts / parking-card.ts.
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override render(): TemplateResult {

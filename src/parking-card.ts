@@ -26,12 +26,15 @@ import type {
   Station,
 } from "./types";
 import { carSvg } from "./car-svg";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { renderFooter, renderVersionBanner } from "./shared-render";
 import {
-  checkCardVersionWS,
-  renderFooter,
-  renderVersionBanner,
-} from "./shared-render";
+  entitySuggestionFor,
+  findStubEntity,
+  runVersionCheckOnce,
+  shouldUpdateForEntityState,
+  syncCardLanguage,
+} from "./card-lifecycle";
 import { parkingLotStyles } from "./styles";
 import {
   formatKw,
@@ -54,20 +57,9 @@ window.customCards.push({
     "Single station, points rendered as parking slots viewed from above.",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
-  // 2026.6 entity-first picker: suggest this card only for our own
-  // integration's sensor entities (registry platform === domain).
-  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
-    if (!entityId.startsWith("sensor.")) return null;
-    if (hass?.entities?.[entityId]?.platform !== "ladestellen_austria") {
-      return null;
-    }
-    return {
-      config: {
-        type: "custom:ladestellen-austria-parking-card",
-        entity: entityId,
-      },
-    };
-  },
+  getEntitySuggestion: entitySuggestionFor(
+    "custom:ladestellen-austria-parking-card",
+  ),
 });
 
 @customElement("ladestellen-austria-parking-card")
@@ -82,10 +74,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     _hass: HomeAssistant,
     entities: string[],
   ): Record<string, unknown> {
-    const found = entities.find(
-      (e) => e.startsWith("sensor.") && e.includes("ladestelle"),
-    );
-    return { entity: found ?? "", station_id: "" };
+    return { entity: findStubEntity(entities), station_id: "" };
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -96,7 +85,6 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // removes the slot's evseId; identity comparison in shouldUpdate.
   @state() private _revealedSlots: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
-  private _versionCheckDone = false;
 
   public setConfig(config: ParkingLotCardConfig): void {
     if (!config || typeof config !== "object") {
@@ -133,10 +121,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
     ) {
       return true;
     }
-    const prev = changedProps.get("hass") as HomeAssistant | undefined;
-    if (!prev || !this.config.entity) return true;
-    return (
-      prev.states[this.config.entity] !== this.hass.states[this.config.entity]
+    return shouldUpdateForEntityState(
+      changedProps,
+      this.hass,
+      this.config.entity,
     );
   }
 
@@ -163,32 +151,23 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override firstUpdated(_changedProps: PropertyValues): void {
-    // Lit's textbook hook for one-shot init that needs the DOM. Fire
-    // the WS card-version probe once. _versionCheckDone is also
-    // checked in updated() in case `hass` arrives after the first
-    // update. isConnected guards the late .then() so the callback
-    // never writes _versionMismatch on a disconnected element.
-    this._maybeRunVersionCheck();
+    this._runVersionCheck();
   }
 
   protected override updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    if (changedProps.has("hass")) {
-      this._maybeRunVersionCheck();
-    }
+    // Also here, not just firstUpdated, in case `hass` arrives after the
+    // first update; runVersionCheckOnce makes the repeat call a no-op.
+    if (changedProps.has("hass")) this._runVersionCheck();
   }
 
-  private _maybeRunVersionCheck(): void {
-    if (this._versionCheckDone || !this.hass) return;
-    this._versionCheckDone = true;
-    void checkCardVersionWS(this.hass).then((mismatch) => {
-      if (this.isConnected && mismatch) this._versionMismatch = mismatch;
+  private _runVersionCheck(): void {
+    runVersionCheckOnce(this, (v) => {
+      this._versionMismatch = v;
     });
   }
 
