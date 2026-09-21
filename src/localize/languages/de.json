@@ -7,7 +7,7 @@
     "loading": "Lade…",
     "version_update": "Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",
     "version_reload": "Neu laden",
-    "version_reload_stuck": "Neu laden hat die neue Version nicht übernommen. Schließen Sie diesen Browser-Tab und öffnen Sie das Dashboard erneut, oder löschen Sie die Website-Daten für Home Assistant in den Browser-Einstellungen."
+    "version_reload_stuck": "Neu laden hat die neue Version nicht übernommen. Schließe diesen Browser-Tab und öffne das Dashboard erneut, oder lösche die Website-Daten für Home Assistant in den Browser-Einstellungen."
   },
   "card": {
     "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
@@ -44,7 +44,7 @@
     "point_status_blocked": "Blockiert",
     "point_status_out_of_order": "Außer Betrieb",
     "point_status_faulted": "Defekt",
-    "point_status_inoperative": "Außer Betrieb",
+    "point_status_inoperative": "Nicht in Betrieb",
     "point_status_unavailable": "Nicht verfügbar",
     "point_status_out_of_stock": "Leer",
     "point_status_planned": "Geplant",
@@ -76,7 +76,7 @@
   },
   "amenities": {
     "green_energy": "Ökostrom",
-    "free_parking": "Gratis Parken",
+    "free_parking": "Kostenloses Parken",
     "roofed_parking": "Überdacht",
     "illuminated_parking": "Beleuchtet",
     "barrier_free": "Barrierefrei",
