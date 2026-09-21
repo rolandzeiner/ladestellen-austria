@@ -1156,15 +1156,22 @@ export const editorStyles = css`
   .chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
+  /* 40px, not 44px: WCAG 2.5.8 AA is satisfied outright, and the house
+     rule's dense-row carve-out applies because the 8px gap keeps every
+     neighbouring target more than 4px away. 44px chips in a wrapped
+     three-row filter block read as buttons, not chips. */
   .filter-chip {
     appearance: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
     border: 1px solid var(--divider-color);
     border-radius: 999px;
     background: var(--ha-card-background, var(--card-background-color));
     color: var(--primary-text-color);
-    padding: 4px 12px;
+    padding: 4px 14px;
     font-size: var(--ha-font-size-s, 12px);
     cursor: pointer;
     transition:
@@ -1205,6 +1212,7 @@ export const editorStyles = css`
     text-align: left;
     display: flex;
     align-items: center;
+    min-height: 44px;
     gap: 10px;
     padding: 8px 12px;
     border-radius: 8px;
@@ -1265,8 +1273,9 @@ export const editorStyles = css`
     position: relative;
     display: inline-flex;
     align-items: center;
+    min-height: 44px;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--swatch-color) 18%, transparent);
     color: var(--primary-text-color);
