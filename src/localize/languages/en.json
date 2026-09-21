@@ -67,8 +67,8 @@
     "slot_status_blocked": "blocked",
     "slot_status_out_of_stock": "empty",
     "slot_status_faulted": "faulted",
-    "slot_status_inoperative": "offline",
-    "slot_status_unavailable": "n/a",
+    "slot_status_inoperative": "inoperative",
+    "slot_status_unavailable": "unavailable",
     "slot_status_planned": "planned",
     "slot_status_removed": "removed"
   },
