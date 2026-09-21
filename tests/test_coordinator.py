@@ -22,6 +22,7 @@ from custom_components.ladestellen_austria.const import (
 )
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
+    _describe_error,
 )
 
 from .conftest import EXAMPLE_COORDINATOR_DATA, make_entry, make_response_cm
@@ -857,3 +858,73 @@ async def test_status_events_fire_per_evse(hass: HomeAssistant) -> None:
         ("E1", "AVAILABLE", "OCCUPIED"),
         ("E2", "CHARGING", "AVAILABLE"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Failure logging — translation placeholders must survive into the log
+# ---------------------------------------------------------------------------
+
+
+def _http_error(status: str = "503") -> UpdateFailed:
+    return UpdateFailed(
+        translation_domain=DOMAIN,
+        translation_key="api_http_error",
+        translation_placeholders={
+            "status": status,
+            "reason": "Service Unavailable",
+        },
+    )
+
+
+def test_describe_error_appends_placeholders() -> None:
+    """The status and reason the raise site collected reach the log line."""
+    described = _describe_error(_http_error())
+
+    assert "status=503" in described
+    assert "reason=Service Unavailable" in described
+
+
+def test_describe_error_passes_plain_exceptions_through() -> None:
+    """An exception without translation placeholders is rendered unchanged."""
+    assert _describe_error(ValueError("boom")) == "boom"
+
+
+async def test_failure_log_carries_http_status(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A failed refresh logs the HTTP status, not just the translation key.
+
+    Regression guard: `str(UpdateFailed)` falls back to the bare key when the
+    `exceptions` translation category is not cached, and core's own "Error
+    fetching ... data" line renders exactly that — so an outage used to leave
+    no diagnosable trace at all.
+    """
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=_http_error()),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+
+    assert "Ladestellen Austria API unavailable" in caplog.text
+    assert "status=503" in caplog.text
+
+
+async def test_failure_log_not_repeated_during_sustained_outage(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Only the available -> unavailable transition is logged."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with patch.object(coordinator, "_fetch_search", side_effect=_http_error()):
+        for _ in range(3):
+            coordinator.last_update_success = False
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+
+    assert "Ladestellen Austria API unavailable" not in caplog.text

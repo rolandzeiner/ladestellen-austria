@@ -25,7 +25,7 @@ from homeassistant.core import (
     State,
     callback,
 )
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.debounce import Debouncer
@@ -57,6 +57,33 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _describe_error(err: BaseException) -> str:
+    """Render an exception for the log with its translation placeholders.
+
+    `HomeAssistantError.__str__` resolves the message through the *cached*
+    `exceptions` translation category. For a custom integration that category
+    is generally not loaded when a coordinator refresh fails, so it falls back
+    to the bare translation key — and memoises it on the exception, so it stays
+    bare even once translations are cached. Every raise in this module carries
+    `translation_key=` + `translation_placeholders=` (the
+    `exception-translations` quality-scale rule), which meant the status code
+    and reason the raise site collected never reached the log: a lone
+    `api_http_error` cannot tell a 429 from a 503, which is exactly the
+    question an outage raises.
+
+    Re-attaching the placeholders keeps the log diagnosable without
+    duplicating the English copy from `strings.json` in Python.
+    """
+    if isinstance(err, HomeAssistantError) and err.translation_placeholders:
+        detail = ", ".join(
+            f"{key}={value}" for key, value in err.translation_placeholders.items()
+        )
+        if detail:
+            return f"{err} ({detail})"
+    return str(err)
+
 
 type LadestellenAustriaConfigEntry = ConfigEntry["LadestellenAustriaCoordinator"]
 
@@ -538,10 +565,20 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lat = self._latitude
             lng = self._longitude
 
+        was_available = self.last_update_success
+
         try:
             stations = await self._fetch_search(lat, lng)
-        except UpdateFailed:
+        except UpdateFailed as err:
             self._note_failure()
+            # Log once on the available -> unavailable transition, not on every
+            # poll of a sustained outage. Core's own "Error fetching ... data"
+            # line renders `str(err)`, which is the bare translation key — so
+            # without this the status code never reached the log at all.
+            if was_available:
+                _LOGGER.warning(
+                    "Ladestellen Austria API unavailable: %s", _describe_error(err)
+                )
             raise
         # Local-only dev hook: contributors export
         # `LADESTELLEN_AUSTRIA_DEV_FIXTURE=1` and drop a (gitignored)
@@ -574,7 +611,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if isinstance(points, list):
                 station["points"] = sorted(points, key=_evse_sort_key)
 
-        if self.last_update_success is False:
+        if not was_available:
             _LOGGER.info(
                 "Ladestellen Austria API available again (%d stations)",
                 len(truncated),
