@@ -18,8 +18,12 @@ import {
   filterStations,
   hoursToMow,
   isOpenNow,
+  mapsDeeplink,
   minuteOfWeek,
+  stationConnectorTokens,
   stationHasAmenity,
+  stationHasDcPoint,
+  stationMaxKw,
   statusLevel,
 } from "./station-logic";
 import type { OpeningHours, Point, Station } from "./types";
@@ -409,5 +413,93 @@ describe("filterStations", () => {
   it("tolerates a station with no points array", () => {
     const s = station({ points: undefined as unknown as Point[] });
     expect(() => filterStations([s], { only_available: true }, now, VIENNA)).not.toThrow();
+  });
+});
+
+describe("stationMaxKw", () => {
+  it("takes the highest capacity across points", () => {
+    const s = station({
+      points: [point({ capacityKw: 11 }), point({ capacityKw: 150 })],
+    });
+    expect(stationMaxKw(s)).toBe(150);
+  });
+
+  it("returns 0 when no point reports a capacity", () => {
+    expect(stationMaxKw(station({ points: [point({})] }))).toBe(0);
+    expect(stationMaxKw(station({ points: [] }))).toBe(0);
+  });
+
+  it("tolerates a missing points array", () => {
+    expect(stationMaxKw(station({ points: undefined as unknown as Point[] }))).toBe(0);
+  });
+});
+
+describe("stationHasDcPoint", () => {
+  it("detects a DC point", () => {
+    const s = station({ points: [point({ electricityType: ["DC"] })] });
+    expect(stationHasDcPoint(s)).toBe(true);
+  });
+
+  it("is false for an AC-only station", () => {
+    const s = station({ points: [point({ electricityType: ["AC_3_PHASE"] })] });
+    expect(stationHasDcPoint(s)).toBe(false);
+  });
+
+  it("needs an exact DC entry, not a prefix", () => {
+    // Deliberately stricter than pointPowerType, which buckets DC_FAST
+    // as DC — this drives the row accent and matches the old inline test.
+    const s = station({ points: [point({ electricityType: ["DC_FAST"] })] });
+    expect(stationHasDcPoint(s)).toBe(false);
+  });
+});
+
+describe("stationConnectorTokens", () => {
+  it("deduplicates across points", () => {
+    const plug = { consumerName: "TYPE_2_AC", key: "T2" };
+    const s = station({
+      points: [
+        point({ connectorType: [plug] } as Partial<Point>),
+        point({ connectorType: [plug] } as Partial<Point>),
+      ],
+    });
+    expect([...stationConnectorTokens(s)]).toEqual(["Type 2"]);
+  });
+
+  it("collects every distinct type", () => {
+    const s = station({
+      points: [
+        point({
+          connectorType: [
+            { consumerName: "TYPE_2_AC", key: "T2" },
+            { consumerName: "CHADEMO", key: "CH" },
+          ],
+        } as Partial<Point>),
+      ],
+    });
+    expect([...stationConnectorTokens(s)].sort()).toEqual(["CHAdeMO", "Type 2"]);
+  });
+
+  it("is empty for a station with no connectors", () => {
+    expect([...stationConnectorTokens(station({ points: [] }))]).toEqual([]);
+  });
+});
+
+describe("mapsDeeplink", () => {
+  it("builds an https maps URL from coordinates", () => {
+    expect(mapsDeeplink({ lat: 48.2, lon: 16.37 })).toBe(
+      "https://www.google.com/maps/search/?api=1&query=48.2,16.37",
+    );
+  });
+
+  it("returns an empty string when the station has no location", () => {
+    // `stations` comes from an unvalidated state attribute, so this
+    // happens in practice and must not throw.
+    expect(mapsDeeplink(undefined)).toBe("");
+  });
+
+  it("passes the self-built URL through the https allowlist", () => {
+    // The guard is defensive: it stays in place so a future contributor
+    // cannot route an upstream attribute through this binding.
+    expect(mapsDeeplink({ lat: 0, lon: 0 })).toMatch(/^https:\/\//);
   });
 });

@@ -28,7 +28,11 @@ import {
   rackSlotStatus,
   safeHttpsUri,
   shortConnector,
+  slotAriaLabel,
+  slotClassList,
+  slotStatusBucket,
   slotStatusShortKey,
+  slotStatusWord,
   slotVariant,
 } from "./utils";
 import type { Point } from "./types";
@@ -304,5 +308,150 @@ describe("computeFormLabel", () => {
     expect(
       computeFormLabel({ name: "nope_xyz", type: "expandable" }),
     ).toBe("nope_xyz");
+  });
+});
+
+describe("slotStatusBucket", () => {
+  it.each([
+    ["ok", "free"],
+    ["busy", "busy"],
+    ["warn", "warn"],
+    ["unknown", "unknown"],
+    ["empty", "unknown"],
+  ] as const)("maps %s to %s", (status, expected) => {
+    expect(slotStatusBucket(status)).toBe(expected);
+  });
+});
+
+describe("slotStatusWord", () => {
+  it("falls back to the full status label when the short key is untranslated", () => {
+    // A new upstream status must degrade to something readable rather
+    // than leaking `parking.slot_status_whatever` into the UI.
+    expect(slotStatusWord("definitely_not_a_key", "Out of order")).toBe(
+      "Out of order",
+    );
+  });
+
+  it("uses the translation when one exists", () => {
+    expect(slotStatusWord("free", "IGNORED")).not.toBe("IGNORED");
+  });
+});
+
+describe("slotClassList", () => {
+  const base = {
+    bucket: "ok" as const,
+    isAvailable: true,
+    isBusy: false,
+    isWarn: false,
+    overlay: null,
+    showCar: false,
+    showOverlayIcon: false,
+  };
+
+  it("always starts with the base class", () => {
+    expect(slotClassList(base, false).split(" ")[0]).toBe("parking-slot");
+  });
+
+  it.each([
+    [{ isAvailable: true, isBusy: false, isWarn: false }, "is-available"],
+    [{ isAvailable: false, isBusy: true, isWarn: false }, "is-busy"],
+    [{ isAvailable: false, isBusy: false, isWarn: true }, "is-warn"],
+    [{ isAvailable: false, isBusy: false, isWarn: false }, "is-unknown"],
+  ])("picks %o -> %s", (flags, expected) => {
+    expect(slotClassList({ ...base, ...flags }, false)).toContain(expected);
+  });
+
+  it("marks has-overlay for either a car or an icon", () => {
+    expect(slotClassList({ ...base, showCar: true }, false)).toContain(
+      "has-overlay",
+    );
+    expect(slotClassList({ ...base, showOverlayIcon: true }, false)).toContain(
+      "has-overlay",
+    );
+  });
+
+  it("distinguishes the car from the icon", () => {
+    const car = slotClassList({ ...base, showCar: true }, false);
+    expect(car).toContain("has-car");
+    expect(car).not.toContain("has-icon");
+  });
+
+  it("adds the background tint class only when the overlay carries one", () => {
+    expect(
+      slotClassList(
+        { ...base, overlay: { icon: "mdi:x", tone: "info", bgTint: "info" } },
+        false,
+      ),
+    ).toContain("slot-tint-info");
+    expect(
+      slotClassList(
+        { ...base, overlay: { icon: "mdi:x", tone: "muted" } },
+        false,
+      ),
+    ).not.toContain("slot-tint");
+  });
+
+  it("adds is-revealed only when asked", () => {
+    expect(slotClassList(base, true)).toContain("is-revealed");
+    expect(slotClassList(base, false)).not.toContain("is-revealed");
+  });
+
+  it("emits no empty class tokens", () => {
+    // The array is filtered before joining; a stray "" would render as a
+    // double space and break exact class matching in CSS tests.
+    expect(slotClassList(base, false)).not.toMatch(/\s{2,}/);
+    expect(slotClassList(base, false).split(" ").filter((c) => !c)).toEqual([]);
+  });
+});
+
+describe("slotAriaLabel", () => {
+  const base = {
+    powerType: "ac" as const,
+    capacityKw: 22,
+    kwText: "22",
+    connector: "Type 2",
+    statusLabel: "Available",
+  };
+
+  it("joins the parts with a middle dot", () => {
+    expect(slotAriaLabel(base)).toBe("AC · 22 kW · Type 2 · Available");
+  });
+
+  it("uppercases the power type", () => {
+    expect(slotAriaLabel({ ...base, powerType: "dc" })).toContain("DC");
+  });
+
+  it("drops a missing power type rather than reading a blank", () => {
+    expect(slotAriaLabel({ ...base, powerType: null })).toBe(
+      "22 kW · Type 2 · Available",
+    );
+  });
+
+  it("treats 0 kW as not reported", () => {
+    // The API uses 0 for 'no capacity published'.
+    expect(slotAriaLabel({ ...base, capacityKw: 0 })).toBe(
+      "AC · Type 2 · Available",
+    );
+    expect(slotAriaLabel({ ...base, capacityKw: undefined })).toBe(
+      "AC · Type 2 · Available",
+    );
+  });
+
+  it("drops the en-dash placeholder connector", () => {
+    expect(slotAriaLabel({ ...base, connector: "–" })).toBe(
+      "AC · 22 kW · Available",
+    );
+  });
+
+  it("always keeps the status, even when everything else is absent", () => {
+    expect(
+      slotAriaLabel({
+        powerType: null,
+        capacityKw: 0,
+        kwText: "–",
+        connector: "–",
+        statusLabel: "Unknown",
+      }),
+    ).toBe("Unknown");
   });
 });

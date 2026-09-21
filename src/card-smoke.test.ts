@@ -53,6 +53,18 @@ beforeAll(async () => {
   await import("./ladestellen-austria-card");
 });
 
+function basePoint() {
+  return {
+    evseId: "AT*TST*E1",
+    capacityKw: 22,
+    status: "AVAILABLE",
+    freeOfCharge: false,
+    connectorType: [{ consumerName: "TYPE_2_AC", key: "T2" }],
+    electricityType: ["AC_3_PHASE"],
+    authenticationMode: ["APP"],
+  };
+}
+
 function station(over: Partial<Station> = {}): Station {
   return {
     stationId: "at-1",
@@ -241,6 +253,68 @@ describe("ladestellen-austria-card", () => {
       e.hass = hass();
     });
     expect(el.shadowRoot?.querySelector(".empty-state")).not.toBeNull();
+  });
+});
+
+describe("station ordering", () => {
+  // These assertions exist because a refactor of render() silently
+  // deleted _sortStations and every test still passed — nothing
+  // exercised the ordering. The rendered DOM order is the contract.
+  function stations(): Station[] {
+    return [
+      station({
+        stationId: "far",
+        label: "Far",
+        distance: 9000,
+        points: [{ ...basePoint(), capacityKw: 150 }] as Station["points"],
+      }),
+      station({
+        stationId: "near",
+        label: "Near",
+        distance: 100,
+        points: [{ ...basePoint(), capacityKw: 11 }] as Station["points"],
+      }),
+      station({
+        stationId: "mid",
+        label: "Mid",
+        distance: 1000,
+        points: [{ ...basePoint(), capacityKw: 50 }] as Station["points"],
+      }),
+    ];
+  }
+
+  async function renderedOrder(config: Record<string, unknown>) {
+    const el = await mount<
+      LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }
+    >("ladestellen-austria-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", ...config });
+      e.hass = hass(stations());
+    });
+    return [...(el.shadowRoot?.querySelectorAll(".station-name") ?? [])].map(
+      (n) => n.textContent?.trim(),
+    );
+  }
+
+  it("sorts by distance ascending by default", async () => {
+    expect(await renderedOrder({})).toEqual(["Near", "Mid", "Far"]);
+  });
+
+  it("sorts by power descending when sort_by_power is set", async () => {
+    expect(await renderedOrder({ sort_by_power: true })).toEqual([
+      "Far",
+      "Mid",
+      "Near",
+    ]);
+  });
+
+  it("caps the list at max_stations", async () => {
+    expect(await renderedOrder({ max_stations: 2 })).toEqual(["Near", "Mid"]);
+  });
+
+  it("floats a pinned station above the sort order", async () => {
+    expect(
+      await renderedOrder({ pinned_station_ids: ["far"] }),
+    ).toEqual(["Far", "Near", "Mid"]);
   });
 });
 

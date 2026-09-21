@@ -10,7 +10,7 @@
 // Keep these pure. The card passes `now` and `tz` in rather than reading
 // the clock here, so opening-hours behaviour is deterministic in tests.
 
-import { normStatus, shortConnector } from "./utils";
+import { normStatus, safeHttpsUri, shortConnector } from "./utils";
 import type {
   LadestellenAustriaCardConfig,
   OpeningHours,
@@ -220,7 +220,7 @@ function hasActivePoint(s: Station): boolean {
 }
 
 /** Every distinct short connector label offered anywhere on the station. */
-function stationConnectorTokens(s: Station): Set<string> {
+export function stationConnectorTokens(s: Station): Set<string> {
   return new Set(
     (s.points ?? []).flatMap((p) =>
       (p.connectorType ?? []).map((c) => shortConnector(c.consumerName, c.key)),
@@ -289,4 +289,37 @@ export function filterStations(
     }
     return true;
   });
+}
+
+/** Highest advertised capacity across a station's points; 0 when none report one. */
+export function stationMaxKw(station: Station): number {
+  return (station.points ?? []).reduce(
+    (max, p) => Math.max(max, p.capacityKw ?? 0),
+    0,
+  );
+}
+
+/** Does any point on the station deliver DC? Drives the row's kW accent. */
+export function stationHasDcPoint(station: Station): boolean {
+  return (station.points ?? []).some((p) =>
+    (p.electricityType ?? []).includes("DC"),
+  );
+}
+
+/**
+ * Google Maps deeplink for a station, or "" when it has no coordinates.
+ *
+ * `stations` arrives from an unvalidated state attribute, so a station
+ * can reach the renderer without `location` despite the type — a missing
+ * field must not throw and blank the whole card. The self-built URL
+ * still goes through safeHttpsUri so a future contributor cannot wire an
+ * upstream attribute through this binding and bypass the allowlist.
+ */
+export function mapsDeeplink(
+  location: { lat: number; lon: number } | undefined,
+): string {
+  if (!location) return "";
+  return safeHttpsUri(
+    `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lon}`,
+  );
 }

@@ -338,3 +338,87 @@ export function computeFormLabel(schema: {
   const resolved = localize(key);
   return resolved === key ? schema.name : resolved;
 }
+
+/**
+ * Coarse colour bucket for the slot's bottom status word. Deliberately
+ * coarser than the status itself: RESERVED and BLOCKED both read red,
+ * the whole OUT_OF_ORDER family reads orange.
+ */
+export function slotStatusBucket(status: RackStatus): string {
+  switch (status) {
+    case "ok":
+      return "free";
+    case "busy":
+      return "busy";
+    case "warn":
+      return "warn";
+    default:
+      return "unknown";
+  }
+}
+
+/**
+ * The short word shown at the bottom of a slot ("frei" / "lädt" /
+ * "reserviert"). Falls back to the full status label when the short key
+ * has no translation, so a new upstream status degrades to something
+ * readable instead of a raw key.
+ */
+export function slotStatusWord(bucket: string, fallback: string): string {
+  const key = `parking.slot_status_${bucket}`;
+  const resolved = localize(key);
+  return resolved === key ? fallback : resolved;
+}
+
+/**
+ * The slot button's full class list. The status cascade and the five
+ * conditional modifiers were inline in the renderer, where they were
+ * most of its branching and none of it was reachable from a test.
+ */
+export function slotClassList(
+  variant: SlotVariant,
+  isRevealed: boolean,
+): string {
+  const { isAvailable, isBusy, isWarn, overlay, showCar, showOverlayIcon } =
+    variant;
+  const status = isAvailable
+    ? "is-available"
+    : isBusy
+      ? "is-busy"
+      : isWarn
+        ? "is-warn"
+        : "is-unknown";
+  return [
+    "parking-slot",
+    status,
+    showCar || showOverlayIcon ? "has-overlay" : "",
+    showCar ? "has-car" : "",
+    showOverlayIcon ? "has-icon" : "",
+    overlay?.bgTint ? `slot-tint-${overlay.bgTint}` : "",
+    isRevealed ? "is-revealed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Screen-reader label for a slot: power type, capacity, connector and
+ * status, middle-dot separated, with the empty parts dropped rather
+ * than read out as blanks. A 0 kW capacity counts as absent — the API
+ * uses it for "not reported".
+ */
+export function slotAriaLabel(parts: {
+  powerType: "dc" | "ac" | null;
+  capacityKw: number | undefined;
+  kwText: string;
+  connector: string;
+  statusLabel: string;
+}): string {
+  return [
+    parts.powerType ? parts.powerType.toUpperCase() : null,
+    parts.capacityKw ? `${parts.kwText} kW` : null,
+    parts.connector && parts.connector !== "–" ? parts.connector : null,
+    parts.statusLabel,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
