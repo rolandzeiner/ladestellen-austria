@@ -256,6 +256,73 @@ describe("ladestellen-austria-card", () => {
   });
 });
 
+describe("station row disclosure", () => {
+  const mountCard = () =>
+    mount<
+      LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }
+    >("ladestellen-austria-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria" });
+      e.hass = hass();
+    });
+
+  // The trigger is an overlay sibling, not a wrapper. If it ever goes
+  // back to being role="button" on the <li>, the maps link becomes a
+  // presentational child of a button and can drop out of the
+  // accessibility tree entirely.
+  it("exposes a real button, not a role on the row", async () => {
+    const el = await mountCard();
+    const row = el.shadowRoot!.querySelector("li.station")!;
+    expect(row.hasAttribute("role")).toBe(false);
+    expect(row.hasAttribute("tabindex")).toBe(false);
+
+    const trigger = row.querySelector("button.station-trigger")!;
+    expect(trigger).not.toBeNull();
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(trigger.getAttribute("aria-controls")).toBeTruthy();
+  });
+
+  it("keeps the maps link outside the trigger", async () => {
+    const el = await mountCard();
+    const row = el.shadowRoot!.querySelector("li.station")!;
+    const link = row.querySelector("a.icon-action");
+    if (link) {
+      expect(link.closest("button.station-trigger")).toBeNull();
+    }
+  });
+
+  it("names the trigger from the station and its status", async () => {
+    const el = await mountCard();
+    const root = el.shadowRoot!;
+    const trigger = root.querySelector("button.station-trigger")!;
+    const ids = (trigger.getAttribute("aria-labelledby") ?? "").split(" ");
+    expect(ids).toHaveLength(2);
+    for (const id of ids) {
+      const target = root.getElementById(id);
+      expect(target).not.toBeNull();
+      const name =
+        target!.textContent?.trim() || target!.getAttribute("aria-label");
+      expect(name).toBeTruthy();
+    }
+    // The status half must not read as "three slash five".
+    expect(root.getElementById(ids[1]!)!.getAttribute("aria-label")).not.toContain(
+      "/",
+    );
+  });
+
+  it("toggles on click and reflects it in aria-expanded", async () => {
+    const el = await mountCard();
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      "button.station-trigger",
+    )!.click();
+    await el.updateComplete;
+    expect(
+      el
+        .shadowRoot!.querySelector("button.station-trigger")!
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+  });
+});
+
 describe("station ordering", () => {
   // These assertions exist because a refactor of render() silently
   // deleted _sortStations and every test still passed — nothing

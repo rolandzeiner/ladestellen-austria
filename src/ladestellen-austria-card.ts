@@ -665,18 +665,30 @@ export class LadestellenAustriaCard extends LitElement {
     const locText = locParts.join(" · ");
 
     const detailId = `station-panel-${station.stationId}`;
+    const nameId = `station-name-${station.stationId}`;
+    const statusId = `station-status-${station.stationId}`;
     return html`
-      <li
-        class=${cls}
-        @click=${() => this._toggle(station.stationId)}
-        @keydown=${(ev: KeyboardEvent) => this._onKey(ev, station.stationId)}
-        tabindex="0"
-        role="button"
-        aria-expanded=${expanded ? "true" : "false"}
-        aria-controls=${detailId}
-      >
+      <li class=${cls}>
         <div class="station-body">
+          <!-- The disclosure trigger is a transparent overlay across the
+               row, not a wrapper around it. role="button" used to sit on
+               the <li>, which made the row's own maps link a
+               presentational child of a button — assistive tech can drop
+               a distinct destination that way. As a sibling the link
+               stays reachable: .icon-action is positioned so it paints
+               above the overlay and takes its own clicks, while the
+               chevron deliberately stays below it so clicking the
+               affordance still toggles the row. -->
+          <button
+            class="station-trigger"
+            type="button"
+            aria-expanded=${expanded}
+            aria-controls=${detailId}
+            aria-labelledby=${`${nameId} ${statusId}`}
+            @click=${() => this._toggle(station.stationId)}
+          ></button>
           <span
+            id=${statusId}
             class=${`status-dot status-${level}`}
             role="img"
             aria-label=${this._statusAria(level, availPoints, totalPoints)}
@@ -692,7 +704,9 @@ export class LadestellenAustriaCard extends LitElement {
               isPinned,
             })}
             <div class="row-secondary">
-              <span class="station-name" lang="de">${station.label}</span>
+              <span class="station-name" id=${nameId} lang="de"
+                >${station.label}</span
+              >
               ${locText
                 ? html`<span class="station-loc" lang="de">${locText}</span>`
                 : nothing}
@@ -1193,7 +1207,9 @@ export class LadestellenAustriaCard extends LitElement {
   ): string {
     if (level === "inactive") return localize("card.inactive");
     if (level === "unknown") return localize("card.status_unknown");
-    return `${avail} / ${total} ${localize("card.live_suffix")}`;
+    return localize("card.available_count")
+      .replaceAll("{avail}", String(avail))
+      .replaceAll("{total}", String(total));
   }
 
   private _toggle(stationId: string): void {
@@ -1201,13 +1217,6 @@ export class LadestellenAustriaCard extends LitElement {
     if (next.has(stationId)) next.delete(stationId);
     else next.add(stationId);
     this._expanded = next;
-  }
-
-  private _onKey(ev: KeyboardEvent, stationId: string): void {
-    if (ev.key === "Enter" || ev.key === " ") {
-      ev.preventDefault();
-      this._toggle(stationId);
-    }
   }
 
   private _priceText(points: Point[]): string {

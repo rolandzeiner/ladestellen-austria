@@ -478,15 +478,14 @@ const cardOwnStyles = css`
     border-bottom: none;
   }
   .station:hover,
-  .station:focus-visible {
+  .station:focus-within {
     background: color-mix(in srgb, var(--primary-color) 5%, transparent);
-    outline: none;
   }
   .station.is-pinned {
     background: color-mix(in srgb, var(--primary-color) 4%, transparent);
   }
   .station.is-pinned:hover,
-  .station.is-pinned:focus-visible {
+  .station.is-pinned:focus-within {
     background: color-mix(in srgb, var(--primary-color) 8%, transparent);
   }
   .station.is-inactive .station-body {
@@ -494,6 +493,7 @@ const cardOwnStyles = css`
   }
 
   .station-body {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -511,6 +511,26 @@ const cardOwnStyles = css`
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
+  }
+  /* Transparent disclosure trigger stretched across the row. It is
+     absolutely positioned and therefore out of the flex flow, so the
+     dot / main / actions layout is unchanged. */
+  .station-trigger {
+    position: absolute;
+    inset: 0;
+    appearance: none;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+  /* Raise only the maps link above the overlay. Both are positioned and
+     the link comes later in the DOM, so it wins without a z-index. The
+     chevron is left unpositioned on purpose: it stays under the overlay
+     so clicking the expand affordance expands the row. */
+  .station-actions .icon-action {
+    position: relative;
   }
   .chevron {
     --mdc-icon-size: 22px;
@@ -1082,7 +1102,7 @@ const cardOwnStyles = css`
 
   /* ── Accessibility primitives ────────────────────────────────────── */
   /* Focus ring (WCAG 2.4.7 AA; the 2px/3:1 ring also meets 2.4.13 AAA). */
-  .station:focus-visible,
+  .station-trigger:focus-visible,
   .icon-action:focus-visible,
   a:focus-visible,
   button:focus-visible {
@@ -1093,10 +1113,15 @@ const cardOwnStyles = css`
   .btn-primary:focus-visible {
     outline-offset: 3px;
   }
+  /* The trigger spans the whole row, so an outset ring would collide
+     with the neighbouring row's divider. Inset it instead. */
+  .station-trigger:focus-visible {
+    outline-offset: -2px;
+  }
 
   /* Forced-colors fallback (Windows High Contrast). */
   @media (forced-colors: active) {
-    .station:focus-visible,
+    .station-trigger:focus-visible,
     .icon-action:focus-visible,
     a:focus-visible,
     button:focus-visible {

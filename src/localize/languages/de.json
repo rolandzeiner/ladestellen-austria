@@ -17,7 +17,7 @@
     "inactive": "inaktiv",
     "status_unknown": "Live-Status nicht verfügbar",
     "gratis": "Gratis",
-    "live_suffix": "frei",
+    "available_count": "{avail} von {total} verfügbar",
     "open_in_maps": "In Karte öffnen",
     "website": "Website",
     "call": "Anrufen",

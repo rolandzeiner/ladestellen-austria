@@ -17,7 +17,7 @@
     "inactive": "inactive",
     "status_unknown": "live availability unavailable",
     "gratis": "Free",
-    "live_suffix": "free",
+    "available_count": "{avail} of {total} available",
     "open_in_maps": "Open in Maps",
     "website": "Website",
     "call": "Call",
