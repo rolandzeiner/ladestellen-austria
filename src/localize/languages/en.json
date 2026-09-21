@@ -1,6 +1,5 @@
 {
   "common": {
-    "version": "Version",
     "invalid_configuration": "Invalid configuration",
     "invalid_entity": "Card config: 'entity' must be a string referencing a sensor entity_id.",
     "invalid_station_id": "Card config: 'station_id' must be a string.",
@@ -12,7 +11,6 @@
   "card": {
     "no_entity": "Select a Ladestellen Austria sensor in the card editor.",
     "no_stations": "No stations match the current filters.",
-    "hero_context": "to the nearest charger in {city}",
     "hero_count": "{count} stations",
     "hero_count_filtered": "{filtered} of {total} stations",
     "hero_range": "{min}–{max} km range",
