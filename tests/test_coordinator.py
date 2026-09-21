@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -534,6 +534,123 @@ async def test_tracker_restored_clears_repair_issue(
     assert lng == 16.5
     assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
     assert coordinator._tracker_issue_raised is False
+
+
+async def test_tracker_missing_during_startup_raises_no_issue(
+    hass: HomeAssistant,
+) -> None:
+    """No Repairs issue while HA is starting — the tracker may just be late.
+
+    `async_config_entry_first_refresh()` routinely runs before the tracker's
+    own integration has restored its state, so "no coordinates" at that point
+    means "not loaded yet", not "misconfigured". The configured-location
+    fallback still applies.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    hass.states.async_set("device_tracker.phone", "home", {})
+    hass.set_state(CoreState.starting)
+    try:
+        lat, lng = coordinator._get_entity_coords(
+            hass.states.get("device_tracker.phone")
+        )
+    finally:
+        hass.set_state(CoreState.running)
+
+    assert (lat, lng) == (48.21, 16.37)
+    assert coordinator._tracker_issue_raised is False
+    registry = ir.async_get(hass)
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
+
+
+async def test_tracker_issue_cleared_by_later_coordinator(hass: HomeAssistant) -> None:
+    """A reload's fresh coordinator still clears its predecessor's issue.
+
+    `_tracker_issue_raised` is per-instance while the Repairs issue is global,
+    so the clear must not be gated on the flag or a config-entry reload orphans
+    the issue permanently.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+
+    first = LadestellenAustriaCoordinator(hass, entry)
+    hass.states.async_set("device_tracker.phone", "home", {})
+    first._get_entity_coords(hass.states.get("device_tracker.phone"))
+    registry = ir.async_get(hass)
+    assert (
+        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
+        is not None
+    )
+
+    # Reload: a brand-new coordinator for the same entry, flag back at False.
+    second = LadestellenAustriaCoordinator(hass, entry)
+    assert second._tracker_issue_raised is False
+
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    second._get_entity_coords(hass.states.get("device_tracker.phone"))
+
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — the distance guard's reference position
+# ---------------------------------------------------------------------------
+
+
+async def test_failed_fetch_does_not_record_position(hass: HomeAssistant) -> None:
+    """A failed fetch leaves the distance guard's reference position unset.
+
+    Recording it up-front pinned the guard to a position no data was ever
+    received for: a parked car then never cleared the 1500 m threshold and
+    every retry was suppressed until the safety interval came round.
+    """
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=UpdateFailed("boom")),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+
+    assert coordinator._last_fetch_lat is None
+    assert coordinator._last_fetch_lng is None
+    # The cooldown timestamp is deliberately still armed — a flapping API must
+    # not be re-hit on every tracker tick.
+    assert coordinator._last_fetch_time is not None
+
+
+async def test_successful_fetch_records_position(hass: HomeAssistant) -> None:
+    """A successful fetch records the position the data belongs to."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with patch.object(coordinator, "_fetch_search", return_value=[]):
+        await coordinator._async_update_data()
+
+    assert (coordinator._last_fetch_lat, coordinator._last_fetch_lng) == (48.35, 16.5)
 
 
 # ---------------------------------------------------------------------------

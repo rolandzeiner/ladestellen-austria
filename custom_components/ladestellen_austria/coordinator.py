@@ -18,6 +18,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
 from homeassistant.core import (
+    CoreState,
     Event,
     EventStateChangedData,
     HomeAssistant,
@@ -257,10 +258,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Always returns a usable pair — when the tracker has no coordinates
         we fall back to the entry's configured location (HA home if the
-        user left it at defaults) and raise a Repairs issue. The fallback
-        is necessary because a degraded tracker should not block refreshes
-        entirely; the user just sees stale results near home until they
-        fix the tracker.
+        user left it at defaults), and raise a Repairs issue unless HA is
+        still starting. The fallback is necessary because a degraded
+        tracker should not block refreshes entirely; the user just sees
+        stale results near home until they fix the tracker.
         """
         if state is not None:
             lat = state.attributes.get("latitude")
@@ -274,7 +275,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 else:
                     self._clear_tracker_issue()
                     return lat_f, lng_f
-        if self._dynamic_entity:
+        # Only flag it once HA is up. During startup the tracker's own
+        # integration may not have been set up yet, so "no coordinates" is
+        # indistinguishable from "not loaded yet" and is almost always the
+        # latter — `async_config_entry_first_refresh()` routinely wins that
+        # race by a few seconds and used to raise a Repairs issue the user
+        # could do nothing about. The state-change listener picks the tracker
+        # up the moment it appears, so a genuinely missing tracker is still
+        # flagged on the next update.
+        if self._dynamic_entity and self.hass.state is CoreState.running:
             self._raise_tracker_issue()
         return self._latitude, self._longitude
 
@@ -302,9 +311,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _clear_tracker_issue(self) -> None:
-        """Clear the tracker-missing Repairs issue once coordinates return."""
-        if not self._tracker_issue_raised:
-            return
+        """Clear the tracker-missing Repairs issue once coordinates return.
+
+        The delete is unconditional on purpose. `_tracker_issue_raised` is
+        per-coordinator state, but the Repairs issue is global and outlives a
+        config-entry reload — so a fresh coordinator, with the flag back at
+        False, would early-return and orphan the issue its predecessor raised,
+        leaving a warning the user can only dismiss by hand. `async_delete_issue`
+        is a no-op when the issue is absent, so calling it every time is cheap.
+        """
         self._tracker_issue_raised = False
         ir.async_delete_issue(
             self.hass, DOMAIN, f"tracker_missing_{self._entry.entry_id}"
@@ -514,8 +529,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self._dynamic_entity:
             state = self.hass.states.get(self._dynamic_entity)
             lat, lng = self._get_entity_coords(state)
-            self._last_fetch_lat = lat
-            self._last_fetch_lng = lng
+            # The timestamp is recorded optimistically: a failed attempt still
+            # counts against the per-entry cooldown so a flapping API can't be
+            # hammered on every tracker tick. The *position* is not — it is
+            # recorded further down, once data is actually in hand.
             self._last_fetch_time = dt_util.utcnow()
         else:
             lat = self._latitude
@@ -569,6 +586,18 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fire_status_transition_events(truncated)
 
         self._note_success()
+
+        if self._dynamic_entity:
+            # Only now does this position become the reference the distance
+            # guard measures against. Recording it before the fetch pinned the
+            # guard to a position we never received data for: with the car
+            # parked afterwards, `_should_update` saw "hasn't moved 1500 m"
+            # and suppressed every retry until the 6 h safety interval came
+            # round. Leaving it None after a failure makes the guard skip the
+            # distance check entirely, so the cooldown alone paces retries.
+            self._last_fetch_lat = lat
+            self._last_fetch_lng = lng
+
         return {
             "stations": truncated,
             "count": len(truncated),
