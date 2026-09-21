@@ -1284,6 +1284,15 @@ const editorOwnStyles = css`
   .editor-hint--muted {
     opacity: 0.7;
   }
+  /* Same treatment as the card's orphan ids. Declared again here because
+     cardOwnStyles is a separate shadow scope the editors never load. */
+  .orphan-id {
+    font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.6875rem;
+    color: var(--secondary-text-color);
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
 
   /* Each filter dimension (connector / amenity / payment) is its own
      labelled group. The rule is the only thing telling a reader where

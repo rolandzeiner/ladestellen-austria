@@ -327,7 +327,8 @@ export class LadestellenAustriaParkingCardEditor
               `}
           ${selectedId && !stations.some((s) => s.stationId === selectedId)
             ? html`<div class="editor-hint editor-hint--muted">
-                ${localize("parking.station_not_in_range")}: ${selectedId}
+                ${localize("parking.station_not_in_range")}
+                <span class="orphan-id">${selectedId}</span>
               </div>`
             : nothing}
         </div>
@@ -376,9 +377,7 @@ export class LadestellenAustriaParkingCardEditor
             </div>`
           : nothing}
 
-        <div class="editor-section">
-          <div class="editor-hint">${localize("editor.hint_compliance")}</div>
-        </div>
+        <div class="editor-hint">${localize("editor.hint_compliance")}</div>
       </div>
     `;
   }

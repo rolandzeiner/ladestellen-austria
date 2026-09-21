@@ -1221,7 +1221,7 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _priceText(points: Point[]): string {
     if (points.length === 0) return "";
-    if (points.some((p) => p.freeOfCharge)) return localize("card.gratis");
+    if (points.some((p) => p.freeOfCharge)) return localize("card.free_of_charge");
     const kwhPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
       .map((p) => p.priceCentKwh);

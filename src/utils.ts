@@ -88,11 +88,16 @@ export function pointStatusLabel(status: string): string {
     REMOVED: "removed",
     UNKNOWN: "unknown",
   };
+  // Anything we cannot name resolves to the localized "Unknown" rather
+  // than the raw token. E-Control can add a RefillPointStatus at any
+  // time, and the old fallback put the upstream SCREAMING_CASE string
+  // straight into a tooltip, an aria-label and a parking-slot tile.
+  const unknown = localize("card.point_status_unknown");
   const bucket = buckets[s];
-  if (!bucket) return status;
+  if (!bucket) return unknown;
   const key = `card.point_status_${bucket}`;
   const resolved = localize(key);
-  return resolved === key ? status : resolved;
+  return resolved === key ? unknown : resolved;
 }
 
 /**

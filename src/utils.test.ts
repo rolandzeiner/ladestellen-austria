@@ -284,8 +284,11 @@ describe("pointStatusLabel", () => {
     expect(pointStatusLabel("")).toBe("");
   });
 
-  it("returns the raw status when the bucket is unrecognised", () => {
-    expect(pointStatusLabel("SOMETHING_NEW")).toBe("SOMETHING_NEW");
+  it("never leaks a raw status token for an unrecognised bucket", () => {
+    expect(pointStatusLabel("SOMETHING_NEW")).not.toBe("SOMETHING_NEW");
+    expect(pointStatusLabel("SOMETHING_NEW")).toBe(
+      pointStatusLabel("UNKNOWN"),
+    );
   });
 
   it("resolves a known status to a non-empty label", () => {
