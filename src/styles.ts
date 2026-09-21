@@ -1118,7 +1118,7 @@ const cardOwnStyles = css`
 // Editor styles — unchanged. HA form widgets carry their own theming.
 // ---------------------------------------------------------------------------
 
-export const editorStyles = css`
+const editorOwnStyles = css`
   :host {
     display: block;
   }
@@ -1225,10 +1225,8 @@ export const editorStyles = css`
       background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
       border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .pin-row:hover,
-  .pin-row:focus-visible {
+  .pin-row:hover {
     background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-    outline: none;
   }
   .pin-row.pinned {
     background: color-mix(in srgb, var(--primary-color) 10%, transparent);
@@ -1262,6 +1260,21 @@ export const editorStyles = css`
     opacity: 0.7;
   }
 
+  /* Each filter dimension (connector / amenity / payment) is its own
+     labelled group. The rule is the only thing telling a reader where
+     one dimension ends and the next begins — the three chip rows are
+     otherwise a single undifferentiated field of pills. */
+  .chip-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-2, 8px);
+  }
+  .chip-group + .chip-group {
+    margin-top: var(--ha-space-2, 8px);
+    padding-top: var(--ha-space-3, 12px);
+    border-top: 1px solid var(--divider-color);
+  }
+
   /* Palette-swatch chip — used by the parking card's "Eigene Farbe"
      picker. Pill-shaped chip tinted in the chosen colour, with a
      palette-swatch-variant icon in full saturation + the hex value as
@@ -1292,9 +1305,12 @@ export const editorStyles = css`
   }
   /* Keyboard focus lands on the inner <input>, not the wrapping label —
      :focus-within catches the focus event on the actual focused
-     descendant and paints the brand-tinted ring on the visible chip. */
+     descendant and paints the ring on the visible chip. The ring uses
+     --primary-color, not --swatch-color: the swatch colour is whatever
+     the user picked, so it can land at any contrast against the editor
+     background and cannot be relied on to meet WCAG 1.4.11's 3:1. */
   .color-swatch:focus-within {
-    outline: 2px solid var(--swatch-color);
+    outline: 2px solid var(--primary-color);
     outline-offset: 2px;
   }
   .color-swatch ha-icon {
@@ -1321,7 +1337,40 @@ export const editorStyles = css`
        leaks past inset:0; clip just in case. */
     overflow: hidden;
   }
+
+  /* ── Accessibility primitives ────────────────────────────────────── */
+  /* Focus ring (WCAG 2.4.7 AA; the 2px/3:1 ring also meets 2.4.13 AAA).
+     No border-radius here, unlike cardStyles: outline already follows
+     each control's own radius, and forcing 6px would square off the
+     pill-shaped chips on focus. */
+  .filter-chip:focus-visible,
+  .pin-row:focus-visible,
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  /* Forced-colors fallback (Windows High Contrast). */
+  @media (forced-colors: active) {
+    .filter-chip:focus-visible,
+    .pin-row:focus-visible,
+    .color-swatch:focus-within,
+    a:focus-visible,
+    button:focus-visible {
+      outline-color: CanvasText;
+    }
+    .filter-chip,
+    .color-swatch {
+      forced-color-adjust: none;
+    }
+  }
 `;
+
+// Composed like cardStyles / parkingLotStyles. Exporting the bare css``
+// meant the prefers-reduced-motion catch-all never applied to either
+// editor, so their 160ms transitions kept animating.
+export const editorStyles = [sharedReducedMotion, editorOwnStyles];
 
 // ---------------------------------------------------------------------------
 // Parking-slot card styles — single station, points as parking-lot slots

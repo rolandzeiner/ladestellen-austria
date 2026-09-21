@@ -273,7 +273,12 @@ export class LadestellenAustriaParkingCardEditor
           : nothing}
 
         <div class="editor-section">
-          <div class="section-header">
+          <div
+            class="section-header"
+            id="station-picker-heading"
+            role="heading"
+            aria-level="3"
+          >
             ${localize("parking.editor_station_heading")}
           </div>
           <div class="editor-hint">
@@ -288,7 +293,11 @@ export class LadestellenAustriaParkingCardEditor
                 ${localize("editor.pin_no_stations_yet")}
               </div>`
             : html`
-                <div class="pin-list">
+                <div
+                  class="pin-list"
+                  role="radiogroup"
+                  aria-labelledby="station-picker-heading"
+                >
                   ${stations.map((s) => {
                     const isSelected = s.stationId === selectedId;
                     const distanceText =
@@ -299,12 +308,15 @@ export class LadestellenAustriaParkingCardEditor
                       <button
                         type="button"
                         class=${isSelected ? "pin-row pinned" : "pin-row"}
+                        role="radio"
+                        aria-checked=${isSelected}
                         @click=${() => this._selectStation(s.stationId)}
                       >
                         <ha-icon
                           icon=${isSelected
                             ? "mdi:radiobox-marked"
                             : "mdi:radiobox-blank"}
+                          aria-hidden="true"
                         ></ha-icon>
                         <span class="pin-label">${s.label}</span>
                         <span class="pin-meta">${distanceText}</span>
@@ -332,11 +344,10 @@ export class LadestellenAustriaParkingCardEditor
 
         ${this._config.car_color_mode === "fixed"
           ? html`<div class="editor-section">
-              <div class="section-header">
+              <div class="section-header" role="heading" aria-level="3">
                 ${localize("editor.car_color_pick")}
               </div>
               <div class="toggle-row">
-                <span>${localize("editor.car_color_pick")}</span>
                 <label
                   class="color-swatch"
                   style=${`--swatch-color: ${

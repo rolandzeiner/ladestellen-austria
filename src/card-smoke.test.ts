@@ -376,11 +376,28 @@ describe("ladestellen-austria-parking-card", () => {
   });
 
   it("renders one slot per point", async () => {
-    // Each slot is a <button role="listitem"> with a status-dependent
-    // class, so the role is the stable selector here.
+    // Slots are <button class="parking-slot ..."> inside a role="group"
+    // container. They carry no ARIA role of their own: role="listitem"
+    // used to sit here, but it overrode the native button role while
+    // aria-pressed stayed set, which is a contradiction. The class is
+    // the stable selector.
     const el = await mountParking();
-    const slots = el.shadowRoot?.querySelectorAll('[role="listitem"]') ?? [];
+    const slots = el.shadowRoot?.querySelectorAll(".parking-slot") ?? [];
     expect(slots.length).toBe(11);
+  });
+
+  it("keeps slot button semantics intact", async () => {
+    const el = await mountParking();
+    const slots = Array.from(
+      el.shadowRoot?.querySelectorAll(".parking-slot") ?? [],
+    );
+    expect(slots.length).toBeGreaterThan(0);
+    // No slot may re-declare a role that would mask the button.
+    expect(slots.every((s) => !s.hasAttribute("role"))).toBe(true);
+    // Every interactive slot exposes its revealed state.
+    const pressable = slots.filter((s) => s.getAttribute("tabindex") === "0");
+    expect(pressable.length).toBeGreaterThan(0);
+    expect(pressable.every((s) => s.hasAttribute("aria-pressed"))).toBe(true);
   });
 
   it("tags each slot with its status bucket", async () => {
@@ -474,5 +491,75 @@ describe("editors", () => {
       (e) => e.setConfig({ entity: "sensor.ladestellen_austria" }),
     );
     expect(el.shadowRoot).not.toBeNull();
+  });
+
+  // The editors are hand-written Lit below the ha-form, so none of the
+  // ARIA below comes for free the way it does inside <ha-form>. These
+  // assertions exist because attribute-only regressions are silent: the
+  // editor still looks and clicks exactly the same once they go.
+  const mountEditor = (tag: string) =>
+    mount<LitElement & { setConfig: (c: unknown) => void }>(tag, (e) =>
+      e.setConfig({ entity: "sensor.ladestellen_austria" }),
+    );
+
+  it("exposes chip filters as labelled toggle groups", async () => {
+    const el = await mountEditor("ladestellen-austria-card-editor");
+    const root = el.shadowRoot!;
+
+    const chips = Array.from(root.querySelectorAll("button.filter-chip"));
+    expect(chips.length).toBeGreaterThan(0);
+    expect(chips.every((c) => c.hasAttribute("aria-pressed"))).toBe(true);
+    expect(
+      chips.every(
+        (c) =>
+          c.classList.contains("active") ===
+          (c.getAttribute("aria-pressed") === "true"),
+      ),
+    ).toBe(true);
+
+    const groups = Array.from(root.querySelectorAll('[role="group"]'));
+    expect(groups).toHaveLength(3);
+    for (const g of groups) {
+      const id = g.getAttribute("aria-labelledby");
+      expect(id).toBeTruthy();
+      expect(root.getElementById(id!)?.textContent?.trim()).toBeTruthy();
+    }
+  });
+
+  it("exposes the station picker as a radio group", async () => {
+    const el = await mountEditor("ladestellen-austria-parking-card-editor");
+    const root = el.shadowRoot!;
+    expect(
+      root.getElementById("station-picker-heading")?.getAttribute("role"),
+    ).toBe("heading");
+    // The group renders only once stations are present; the labelling
+    // target must exist either way so the wiring cannot rot silently.
+    const group = root.querySelector('[role="radiogroup"]');
+    if (group) {
+      expect(group.getAttribute("aria-labelledby")).toBe(
+        "station-picker-heading",
+      );
+      const radios = Array.from(group.querySelectorAll('[role="radio"]'));
+      expect(radios.every((r) => r.hasAttribute("aria-checked"))).toBe(true);
+    }
+  });
+
+  it("gives both editors a heading structure", async () => {
+    for (const tag of [
+      "ladestellen-austria-card-editor",
+      "ladestellen-austria-parking-card-editor",
+    ]) {
+      const el = await mountEditor(tag);
+      const headers = Array.from(
+        el.shadowRoot!.querySelectorAll(".section-header"),
+      );
+      expect(headers.length).toBeGreaterThan(0);
+      expect(headers.every((h) => h.getAttribute("role") === "heading")).toBe(
+        true,
+      );
+      expect(headers.every((h) => h.getAttribute("aria-level") === "3")).toBe(
+        true,
+      );
+    }
   });
 });

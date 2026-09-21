@@ -216,66 +216,76 @@ export class LadestellenAustriaCardEditor
           : nothing}
 
         <div class="editor-section">
-          <div class="section-header">
+          <div class="section-header" role="heading" aria-level="3">
             ${localize("editor.section_chip_filters")}
           </div>
-          <div class="editor-hint">
-            ${localize("editor.connector_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${CONNECTOR_FILTER_OPTIONS.map(
-              (token) => html`
-                <button
-                  type="button"
-                  class=${selectedConnectors.includes(token)
-                    ? "filter-chip active"
-                    : "filter-chip"}
-                  @click=${() => this._toggleListItem("connector_types", token)}
-                >
-                  ${token}
-                </button>
-              `,
-            )}
+
+          <div class="chip-group" role="group" aria-labelledby="hint-connector">
+            <div class="editor-hint" id="hint-connector">
+              ${localize("editor.connector_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${CONNECTOR_FILTER_OPTIONS.map(
+                (token) => html`
+                  <button
+                    type="button"
+                    class=${selectedConnectors.includes(token)
+                      ? "filter-chip active"
+                      : "filter-chip"}
+                    aria-pressed=${selectedConnectors.includes(token)}
+                    @click=${() => this._toggleListItem("connector_types", token)}
+                  >
+                    ${token}
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
-          <div class="editor-hint">
-            ${localize("editor.amenity_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${AMENITY_FILTER_OPTIONS.map(
-              (opt) => html`
-                <button
-                  type="button"
-                  class=${selectedAmenities.includes(opt.key)
-                    ? "filter-chip icon-chip active"
-                    : "filter-chip icon-chip"}
-                  @click=${() => this._toggleListItem("amenities", opt.key)}
-                >
-                  <ha-icon icon=${opt.icon}></ha-icon>
-                  <span>${localize(opt.label_key)}</span>
-                </button>
-              `,
-            )}
+          <div class="chip-group" role="group" aria-labelledby="hint-amenity">
+            <div class="editor-hint" id="hint-amenity">
+              ${localize("editor.amenity_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${AMENITY_FILTER_OPTIONS.map(
+                (opt) => html`
+                  <button
+                    type="button"
+                    class=${selectedAmenities.includes(opt.key)
+                      ? "filter-chip icon-chip active"
+                      : "filter-chip icon-chip"}
+                    aria-pressed=${selectedAmenities.includes(opt.key)}
+                    @click=${() => this._toggleListItem("amenities", opt.key)}
+                  >
+                    <ha-icon icon=${opt.icon} aria-hidden="true"></ha-icon>
+                    <span>${localize(opt.label_key)}</span>
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
-          <div class="editor-hint">
-            ${localize("editor.payment_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${PAYMENT_FILTER_OPTIONS.map(
-              (opt) => html`
-                <button
-                  type="button"
-                  class=${selectedPayments.includes(opt.key)
-                    ? "filter-chip icon-chip active"
-                    : "filter-chip icon-chip"}
-                  @click=${() => this._toggleListItem("payment_methods", opt.key)}
-                >
-                  <ha-icon icon=${opt.icon}></ha-icon>
-                  <span>${localize(opt.label_key)}</span>
-                </button>
-              `,
-            )}
+          <div class="chip-group" role="group" aria-labelledby="hint-payment">
+            <div class="editor-hint" id="hint-payment">
+              ${localize("editor.payment_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${PAYMENT_FILTER_OPTIONS.map(
+                (opt) => html`
+                  <button
+                    type="button"
+                    class=${selectedPayments.includes(opt.key)
+                      ? "filter-chip icon-chip active"
+                      : "filter-chip icon-chip"}
+                    aria-pressed=${selectedPayments.includes(opt.key)}
+                    @click=${() => this._toggleListItem("payment_methods", opt.key)}
+                  >
+                    <ha-icon icon=${opt.icon} aria-hidden="true"></ha-icon>
+                    <span>${localize(opt.label_key)}</span>
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
@@ -298,7 +308,9 @@ export class LadestellenAustriaCardEditor
       (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
     return html`
       <div class="editor-section">
-        <div class="section-header">${localize("editor.section_pinned")}</div>
+        <div class="section-header" role="heading" aria-level="3">
+          ${localize("editor.section_pinned")}
+        </div>
         <div class="editor-hint">${localize("editor.pin_hint")}</div>
 
         ${dynamicMode
@@ -325,10 +337,12 @@ export class LadestellenAustriaCardEditor
                     <button
                       type="button"
                       class=${isPinned ? "pin-row pinned" : "pin-row"}
+                      aria-pressed=${isPinned}
                       @click=${() => this._toggleListItem("pinned_station_ids", s.stationId)}
                     >
                       <ha-icon
                         icon=${isPinned ? "mdi:pin" : "mdi:pin-outline"}
+                        aria-hidden="true"
                       ></ha-icon>
                       <span class="pin-label">${s.label}</span>
                       <span class="pin-meta">${distanceText}</span>
@@ -348,9 +362,10 @@ export class LadestellenAustriaCardEditor
                     <button
                       type="button"
                       class="pin-row pinned orphan"
+                      aria-pressed="true"
                       @click=${() => this._toggleListItem("pinned_station_ids", id)}
                     >
-                      <ha-icon icon="mdi:pin"></ha-icon>
+                      <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
                       <span class="pin-label orphan-id">${id}</span>
                       <span class="pin-meta">
                         ${localize("editor.pin_unpin")}

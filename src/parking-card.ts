@@ -261,7 +261,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
       </div>`;
     }
     return html`<div class="rack-block">
-      <div class="parking-lot" role="list" aria-label=${countText}>
+      <div class="parking-lot" role="group" aria-label=${countText}>
         ${points.map((p) => this._renderSlot(p))}
       </div>
     </div>`;
@@ -427,7 +427,6 @@ export class LadestellenAustriaParkingCard extends LitElement {
         type="button"
         class=${slotClassList(variant, isRevealed)}
         data-status=${statusCat}
-        role="listitem"
         tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
         aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
