@@ -63,7 +63,7 @@
     "no_points": "Keine Ladepunkte für diese Ladestelle vorhanden.",
     "slot_status_free": "frei",
     "slot_status_busy": "belegt",
-    "slot_status_warn": "außer Betrieb",
+    "slot_status_out_of_order": "außer Betrieb",
     "slot_status_unknown": "unbekannt",
     "slot_status_reserved": "reserviert",
     "slot_status_blocked": "gesperrt",

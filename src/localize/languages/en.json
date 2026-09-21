@@ -63,7 +63,7 @@
     "no_points": "No charging points reported for this station.",
     "slot_status_free": "free",
     "slot_status_busy": "in use",
-    "slot_status_warn": "out of order",
+    "slot_status_out_of_order": "out of order",
     "slot_status_unknown": "unknown",
     "slot_status_reserved": "reserved",
     "slot_status_blocked": "blocked",
