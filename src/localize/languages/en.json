@@ -141,12 +141,12 @@
     "connector_filter_hint": "Tap connector types to only show stations offering at least one of them. Empty = no filter.",
     "amenity_filter_hint": "Tap amenities to narrow to stations offering all selected features (AND). Empty = no filter.",
     "payment_filter_hint": "Tap payment methods to only show stations accepting at least one of them. Empty = no filter.",
-    "hint_compliance": "The E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' attribution in the footer are required by the ladestellen.at Terms of Use.",
+    "hint_compliance": "The ladestellen.at Terms of Use require the E-Control logo (linking to e-control.at) and the 'Datenquelle: E-Control' line in the footer.",
     "section_pinned": "Pinned stations",
     "pin_hint": "Pinned stations always appear first and bypass filters. They still count toward the display cap above.",
     "pin_select_sensor_first": "Select a sensor first to see available stations.",
     "pin_no_stations_yet": "No stations returned yet — wait for the next refresh.",
-    "pin_orphans_heading": "Pinned but not in range (click to remove):",
+    "pin_orphans_heading": "Pinned but out of range. Select to remove.",
     "pin_unpin": "Remove",
     "pin_disabled_dynamic": "Dynamic location mode is active on this sensor — pinned stations are disabled because the list follows your current position. Existing pins are preserved for when you switch back to fixed mode."
   }
