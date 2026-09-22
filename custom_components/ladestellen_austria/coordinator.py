@@ -263,17 +263,17 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             dt_util.utcnow()
         )
         # Entry-owned and named, not a bare `hass.async_create_task`.
-        # Owned so unload WAITS for the fetch (config_entries.py:1250
-        # awaits `_tasks` with timeout=10) instead of orphaning it — note
-        # unload cancels only `_background_tasks`, so this is a wait, not
-        # a cancel. Named so it is identifiable in HA's task list rather
-        # than showing up as "Task-123".
+        # Owned so unload WAITS for the fetch instead of orphaning it:
+        # `ConfigEntry._async_process_on_unload` awaits `_tasks` with a
+        # 10 s timeout and cancels only `_background_tasks`, so this is a
+        # wait, not a cancel. Named so it is identifiable in HA's task
+        # list rather than showing up as "Task-123".
         #
         # The coordinator is independently safe against a torn-down
-        # refresh: `async_shutdown` is registered as an `async_on_unload`
-        # callback (update_coordinator.py:148-149) and so runs BEFORE the
-        # task wait, setting `_shutdown_requested`, which `_async_refresh`
-        # short-circuits on (update_coordinator.py:212, :424).
+        # refresh: `DataUpdateCoordinator.async_shutdown` is registered
+        # through `config_entry.async_on_unload`, so it runs BEFORE the
+        # task wait and sets `_shutdown_requested`, which `_async_refresh`
+        # short-circuits on.
         self._entry.async_create_task(
             self.hass,
             self.async_refresh(),
@@ -658,23 +658,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         considered stable. Bumping it requires either a new event name
         or a versioned `version` field in the payload.
 
-        ⚠ Discoverability note: HA's canonical mechanisms for
-        state-transition automations are **entity triggers** and
-        **device triggers** (``device_trigger.py``). This custom
-        ``hass.bus`` event does **not** appear in the automation UI's
-        trigger picker — power users have to hand-write a
-        ``trigger: event`` YAML block. We chose this pattern because
-        EVSE row cardinality (often dozens per station, with frequent
-        churn) doesn't fit cleanly as per-row entities.
-
-        For new sibling integrations with lower row cardinality (a
-        handful of items per entry), prefer ``device_trigger.py`` with
-        ``async_get_triggers`` returning per-row triggers — that
-        surfaces them in the UI picker, fires them via
-        ``async_attach_trigger``, and integrates with the automation
-        editor's natural-language description. See
-        the portfolio-liftables reference, item 18
-        (maintainer note; the file is not in this repo).
+        A bus event, not a ``device_trigger.py`` trigger, so it does not
+        appear in the automation UI's trigger picker — users hand-write a
+        ``trigger: event`` block. EVSE row cardinality (dozens per
+        station, with churn) doesn't fit cleanly as per-row entities.
         """
         if not isinstance(self.data, dict):
             return

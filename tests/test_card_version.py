@@ -1,12 +1,11 @@
 """Regression test — Python and TypeScript CARD_VERSION must stay byte-identical.
 
 The Lovelace resource URL appends `?v=<CARD_VERSION>` from const.py as a
-cache-buster, while the bundled card itself imports CARD_VERSION from
-src/const.ts and prints it in the boot-time console banner. If the two
-strings drift, the cache-buster URL won't match what the card thinks it
-is — which is silent today (no WS version probe is registered) but
-breaks the diagnostic value of the banner and the future option to add
-one.
+cache-buster, while the bundled card imports CARD_VERSION from
+src/const.ts and checks it against the `ladestellen_austria/card_version`
+WS command registered in __init__.py. If the two strings drift, every
+client sees a permanent mismatch: the card raises its reload banner, the
+reload re-serves the same bundle, and the banner comes straight back.
 
 Bump both in the same commit; this test catches drift in CI.
 """

@@ -1,11 +1,10 @@
 // Must match CARD_VERSION in custom_components/ladestellen_austria/const.py
-// byte-for-byte. tests/test_card_version.py enforces the invariant in CI.
-// If they drift, the WS probe (`ladestellen_austria/card_version`) returns
-// a different version than this hard-coded value; the card detects the
-// mismatch on first hass-set and shows a reload banner. The reload picks
-// up the freshly-cached JS and the banner clears.
+// byte-for-byte; tests/test_card_version.py enforces it in CI. On drift the
+// WS probe (`ladestellen_austria/card_version`) reports a version different
+// from this literal and the card raises its reload banner on first hass-set
+// — which clears once the reload fetches the new bundle, or switches to the
+// stuck-state message when it cannot (see shared-render.ts).
 //
-// Bump both in the same commit. The README badge + manifest.json stay at
-// the clean version; this constant + const.py can carry a `-beta-N`
-// suffix during development.
+// There is no dev-time suffix. const.py derives its value from manifest.json,
+// so a release is one edit there plus one here, in the same commit.
 export const CARD_VERSION = "1.1.0";
