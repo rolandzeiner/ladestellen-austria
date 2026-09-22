@@ -69,10 +69,13 @@ npm test                    # vitest; the only step that runs the card's logic
 npm run build
 ```
 
-`npm run test:coverage` prints a per-file v8 report and writes
-`coverage/coverage-final.json`. There is no coverage threshold gate — the
-number is there to show you which branches a change left unexercised, not to
-block on a percentage.
+Python coverage **is** gated: `pytest.ini` carries `--cov-fail-under=90` in
+`addopts`, so any `pytest` run that drops the package below 90 % fails
+(it currently sits at ~94 %).
+
+The card side is not gated. `npm run test:coverage` prints a per-file v8 report
+and writes `coverage/coverage-final.json` — that number is there to show you
+which branches a change left unexercised, not to block on a percentage.
 
 CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high`. Failing locally wastes a push.
 
