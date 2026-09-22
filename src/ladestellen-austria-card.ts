@@ -1,7 +1,7 @@
 // Ladestellen Austria — Lovelace custom card
 // https://github.com/rolandzeiner/ladestellen-austria
 //
-// Lit 3 + Shadow DOM + Rollup, single-file HACS bundle.
+// Lit 3 + Shadow DOM + Rolldown, single-file HACS bundle.
 // §3c of the ladestellen.at Terms of Use requires the E-Control brand link
 // to https://www.e-control.at/. §3d requires the verbatim "Datenquelle:
 // E-Control" attribution next to the data. Both are non-negotiable —
@@ -19,6 +19,7 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import {
   fireEvent,
+  type HassEntity,
   type HomeAssistant,
   type LovelaceCardEditor,
   type LadestellenAustriaCardConfig,
@@ -26,13 +27,26 @@ import {
   type Point,
   type Station,
 } from "./types";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { renderFooter, renderVersionBanner } from "./shared-render";
 import {
-  checkCardVersionWS,
-  renderFooter,
-  renderVersionBanner,
-} from "./shared-render";
+  entitySuggestionFor,
+  findStubEntity,
+  runVersionCheckOnce,
+  shouldUpdateForEntityState,
+  syncCardLanguage,
+} from "./card-lifecycle";
 import { cardStyles } from "./styles";
+import {
+  filterStations,
+  isOpenNow,
+  mapsDeeplink,
+  stationConnectorTokens,
+  stationHasDcPoint,
+  stationMaxKw,
+  statusLevel,
+  type StatusLevel,
+} from "./station-logic";
 import {
   formatCent,
   formatEuro,
@@ -42,14 +56,13 @@ import {
   pointPowerType,
   pointStatusLabel,
   safeHttpsUri,
-  shortConnector,
   slotVariant,
 } from "./utils";
 
 import "./editor";
 // Second card type ships in the same bundle — its @customElement
 // decorator registers on module load, its window.customCards push
-// runs, and Rollup rolls it into ladestellen-austria-card.js.
+// runs, and Rolldown rolls it into ladestellen-austria-card.js.
 import "./parking-card";
 
 window.customCards = window.customCards ?? [];
@@ -59,42 +72,28 @@ window.customCards.push({
   description: "Nearby EV charging stations, powered by E-Control Austria",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
-  // 2026.6 entity-first picker: suggest this card only for our own
-  // integration's sensor entities (registry platform === domain).
-  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
-    if (!entityId.startsWith("sensor.")) return null;
-    if (hass?.entities?.[entityId]?.platform !== "ladestellen_austria") {
-      return null;
-    }
-    return {
-      config: { type: "custom:ladestellen-austria-card", entity: entityId },
-    };
-  },
+  getEntitySuggestion: entitySuggestionFor("custom:ladestellen-austria-card"),
 });
 
 const DEFAULT_MAX_STATIONS = 10;
 
-type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
+/** One row in the rendered list: a real station, or an orphaned pin. */
+type StationListItem =
+  | { kind: "live"; station: Station }
+  | { kind: "orphan"; id: string };
 
-const WEEKDAY_NAME_TO_IDX: Record<string, number> = {
-  MONDAY: 0,
-  TUESDAY: 1,
-  WEDNESDAY: 2,
-  THURSDAY: 3,
-  FRIDAY: 4,
-  SATURDAY: 5,
-  SUNDAY: 6,
-};
-
-const WEEKDAY_SHORT_TO_IDX: Record<string, number> = {
-  Mon: 0,
-  Tue: 1,
-  Wed: 2,
-  Thu: 3,
-  Fri: 4,
-  Sat: 5,
-  Sun: 6,
-};
+/** Everything render() needs, derived once from the sensor state. */
+interface StationListView {
+  visible: StationListItem[];
+  liveAvailable: boolean;
+  pinnedLiveStationIds: Set<string>;
+  dynamicMode: boolean;
+  dynamicEntity: string | null;
+  filteredCount: number;
+  totalCount: number;
+  nearestByDistance: Station | undefined;
+  farthestShown: Station | undefined;
+}
 
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
@@ -108,17 +107,13 @@ export class LadestellenAustriaCard extends LitElement {
     _hass: HomeAssistant,
     entities: string[],
   ): Record<string, unknown> {
-    const found = entities.find(
-      (e) => e.startsWith("sensor.") && e.includes("ladestelle"),
-    );
-    return { entity: found ?? "" };
+    return { entity: findStubEntity(entities) };
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
-  private _versionCheckDone = false;
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
     if (!config || typeof config !== "object") {
@@ -160,10 +155,10 @@ export class LadestellenAustriaCard extends LitElement {
     ) {
       return true;
     }
-    const prev = changedProps.get("hass") as HomeAssistant | undefined;
-    if (!prev || !this.config.entity) return true;
-    return (
-      prev.states[this.config.entity] !== this.hass.states[this.config.entity]
+    return shouldUpdateForEntityState(
+      changedProps,
+      this.hass,
+      this.config.entity,
     );
   }
 
@@ -188,36 +183,147 @@ export class LadestellenAustriaCard extends LitElement {
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    // Push hass.language into the localize() helper whenever hass
-    // changes — keeps the card aligned with HA's user-profile language
-    // setting without re-pushing on every unrelated re-render.
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override firstUpdated(_changedProps: PropertyValues): void {
-    // Lit's textbook hook for one-shot init that needs the DOM. Fire
-    // the WS card-version probe once. _versionCheckDone is also
-    // checked in updated() in case `hass` arrives after the first
-    // update. isConnected guards the late .then() so the callback
-    // never writes _versionMismatch on a disconnected element.
-    this._maybeRunVersionCheck();
+    this._runVersionCheck();
   }
 
   protected override updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    if (changedProps.has("hass")) {
-      this._maybeRunVersionCheck();
-    }
+    // Also here, not just firstUpdated, in case `hass` arrives after the
+    // first update; runVersionCheckOnce makes the repeat call a no-op.
+    if (changedProps.has("hass")) this._runVersionCheck();
   }
 
-  private _maybeRunVersionCheck(): void {
-    if (this._versionCheckDone || !this.hass) return;
-    this._versionCheckDone = true;
-    void checkCardVersionWS(this.hass).then((mismatch) => {
-      if (this.isConnected && mismatch) this._versionMismatch = mismatch;
+  private _runVersionCheck(): void {
+    runVersionCheckOnce(this, (v) => {
+      this._versionMismatch = v;
     });
+  }
+
+  /**
+   * Everything render() needs derived from the sensor's state object.
+   *
+   * This was ~55 lines inline at the top of render(), which is why the
+   * renderer carried eight `??`/ternary decision points before it drew
+   * anything. Pulling it out leaves render() as a layout description.
+   */
+  private _buildListView(stateObj: HassEntity): StationListView {
+    const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
+    const liveAvailable = stateObj.attributes.live_status_available === true;
+    // Dynamic-tracker mode signals: the sensor follows a device_tracker's
+    // GPS instead of the fixed config coords. Pinning is meaningless in
+    // this mode (the list of nearby stations changes as the user moves),
+    // so we short-circuit any configured pins to an empty list. The
+    // config itself is preserved untouched, so switching back to static
+    // mode restores the previously-pinned stations.
+    const dynamicMode = stateObj.attributes.dynamic_mode === true;
+    const dynamicEntity = stateObj.attributes.dynamic_entity ?? null;
+
+    // Partition by pin status. Pinned first in user-defined order,
+    // bypassing filters + sort. Orphan pins (IDs not found in the API
+    // response) render as placeholder rows at their pin-order position.
+    const pinnedIds = dynamicMode ? [] : (this.config.pinned_station_ids ?? []);
+    const pinnedItems = this._collectPinnedItems(pinnedIds, allStations);
+    const pinnedLiveStationIds = new Set(
+      pinnedItems
+        .filter((item) => item.kind === "live")
+        .map((item) => item.stationId),
+    );
+    const rest = allStations.filter(
+      (s) => !pinnedLiveStationIds.has(s.stationId),
+    );
+
+    const filtered = this._filterStations(rest);
+    const sorted = this._sortStations(filtered);
+
+    const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
+    const orderedAll: StationListItem[] = [
+      ...pinnedItems,
+      ...sorted.map((s) => ({ kind: "live" as const, station: s })),
+    ];
+    const visible = orderedAll.slice(0, cap);
+    const visibleLive = visible
+      .filter(
+        (item): item is { kind: "live"; station: Station } =>
+          item.kind === "live",
+      )
+      .map((item) => item.station);
+
+    return {
+      visible,
+      liveAvailable,
+      pinnedLiveStationIds,
+      dynamicMode,
+      dynamicEntity,
+      filteredCount: filtered.length,
+      totalCount: allStations.length,
+      // Hero always uses the distance-nearest station from the unfiltered,
+      // unpinned pool — a stable "how far is any charger from me" answer
+      // that shouldn't flip when the user resorts, filters, or pins.
+      nearestByDistance: allStations[0],
+      farthestShown: visibleLive[visibleLive.length - 1],
+    };
+  }
+
+  /** Card header. Returns nothing when the user hid it. */
+  private _renderCardHeader(
+    nearest: Station | undefined,
+  ): TemplateResult | typeof nothing {
+    if (this.config.hide_header) return nothing;
+    const name = this.config.name;
+    const titleText = name && name.trim() ? name : "Ladestellen Austria";
+    const subtitle = nearest ? this._heroCity(nearest) : "";
+    return html`<header class="header">
+      <div class="icon-tile" aria-hidden="true">
+        <ha-icon icon="mdi:ev-station"></ha-icon>
+      </div>
+      <div class="header-text">
+        <h2 class="title">${titleText}</h2>
+        ${subtitle ? html`<p class="subtitle">${subtitle}</p>` : nothing}
+      </div>
+    </header>`;
+  }
+
+  /** The "following <entity>" chip, shown only in dynamic-tracker mode. */
+  private _renderDynamicFlag(
+    dynamicMode: boolean,
+    dynamicEntity: string | null,
+  ): TemplateResult | typeof nothing {
+    if (!dynamicMode || !dynamicEntity) return nothing;
+    return html`<div class="flags">
+      <span class="flag">
+        <ha-icon icon="mdi:crosshairs-gps" aria-hidden="true"></ha-icon>
+        <span
+          >${localize("card.dynamic_follows_entity").replace(
+            "{entity}",
+            dynamicEntity,
+          )}</span
+        >
+      </span>
+    </div>`;
+  }
+
+  /** The station list, or the empty-state when nothing survived filtering. */
+  private _renderStationList(view: StationListView): TemplateResult {
+    if (view.visible.length === 0) {
+      return html`<div class="empty-state">
+        ${localize("card.no_stations")}
+      </div>`;
+    }
+    return html`<ul class="stations" role="list">
+      ${view.visible.map((item) =>
+        item.kind === "live"
+          ? this._renderStation(
+              item.station,
+              view.liveAvailable,
+              view.pinnedLiveStationIds.has(item.station.stationId),
+            )
+          : this._renderOrphanPin(item.id),
+      )}
+    </ul>`;
   }
 
   protected override render(): TemplateResult {
@@ -255,127 +361,24 @@ export class LadestellenAustriaCard extends LitElement {
       `;
     }
 
-    const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
-    const liveAvailable = stateObj.attributes.live_status_available === true;
-    // Dynamic-tracker mode signals: the sensor follows a device_tracker's
-    // GPS instead of the fixed config coords. Pinning is meaningless in
-    // this mode (the list of nearby stations changes as the user moves),
-    // so we short-circuit any configured pins to an empty list. The
-    // config itself is preserved untouched, so switching back to static
-    // mode restores the previously-pinned stations.
-    const dynamicMode = stateObj.attributes.dynamic_mode === true;
-    const dynamicEntity = stateObj.attributes.dynamic_entity ?? null;
-
-    // Partition by pin status. Pinned first in user-defined order,
-    // bypassing filters + sort. Orphan pins (IDs not found in the API
-    // response) render as placeholder rows at their pin-order position.
-    const pinnedIds = dynamicMode
-      ? []
-      : (this.config.pinned_station_ids ?? []);
-    const pinnedItems = this._collectPinnedItems(pinnedIds, allStations);
-    const pinnedLiveStationIds = new Set(
-      pinnedItems
-        .filter((item) => item.kind === "live")
-        .map((item) => item.stationId),
-    );
-    const rest = allStations.filter(
-      (s) => !pinnedLiveStationIds.has(s.stationId),
-    );
-
-    const filtered = this._filterStations(rest);
-    const sorted = this._sortStations(filtered);
-
-    // Hero always uses the distance-nearest station from the unfiltered,
-    // unpinned pool — a stable "how far is any charger from me" answer
-    // that shouldn't flip when the user resorts, filters, or pins.
-    const nearestByDistance = allStations[0];
-
-    const cap = Math.max(1, this.config.max_stations ?? DEFAULT_MAX_STATIONS);
-    const orderedAll: Array<
-      | { kind: "live"; station: Station }
-      | { kind: "orphan"; id: string }
-    > = [
-      ...pinnedItems,
-      ...sorted.map((s) => ({ kind: "live" as const, station: s })),
-    ];
-    const visible = orderedAll.slice(0, cap);
-    const visibleLive = visible
-      .filter(
-        (item): item is { kind: "live"; station: Station } =>
-          item.kind === "live",
-      )
-      .map((item) => item.station);
-    const farthestShown =
-      visibleLive.length > 0
-        ? visibleLive[visibleLive.length - 1]
-        : undefined;
-
-    const showHero = this.config.show_hero !== false;
-    const titleText =
-      this.config.name && this.config.name.trim()
-        ? this.config.name
-        : "Ladestellen Austria";
-    const headerSubtitle = nearestByDistance
-      ? this._heroCity(nearestByDistance)
-      : "";
+    const view = this._buildListView(stateObj);
 
     return html`
       <ha-card>
         <div class="card-content">
           <div class="wrap">
             ${renderVersionBanner(this._versionMismatch)}
-            ${this.config.hide_header
-              ? nothing
-              : html`<header class="header">
-                  <div class="icon-tile" aria-hidden="true">
-                    <ha-icon icon="mdi:ev-station"></ha-icon>
-                  </div>
-                  <div class="header-text">
-                    <h2 class="title">${titleText}</h2>
-                    ${headerSubtitle
-                      ? html`<p class="subtitle">${headerSubtitle}</p>`
-                      : nothing}
-                  </div>
-                </header>`}
-            ${showHero
+            ${this._renderCardHeader(view.nearestByDistance)}
+            ${this.config.show_hero !== false
               ? this._renderHero(
-                  nearestByDistance,
-                  farthestShown,
-                  filtered.length,
-                  allStations.length,
+                  view.nearestByDistance,
+                  view.farthestShown,
+                  view.filteredCount,
+                  view.totalCount,
                 )
               : nothing}
-            ${dynamicMode && dynamicEntity
-              ? html`<div class="flags">
-                  <span class="flag">
-                    <ha-icon
-                      icon="mdi:crosshairs-gps"
-                      aria-hidden="true"
-                    ></ha-icon>
-                    <span
-                      >${localize("card.dynamic_follows_entity").replace(
-                        "{entity}",
-                        dynamicEntity,
-                      )}</span
-                    >
-                  </span>
-                </div>`
-              : nothing}
-            ${visible.length > 0
-              ? html`<ul class="stations" role="list">
-                  ${visible.map((item) =>
-                    item.kind === "live"
-                      ? this._renderStation(
-                          item.station,
-                          liveAvailable,
-                          pinnedLiveStationIds.has(item.station.stationId),
-                        )
-                      : this._renderOrphanPin(item.id),
-                  )}
-                </ul>`
-              : html`<div class="empty-state">
-                  ${localize("card.no_stations")}
-                </div>`}
+            ${this._renderDynamicFlag(view.dynamicMode, view.dynamicEntity)}
+            ${this._renderStationList(view)}
           </div>
           ${renderFooter(
             this.hass,
@@ -386,7 +389,6 @@ export class LadestellenAustriaCard extends LitElement {
       </ha-card>
     `;
   }
-
 
   private _sortStations(stations: Station[]): Station[] {
     // Both sort modes get a free > busy tier between the primary sort
@@ -508,102 +510,16 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _filterStations(stations: Station[]): Station[] {
-    const onlyAvailable = this.config.only_available ?? false;
-    const onlyFree = this.config.only_free ?? false;
-    const onlyOpen = this.config.only_open ?? false;
-    const wantedTokens = this.config.connector_types ?? [];
-    const wantedAmenities = this.config.amenities ?? [];
-    const wantedPayments = this.config.payment_methods ?? [];
-    if (
-      !onlyAvailable &&
-      !onlyFree &&
-      !onlyOpen &&
-      wantedTokens.length === 0 &&
-      wantedAmenities.length === 0 &&
-      wantedPayments.length === 0
-    ) {
-      return stations;
-    }
-    // Cache now + tz once for the only-open sweep; _isOpenNow is a
+    // Cache now + tz once for the only-open sweep; isOpenNow is a
     // per-station call so we don't want to rebuild Date/tz in the loop.
-    const now = new Date();
-    const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
-    return stations.filter((s) => {
-      if (onlyAvailable) {
-        const hasActive =
-          s.stationStatus === "ACTIVE" &&
-          (s.points ?? []).some((p) => normStatus(p.status) === "AVAILABLE");
-        if (!hasActive) return false;
-      }
-      if (onlyFree) {
-        const hasFree = (s.points ?? []).some((p) => p.freeOfCharge);
-        if (!hasFree) return false;
-      }
-      if (onlyOpen) {
-        // Stations with no opening-hours data (isOpenNow === null) are
-        // treated as "presumed open" — filtering them out would hide
-        // stations that are almost certainly accessible just because
-        // the operator hasn't bothered to publish hours.
-        const open = this._isOpenNow(s.openingHours, now, tz);
-        if (open === false) return false;
-      }
-      if (wantedTokens.length > 0) {
-        const stationTokens = new Set(
-          (s.points ?? []).flatMap((p) =>
-            (p.connectorType ?? []).map((c) =>
-              shortConnector(c.consumerName, c.key),
-            ),
-          ),
-        );
-        const match = wantedTokens.some((t) => stationTokens.has(t));
-        if (!match) return false;
-      }
-      if (wantedAmenities.length > 0) {
-        // AND semantics — the station must carry every selected
-        // amenity flag. Narrowing is what users expect from an
-        // amenity filter (I need barrier-free AND roofed).
-        const everyMatch = wantedAmenities.every((key) =>
-          this._stationHasAmenity(s, key),
-        );
-        if (!everyMatch) return false;
-      }
-      if (wantedPayments.length > 0) {
-        // OR semantics — any point accepting any selected payment
-        // method is enough. You only need one working payment option.
-        const stationModes = new Set(
-          (s.points ?? []).flatMap((p) => p.authenticationMode ?? []),
-        );
-        const anyMatch = wantedPayments.some((m) => stationModes.has(m));
-        if (!anyMatch) return false;
-      }
-      return true;
-    });
+    return filterStations(
+      stations,
+      this.config,
+      new Date(),
+      this.hass?.config?.time_zone ?? "Europe/Vienna",
+    );
   }
 
-  private _stationHasAmenity(station: Station, key: string): boolean {
-    switch (key) {
-      case "green_energy":
-        return Boolean(station.greenEnergy);
-      case "austrian_ecolabel":
-        return Boolean(station.austrianEcoLabel);
-      case "free_parking":
-        return Boolean(station.freeParking);
-      case "roofed_parking":
-        return Boolean(station.roofedParking);
-      case "illuminated_parking":
-        return Boolean(station.illuminatedParking);
-      case "barrier_free":
-        return (station.barrierFreeParkingPlaces ?? 0) > 0;
-      case "catering":
-        return Boolean(station.cateringService);
-      case "bathrooms":
-        return Boolean(station.bathroomsAvailable);
-      case "resting":
-        return Boolean(station.restingFacilities);
-      default:
-        return false;
-    }
-  }
 
   // Footer rendering lives in shared-render.ts; both cards share it.
 
@@ -654,23 +570,57 @@ export class LadestellenAustriaCard extends LitElement {
     return station.city || station.label || "";
   }
 
+  /**
+   * The row's top line: kW, price, connector chips and the pin marker.
+   * Five conditional fragments that were inline in _renderStation and
+   * made up most of its branching.
+   */
+  private _renderRowPrimary(v: {
+    maxKw: number;
+    isDC: boolean;
+    priceText: string;
+    priceIsFree: boolean;
+    visibleConnectors: string[];
+    extraConnectors: number;
+    isPinned: boolean;
+  }): TemplateResult {
+    return html`<div class="row-primary">
+      ${v.maxKw > 0
+        ? html`<span class=${v.isDC ? "metric-kw dc" : "metric-kw"}>
+            <span class="kw-num">${v.maxKw}</span
+            ><span class="kw-unit">kW</span>
+          </span>`
+        : nothing}
+      ${v.priceText
+        ? html`<span
+            class=${v.priceIsFree ? "metric-price free" : "metric-price"}
+            >${v.priceText}</span
+          >`
+        : nothing}
+      ${v.visibleConnectors.map(
+        (token) => html`<span class="chip muted">${token}</span>`,
+      )}
+      ${v.extraConnectors > 0
+        ? html`<span class="chip muted">+${v.extraConnectors}</span>`
+        : nothing}
+      ${v.isPinned
+        ? html`<span class="chip pin" title=${localize("card.pinned")}>
+            <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
+            <span>${localize("card.pinned")}</span>
+          </span>`
+        : nothing}
+    </div>`;
+  }
+
   private _renderStation(
     station: Station,
     liveAvailable: boolean,
     isPinned: boolean = false,
   ): TemplateResult {
     const points = station.points ?? [];
-    const isDC = points.some((p) => (p.electricityType ?? []).includes("DC"));
-    const maxKw = points.reduce((m, p) => Math.max(m, p.capacityKw ?? 0), 0);
-    const connectorTokens = Array.from(
-      new Set(
-        points.flatMap((p) =>
-          (p.connectorType ?? []).map((c) =>
-            shortConnector(c.consumerName, c.key),
-          ),
-        ),
-      ),
-    );
+    const isDC = stationHasDcPoint(station);
+    const maxKw = stationMaxKw(station);
+    const connectorTokens = Array.from(stationConnectorTokens(station));
     // Cap inline connector chips at 3, roll the rest into a "+N" chip so
     // wide rows stay scannable. The full list still appears in the
     // expanded detail via the original points[] data.
@@ -685,27 +635,16 @@ export class LadestellenAustriaCard extends LitElement {
     ).length;
     const stationActive = station.stationStatus === "ACTIVE";
     const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
-    const isOpenNow = this._isOpenNow(station.openingHours, new Date(), tz);
-    const level = this._statusLevel(
+    const openNow = isOpenNow(station.openingHours, new Date(), tz);
+    const level = statusLevel(
       liveAvailable,
       stationActive,
       points,
-      isOpenNow,
+      openNow,
     );
 
     const expanded = this._expanded.has(station.stationId);
-    // `stations` arrives from an unvalidated state attribute, so a station
-    // can reach here without `location` despite the type. Read it once and
-    // only build the deeplink when present — a missing field must not throw
-    // and blank the whole card. Self-built URL still passes through
-    // `safeHttpsUri` defensively so a future contributor can't wire an
-    // upstream attribute through this binding and bypass the allowlist.
-    const loc = station.location;
-    const mapsUrl = loc
-      ? safeHttpsUri(
-          `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`,
-        )
-      : "";
+    const mapsUrl = mapsDeeplink(station.location);
     const showAmenities = this.config?.show_amenities ?? true;
     const showPricing = this.config?.show_pricing ?? true;
 
@@ -726,53 +665,48 @@ export class LadestellenAustriaCard extends LitElement {
     const locText = locParts.join(" · ");
 
     const detailId = `station-panel-${station.stationId}`;
+    const nameId = `station-name-${station.stationId}`;
+    const statusId = `station-status-${station.stationId}`;
     return html`
-      <li
-        class=${cls}
-        @click=${() => this._toggle(station.stationId)}
-        @keydown=${(ev: KeyboardEvent) => this._onKey(ev, station.stationId)}
-        tabindex="0"
-        role="button"
-        aria-expanded=${expanded ? "true" : "false"}
-        aria-controls=${detailId}
-      >
+      <li class=${cls}>
         <div class="station-body">
+          <!-- The disclosure trigger is a transparent overlay across the
+               row, not a wrapper around it. role="button" used to sit on
+               the <li>, which made the row's own maps link a
+               presentational child of a button — assistive tech can drop
+               a distinct destination that way. As a sibling the link
+               stays reachable: .icon-action is positioned so it paints
+               above the overlay and takes its own clicks, while the
+               chevron deliberately stays below it so clicking the
+               affordance still toggles the row. -->
+          <button
+            class="station-trigger"
+            type="button"
+            aria-expanded=${expanded}
+            aria-controls=${detailId}
+            aria-labelledby=${`${nameId} ${statusId}`}
+            @click=${() => this._toggle(station.stationId)}
+          ></button>
           <span
+            id=${statusId}
             class=${`status-dot status-${level}`}
             role="img"
             aria-label=${this._statusAria(level, availPoints, totalPoints)}
           ></span>
           <div class="station-main">
-            <div class="row-primary">
-              ${maxKw > 0
-                ? html`<span class=${isDC ? "metric-kw dc" : "metric-kw"}>
-                    <span class="kw-num">${maxKw}</span
-                    ><span class="kw-unit">kW</span>
-                  </span>`
-                : nothing}
-              ${showPricing && priceText
-                ? html`<span
-                    class=${priceIsFree
-                      ? "metric-price free"
-                      : "metric-price"}
-                    >${priceText}</span
-                  >`
-                : nothing}
-              ${visibleConnectors.map(
-                (t) => html`<span class="chip muted">${t}</span>`,
-              )}
-              ${extraConnectors > 0
-                ? html`<span class="chip muted">+${extraConnectors}</span>`
-                : nothing}
-              ${isPinned
-                ? html`<span class="chip pin" title=${localize("card.pinned")}>
-                    <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
-                    <span>${localize("card.pinned")}</span>
-                  </span>`
-                : nothing}
-            </div>
+            ${this._renderRowPrimary({
+              maxKw,
+              isDC,
+              priceText: showPricing ? priceText : "",
+              priceIsFree,
+              visibleConnectors,
+              extraConnectors,
+              isPinned,
+            })}
             <div class="row-secondary">
-              <span class="station-name" lang="de">${station.label}</span>
+              <span class="station-name" id=${nameId} lang="de"
+                >${station.label}</span
+              >
               ${locText
                 ? html`<span class="station-loc" lang="de">${locText}</span>`
                 : nothing}
@@ -804,7 +738,7 @@ export class LadestellenAustriaCard extends LitElement {
         </div>
         ${this._renderStationDetail(
           station,
-          isOpenNow,
+          openNow,
           showAmenities,
           mapsUrl,
           expanded,
@@ -1180,67 +1114,6 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  // Is the station inside any of its opening ranges at `now` (in `tz`)?
-  // Returns null when hours are missing or unparseable — callers can then
-  // treat the closed-now signal as unknown. Ranges that wrap the week
-  // boundary (from > to) are handled via OR, matching the behaviour a
-  // single 7-day schedule expects.
-  private _isOpenNow(
-    hours: OpeningHours[] | undefined,
-    now: Date,
-    tz: string,
-  ): boolean | null {
-    if (!hours || hours.length === 0) return null;
-    const nowMow = this._minuteOfWeek(now, tz);
-    if (nowMow == null) return null;
-    for (const h of hours) {
-      const fromMow = this._hoursToMow(h.fromWeekday, h.fromTime);
-      const toMow = this._hoursToMow(h.toWeekday, h.toTime);
-      if (fromMow == null || toMow == null) continue;
-      if (fromMow <= toMow) {
-        if (nowMow >= fromMow && nowMow <= toMow) return true;
-      } else {
-        if (nowMow >= fromMow || nowMow <= toMow) return true;
-      }
-    }
-    return false;
-  }
-
-  private _minuteOfWeek(now: Date, tz: string): number | null {
-    try {
-      const fmt = new Intl.DateTimeFormat("en-US", {
-        timeZone: tz,
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const parts = fmt.formatToParts(now);
-      const wk = parts.find((p) => p.type === "weekday")?.value ?? "";
-      const hr = parts.find((p) => p.type === "hour")?.value ?? "";
-      const mn = parts.find((p) => p.type === "minute")?.value ?? "";
-      const weekday = WEEKDAY_SHORT_TO_IDX[wk];
-      if (weekday === undefined) return null;
-      let hour = parseInt(hr, 10);
-      const minute = parseInt(mn, 10);
-      if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
-      // Safari with hour12:false occasionally reports "24" for midnight.
-      if (hour === 24) hour = 0;
-      return weekday * 1440 + hour * 60 + minute;
-    } catch {
-      return null;
-    }
-  }
-
-  private _hoursToMow(dayName: string, time: string): number | null {
-    const day = WEEKDAY_NAME_TO_IDX[(dayName ?? "").toUpperCase()];
-    if (day === undefined) return null;
-    const [hStr, mStr] = (time ?? "").split(":");
-    const h = parseInt(hStr ?? "", 10);
-    const m = parseInt(mStr ?? "", 10);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-    return day * 1440 + h * 60 + m;
-  }
 
   private _paymentChips(
     points: Point[],
@@ -1326,50 +1199,6 @@ export class LadestellenAustriaCard extends LitElement {
     return parts.length > 0 ? parts.join(", ") : null;
   }
 
-  private _statusLevel(
-    liveAvailable: boolean,
-    stationActive: boolean,
-    points: Point[],
-    isOpenNow: boolean | null = null,
-  ): StatusLevel {
-    if (!stationActive) return "inactive";
-    // Closed-now greys the row dot regardless of live count — a station
-    // with 4/4 free but closed is not actionable. Null isOpenNow means no
-    // opening-hours data; treat as always-open for row-status purposes.
-    if (isOpenNow === false) return "inactive";
-    const total = points.length;
-    if (!liveAvailable || total === 0) return "unknown";
-    let avail = 0;
-    let busy = 0;
-    let warn = 0;
-    for (const p of points) {
-      const s = normStatus(p.status);
-      if (s === "AVAILABLE") avail++;
-      else if (
-        s === "CHARGING" ||
-        s === "OCCUPIED" ||
-        s === "RESERVED" ||
-        s === "BLOCKED"
-      )
-        busy++;
-      else if (
-        s === "OUTOFORDER" ||
-        s === "FAULTED" ||
-        s === "INOPERATIVE" ||
-        s === "UNAVAILABLE"
-      )
-        warn++;
-    }
-    if (avail === 0) {
-      // Distinguish "nobody free because the whole station is broken" from
-      // "nobody free because everyone's charging". The former reads inactive
-      // (grey) — the station isn't actionable. The latter stays busy (red).
-      if (busy === 0 && warn > 0) return "inactive";
-      return "busy";
-    }
-    if (avail < total) return "partial";
-    return "ok";
-  }
 
   private _statusAria(
     level: StatusLevel,
@@ -1378,7 +1207,9 @@ export class LadestellenAustriaCard extends LitElement {
   ): string {
     if (level === "inactive") return localize("card.inactive");
     if (level === "unknown") return localize("card.status_unknown");
-    return `${avail} / ${total} ${localize("card.live_suffix")}`;
+    return localize("card.available_count")
+      .replaceAll("{avail}", String(avail))
+      .replaceAll("{total}", String(total));
   }
 
   private _toggle(stationId: string): void {
@@ -1388,16 +1219,9 @@ export class LadestellenAustriaCard extends LitElement {
     this._expanded = next;
   }
 
-  private _onKey(ev: KeyboardEvent, stationId: string): void {
-    if (ev.key === "Enter" || ev.key === " ") {
-      ev.preventDefault();
-      this._toggle(stationId);
-    }
-  }
-
   private _priceText(points: Point[]): string {
     if (points.length === 0) return "";
-    if (points.some((p) => p.freeOfCharge)) return localize("card.gratis");
+    if (points.some((p) => p.freeOfCharge)) return localize("card.free_of_charge");
     const kwhPrices = points
       .filter((p) => !p.freeOfCharge && p.priceCentKwh > 0)
       .map((p) => p.priceCentKwh);

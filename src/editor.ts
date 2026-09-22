@@ -27,7 +27,8 @@ import {
   type Station,
 } from "./types";
 import { editorStyles } from "./styles";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { syncCardLanguage } from "./card-lifecycle";
 import { computeFormLabel } from "./utils";
 
 // Each `name` is resolved via computeLabel into `editor.<name>` so the
@@ -38,6 +39,17 @@ import { computeFormLabel } from "./utils";
 // HaFormSchema is a permissive shape; the runtime accepts the
 // declarative JSON shape directly.
 type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
+
+/**
+ * The config fields backed by a string array and edited by a chip or
+ * pin toggle. Naming them as a union keeps `_toggleListItem` honest —
+ * a typo'd key is a compile error, not a silently ignored write.
+ */
+type ListConfigKey =
+  | "connector_types"
+  | "amenities"
+  | "payment_methods"
+  | "pinned_station_ids";
 
 const SCHEMA: HaFormSchema = [
   {
@@ -140,50 +152,27 @@ export class LadestellenAustriaCardEditor
     fireEvent(this, "config-changed", { config: next });
   }
 
-  private _toggleConnector(token: string): void {
-    const current = this._config.connector_types ?? [];
-    const next = current.includes(token)
-      ? current.filter((t) => t !== token)
-      : [...current, token];
-    this._config = { ...this._config, connector_types: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _toggleAmenity(key: string): void {
-    const current = this._config.amenities ?? [];
-    const next = current.includes(key)
-      ? current.filter((k) => k !== key)
-      : [...current, key];
-    this._config = { ...this._config, amenities: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _togglePayment(key: string): void {
-    const current = this._config.payment_methods ?? [];
-    const next = current.includes(key)
-      ? current.filter((k) => k !== key)
-      : [...current, key];
-    this._config = { ...this._config, payment_methods: next };
-    fireEvent(this, "config-changed", { config: this._config });
-  }
-
-  private _togglePin(stationId: string): void {
-    const current = this._config.pinned_station_ids ?? [];
-    const next = current.includes(stationId)
-      ? current.filter((id) => id !== stationId)
-      : [...current, stationId];
-    this._config = { ...this._config, pinned_station_ids: next };
+  /**
+   * Add or remove `value` in one of the config's string-array fields.
+   *
+   * The four chip/pin groups had a copy of this each, differing only in
+   * which key they wrote. Note the config is replaced rather than
+   * mutated: `_config` is the source of truth for the next render's
+   * `data` prop AND for the widgets' selected-state visuals, so it has
+   * to change identity for Lit to notice.
+   */
+  private _toggleListItem(key: ListConfigKey, value: string): void {
+    const current = this._config[key] ?? [];
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    this._config = { ...this._config, [key]: next };
     fireEvent(this, "config-changed", { config: this._config });
   }
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    // Lit forbids side-effects in render(); push hass.language into the
-    // localize() helper here whenever hass changes. Mirrors the cards'
-    // pattern in ladestellen-austria-card.ts / parking-card.ts.
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override render(): TemplateResult {
@@ -227,66 +216,76 @@ export class LadestellenAustriaCardEditor
           : nothing}
 
         <div class="editor-section">
-          <div class="section-header">
+          <div class="section-header" role="heading" aria-level="3">
             ${localize("editor.section_chip_filters")}
           </div>
-          <div class="editor-hint">
-            ${localize("editor.connector_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${CONNECTOR_FILTER_OPTIONS.map(
-              (token) => html`
-                <button
-                  type="button"
-                  class=${selectedConnectors.includes(token)
-                    ? "filter-chip active"
-                    : "filter-chip"}
-                  @click=${() => this._toggleConnector(token)}
-                >
-                  ${token}
-                </button>
-              `,
-            )}
+
+          <div class="chip-group" role="group" aria-labelledby="hint-connector">
+            <div class="editor-hint" id="hint-connector">
+              ${localize("editor.connector_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${CONNECTOR_FILTER_OPTIONS.map(
+                (token) => html`
+                  <button
+                    type="button"
+                    class=${selectedConnectors.includes(token)
+                      ? "filter-chip active"
+                      : "filter-chip"}
+                    aria-pressed=${selectedConnectors.includes(token)}
+                    @click=${() => this._toggleListItem("connector_types", token)}
+                  >
+                    ${token}
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
-          <div class="editor-hint">
-            ${localize("editor.amenity_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${AMENITY_FILTER_OPTIONS.map(
-              (opt) => html`
-                <button
-                  type="button"
-                  class=${selectedAmenities.includes(opt.key)
-                    ? "filter-chip icon-chip active"
-                    : "filter-chip icon-chip"}
-                  @click=${() => this._toggleAmenity(opt.key)}
-                >
-                  <ha-icon icon=${opt.icon}></ha-icon>
-                  <span>${localize(opt.label_key)}</span>
-                </button>
-              `,
-            )}
+          <div class="chip-group" role="group" aria-labelledby="hint-amenity">
+            <div class="editor-hint" id="hint-amenity">
+              ${localize("editor.amenity_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${AMENITY_FILTER_OPTIONS.map(
+                (opt) => html`
+                  <button
+                    type="button"
+                    class=${selectedAmenities.includes(opt.key)
+                      ? "filter-chip icon-chip active"
+                      : "filter-chip icon-chip"}
+                    aria-pressed=${selectedAmenities.includes(opt.key)}
+                    @click=${() => this._toggleListItem("amenities", opt.key)}
+                  >
+                    <ha-icon icon=${opt.icon} aria-hidden="true"></ha-icon>
+                    <span>${localize(opt.label_key)}</span>
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
-          <div class="editor-hint">
-            ${localize("editor.payment_filter_hint")}
-          </div>
-          <div class="chip-row">
-            ${PAYMENT_FILTER_OPTIONS.map(
-              (opt) => html`
-                <button
-                  type="button"
-                  class=${selectedPayments.includes(opt.key)
-                    ? "filter-chip icon-chip active"
-                    : "filter-chip icon-chip"}
-                  @click=${() => this._togglePayment(opt.key)}
-                >
-                  <ha-icon icon=${opt.icon}></ha-icon>
-                  <span>${localize(opt.label_key)}</span>
-                </button>
-              `,
-            )}
+          <div class="chip-group" role="group" aria-labelledby="hint-payment">
+            <div class="editor-hint" id="hint-payment">
+              ${localize("editor.payment_filter_hint")}
+            </div>
+            <div class="chip-row">
+              ${PAYMENT_FILTER_OPTIONS.map(
+                (opt) => html`
+                  <button
+                    type="button"
+                    class=${selectedPayments.includes(opt.key)
+                      ? "filter-chip icon-chip active"
+                      : "filter-chip icon-chip"}
+                    aria-pressed=${selectedPayments.includes(opt.key)}
+                    @click=${() => this._toggleListItem("payment_methods", opt.key)}
+                  >
+                    <ha-icon icon=${opt.icon} aria-hidden="true"></ha-icon>
+                    <span>${localize(opt.label_key)}</span>
+                  </button>
+                `,
+              )}
+            </div>
           </div>
 
           <div class="editor-hint">${localize("editor.hint_compliance")}</div>
@@ -309,7 +308,9 @@ export class LadestellenAustriaCardEditor
       (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
     return html`
       <div class="editor-section">
-        <div class="section-header">${localize("editor.section_pinned")}</div>
+        <div class="section-header" role="heading" aria-level="3">
+          ${localize("editor.section_pinned")}
+        </div>
         <div class="editor-hint">${localize("editor.pin_hint")}</div>
 
         ${dynamicMode
@@ -336,10 +337,12 @@ export class LadestellenAustriaCardEditor
                     <button
                       type="button"
                       class=${isPinned ? "pin-row pinned" : "pin-row"}
-                      @click=${() => this._togglePin(s.stationId)}
+                      aria-pressed=${isPinned}
+                      @click=${() => this._toggleListItem("pinned_station_ids", s.stationId)}
                     >
                       <ha-icon
                         icon=${isPinned ? "mdi:pin" : "mdi:pin-outline"}
+                        aria-hidden="true"
                       ></ha-icon>
                       <span class="pin-label">${s.label}</span>
                       <span class="pin-meta">${distanceText}</span>
@@ -359,9 +362,10 @@ export class LadestellenAustriaCardEditor
                     <button
                       type="button"
                       class="pin-row pinned orphan"
-                      @click=${() => this._togglePin(id)}
+                      aria-pressed="true"
+                      @click=${() => this._toggleListItem("pinned_station_ids", id)}
                     >
-                      <ha-icon icon="mdi:pin"></ha-icon>
+                      <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
                       <span class="pin-label orphan-id">${id}</span>
                       <span class="pin-meta">
                         ${localize("editor.pin_unpin")}

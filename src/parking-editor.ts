@@ -22,7 +22,8 @@ import {
   type Station,
 } from "./types";
 import { editorStyles } from "./styles";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { syncCardLanguage } from "./card-lifecycle";
 import { computeFormLabel } from "./utils";
 
 // ha-form's TS types aren't shipped on a stable channel by HA core, so
@@ -233,12 +234,7 @@ export class LadestellenAustriaParkingCardEditor
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    // Lit forbids side-effects in render(); push hass.language into the
-    // localize() helper here whenever hass changes. Mirrors the cards'
-    // pattern in ladestellen-austria-card.ts / parking-card.ts.
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override render(): TemplateResult {
@@ -277,7 +273,12 @@ export class LadestellenAustriaParkingCardEditor
           : nothing}
 
         <div class="editor-section">
-          <div class="section-header">
+          <div
+            class="section-header"
+            id="station-picker-heading"
+            role="heading"
+            aria-level="3"
+          >
             ${localize("parking.editor_station_heading")}
           </div>
           <div class="editor-hint">
@@ -292,7 +293,11 @@ export class LadestellenAustriaParkingCardEditor
                 ${localize("editor.pin_no_stations_yet")}
               </div>`
             : html`
-                <div class="pin-list">
+                <div
+                  class="pin-list"
+                  role="radiogroup"
+                  aria-labelledby="station-picker-heading"
+                >
                   ${stations.map((s) => {
                     const isSelected = s.stationId === selectedId;
                     const distanceText =
@@ -303,12 +308,15 @@ export class LadestellenAustriaParkingCardEditor
                       <button
                         type="button"
                         class=${isSelected ? "pin-row pinned" : "pin-row"}
+                        role="radio"
+                        aria-checked=${isSelected}
                         @click=${() => this._selectStation(s.stationId)}
                       >
                         <ha-icon
                           icon=${isSelected
                             ? "mdi:radiobox-marked"
                             : "mdi:radiobox-blank"}
+                          aria-hidden="true"
                         ></ha-icon>
                         <span class="pin-label">${s.label}</span>
                         <span class="pin-meta">${distanceText}</span>
@@ -319,7 +327,8 @@ export class LadestellenAustriaParkingCardEditor
               `}
           ${selectedId && !stations.some((s) => s.stationId === selectedId)
             ? html`<div class="editor-hint editor-hint--muted">
-                ${localize("parking.station_not_in_range")}: ${selectedId}
+                ${localize("parking.station_not_in_range")}
+                <span class="orphan-id">${selectedId}</span>
               </div>`
             : nothing}
         </div>
@@ -336,11 +345,10 @@ export class LadestellenAustriaParkingCardEditor
 
         ${this._config.car_color_mode === "fixed"
           ? html`<div class="editor-section">
-              <div class="section-header">
+              <div class="section-header" role="heading" aria-level="3">
                 ${localize("editor.car_color_pick")}
               </div>
               <div class="toggle-row">
-                <span>${localize("editor.car_color_pick")}</span>
                 <label
                   class="color-swatch"
                   style=${`--swatch-color: ${
@@ -369,9 +377,7 @@ export class LadestellenAustriaParkingCardEditor
             </div>`
           : nothing}
 
-        <div class="editor-section">
-          <div class="editor-hint">${localize("editor.hint_compliance")}</div>
-        </div>
+        <div class="editor-hint">${localize("editor.hint_compliance")}</div>
       </div>
     `;
   }

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -22,6 +22,7 @@ from custom_components.ladestellen_austria.const import (
 )
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
+    _describe_error,
 )
 
 from .conftest import EXAMPLE_COORDINATOR_DATA, make_entry, make_response_cm
@@ -536,6 +537,123 @@ async def test_tracker_restored_clears_repair_issue(
     assert coordinator._tracker_issue_raised is False
 
 
+async def test_tracker_missing_during_startup_raises_no_issue(
+    hass: HomeAssistant,
+) -> None:
+    """No Repairs issue while HA is starting — the tracker may just be late.
+
+    `async_config_entry_first_refresh()` routinely runs before the tracker's
+    own integration has restored its state, so "no coordinates" at that point
+    means "not loaded yet", not "misconfigured". The configured-location
+    fallback still applies.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    hass.states.async_set("device_tracker.phone", "home", {})
+    hass.set_state(CoreState.starting)
+    try:
+        lat, lng = coordinator._get_entity_coords(
+            hass.states.get("device_tracker.phone")
+        )
+    finally:
+        hass.set_state(CoreState.running)
+
+    assert (lat, lng) == (48.21, 16.37)
+    assert coordinator._tracker_issue_raised is False
+    registry = ir.async_get(hass)
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
+
+
+async def test_tracker_issue_cleared_by_later_coordinator(hass: HomeAssistant) -> None:
+    """A reload's fresh coordinator still clears its predecessor's issue.
+
+    `_tracker_issue_raised` is per-instance while the Repairs issue is global,
+    so the clear must not be gated on the flag or a config-entry reload orphans
+    the issue permanently.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+
+    first = LadestellenAustriaCoordinator(hass, entry)
+    hass.states.async_set("device_tracker.phone", "home", {})
+    first._get_entity_coords(hass.states.get("device_tracker.phone"))
+    registry = ir.async_get(hass)
+    assert (
+        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}")
+        is not None
+    )
+
+    # Reload: a brand-new coordinator for the same entry, flag back at False.
+    second = LadestellenAustriaCoordinator(hass, entry)
+    assert second._tracker_issue_raised is False
+
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    second._get_entity_coords(hass.states.get("device_tracker.phone"))
+
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry.entry_id}") is None
+
+
+# ---------------------------------------------------------------------------
+# Dynamic mode — the distance guard's reference position
+# ---------------------------------------------------------------------------
+
+
+async def test_failed_fetch_does_not_record_position(hass: HomeAssistant) -> None:
+    """A failed fetch leaves the distance guard's reference position unset.
+
+    Recording it up-front pinned the guard to a position no data was ever
+    received for: a parked car then never cleared the 1500 m threshold and
+    every retry was suppressed until the safety interval came round.
+    """
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=UpdateFailed("boom")),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+
+    assert coordinator._last_fetch_lat is None
+    assert coordinator._last_fetch_lng is None
+    # The cooldown timestamp is deliberately still armed — a flapping API must
+    # not be re-hit on every tracker tick.
+    assert coordinator._last_fetch_time is not None
+
+
+async def test_successful_fetch_records_position(hass: HomeAssistant) -> None:
+    """A successful fetch records the position the data belongs to."""
+    entry = _make_entry({CONF_DYNAMIC_ENTITY: "device_tracker.phone"})
+    entry.add_to_hass(hass)
+    hass.states.async_set(
+        "device_tracker.phone",
+        "not_home",
+        {"latitude": 48.35, "longitude": 16.5},
+    )
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with patch.object(coordinator, "_fetch_search", return_value=[]):
+        await coordinator._async_update_data()
+
+    assert (coordinator._last_fetch_lat, coordinator._last_fetch_lng) == (48.35, 16.5)
+
+
 # ---------------------------------------------------------------------------
 # Dynamic mode — _handle_tracker_update end-to-end (event → guard → refresh)
 # ---------------------------------------------------------------------------
@@ -740,3 +858,73 @@ async def test_status_events_fire_per_evse(hass: HomeAssistant) -> None:
         ("E1", "AVAILABLE", "OCCUPIED"),
         ("E2", "CHARGING", "AVAILABLE"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Failure logging — translation placeholders must survive into the log
+# ---------------------------------------------------------------------------
+
+
+def _http_error(status: str = "503") -> UpdateFailed:
+    return UpdateFailed(
+        translation_domain=DOMAIN,
+        translation_key="api_http_error",
+        translation_placeholders={
+            "status": status,
+            "reason": "Service Unavailable",
+        },
+    )
+
+
+def test_describe_error_appends_placeholders() -> None:
+    """The status and reason the raise site collected reach the log line."""
+    described = _describe_error(_http_error())
+
+    assert "status=503" in described
+    assert "reason=Service Unavailable" in described
+
+
+def test_describe_error_passes_plain_exceptions_through() -> None:
+    """An exception without translation placeholders is rendered unchanged."""
+    assert _describe_error(ValueError("boom")) == "boom"
+
+
+async def test_failure_log_carries_http_status(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A failed refresh logs the HTTP status, not just the translation key.
+
+    Regression guard: `str(UpdateFailed)` falls back to the bare key when the
+    `exceptions` translation category is not cached, and core's own "Error
+    fetching ... data" line renders exactly that — so an outage used to leave
+    no diagnosable trace at all.
+    """
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=_http_error()),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+
+    assert "Ladestellen Austria API unavailable" in caplog.text
+    assert "status=503" in caplog.text
+
+
+async def test_failure_log_not_repeated_during_sustained_outage(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Only the available -> unavailable transition is logged."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with patch.object(coordinator, "_fetch_search", side_effect=_http_error()):
+        for _ in range(3):
+            coordinator.last_update_success = False
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+
+    assert "Ladestellen Austria API unavailable" not in caplog.text

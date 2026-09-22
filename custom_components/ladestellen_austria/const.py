@@ -18,13 +18,11 @@ INTEGRATION_VERSION: Final = json.loads(
     (Path(__file__).parent / "manifest.json").read_text(encoding="utf-8")
 )["version"]
 
-# Must match src/const.ts CARD_VERSION byte-for-byte; tests/test_card_version.py
-# enforces the invariant in CI. This constant is an ALIAS of
-# INTEGRATION_VERSION, so it cannot drift from manifest.json on its own —
-# a release is one edit to manifest.json plus one to src/const.ts. There
-# is no dev-time suffix: a pre-release carries the same version as the
-# eventual final release, and the GitHub --prerelease flag is what
-# distinguishes them.
+# An ALIAS of INTEGRATION_VERSION, so it cannot drift from manifest.json on
+# its own; the one file that can is src/const.ts, which must match it
+# byte-for-byte (tests/test_card_version.py enforces that in CI). No
+# dev-time suffix: a pre-release carries the same version as the eventual
+# final release, and the GitHub --prerelease flag is what distinguishes them.
 #
 # Two cache-stale defences combine here:
 #   1. Cache-buster: card_registration.py appends `?v=<CARD_VERSION>` to the

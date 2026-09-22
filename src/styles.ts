@@ -120,6 +120,20 @@ const cardOwnStyles = css`
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
+    /* Fill the grid cell the dashboard gave us.
+       A sections view puts a fixed pixel height on the cell WRAPPER whenever
+       the card's rows are numeric -- which a user also causes by dragging the
+       row handle, since a stored grid_options overrides what getGridOptions()
+       returns -- and styles nothing inside that wrapper.
+       This host is display: block, so IT is the containing block for the
+       ha-card below, and a percentage height against a containing block whose
+       own height is auto computes to auto. Without this line ha-card therefore
+       sizes to its content, overflows a cell too short for it, and is painted
+       over the card underneath. Taking the cell's height here is what gives
+       ha-card's 100% something to resolve against.
+       In an auto-height cell it resolves to auto -- the height it already had
+       -- so it costs nothing there. */
+    block-size: 100%;
     container-type: inline-size;
     container-name: lscard;
 
@@ -202,6 +216,13 @@ const cardOwnStyles = css`
        to keep the noise visible.) */
   }
   ha-card {
+    /* Resolves against the height :host just took from the cell, so
+       overflow: hidden clips inside the card rather than the card spilling
+       past its own cell. The two declarations only work as a pair: core cards
+       that set this one alone leave :host at its default inline display, where
+       the cell wrapper is ha-card's containing block instead. */
+    block-size: 100%;
+
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
   }
@@ -457,15 +478,14 @@ const cardOwnStyles = css`
     border-bottom: none;
   }
   .station:hover,
-  .station:focus-visible {
+  .station:focus-within {
     background: color-mix(in srgb, var(--primary-color) 5%, transparent);
-    outline: none;
   }
   .station.is-pinned {
     background: color-mix(in srgb, var(--primary-color) 4%, transparent);
   }
   .station.is-pinned:hover,
-  .station.is-pinned:focus-visible {
+  .station.is-pinned:focus-within {
     background: color-mix(in srgb, var(--primary-color) 8%, transparent);
   }
   .station.is-inactive .station-body {
@@ -473,6 +493,7 @@ const cardOwnStyles = css`
   }
 
   .station-body {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -490,6 +511,26 @@ const cardOwnStyles = css`
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
+  }
+  /* Transparent disclosure trigger stretched across the row. It is
+     absolutely positioned and therefore out of the flex flow, so the
+     dot / main / actions layout is unchanged. */
+  .station-trigger {
+    position: absolute;
+    inset: 0;
+    appearance: none;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+  /* Raise only the maps link above the overlay. Both are positioned and
+     the link comes later in the DOM, so it wins without a z-index. The
+     chevron is left unpositioned on purpose: it stays under the overlay
+     so clicking the expand affordance expands the row. */
+  .station-actions .icon-action {
+    position: relative;
   }
   .chevron {
     --mdc-icon-size: 22px;
@@ -1061,7 +1102,7 @@ const cardOwnStyles = css`
 
   /* ── Accessibility primitives ────────────────────────────────────── */
   /* Focus ring (WCAG 2.4.7 AA; the 2px/3:1 ring also meets 2.4.13 AAA). */
-  .station:focus-visible,
+  .station-trigger:focus-visible,
   .icon-action:focus-visible,
   a:focus-visible,
   button:focus-visible {
@@ -1072,10 +1113,15 @@ const cardOwnStyles = css`
   .btn-primary:focus-visible {
     outline-offset: 3px;
   }
+  /* The trigger spans the whole row, so an outset ring would collide
+     with the neighbouring row's divider. Inset it instead. */
+  .station-trigger:focus-visible {
+    outline-offset: -2px;
+  }
 
   /* Forced-colors fallback (Windows High Contrast). */
   @media (forced-colors: active) {
-    .station:focus-visible,
+    .station-trigger:focus-visible,
     .icon-action:focus-visible,
     a:focus-visible,
     button:focus-visible {
@@ -1097,7 +1143,7 @@ const cardOwnStyles = css`
 // Editor styles — unchanged. HA form widgets carry their own theming.
 // ---------------------------------------------------------------------------
 
-export const editorStyles = css`
+const editorOwnStyles = css`
   :host {
     display: block;
   }
@@ -1135,15 +1181,22 @@ export const editorStyles = css`
   .chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
+  /* 40px, not 44px: WCAG 2.5.8 AA is satisfied outright, and the house
+     rule's dense-row carve-out applies because the 8px gap keeps every
+     neighbouring target more than 4px away. 44px chips in a wrapped
+     three-row filter block read as buttons, not chips. */
   .filter-chip {
     appearance: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
     border: 1px solid var(--divider-color);
     border-radius: 999px;
     background: var(--ha-card-background, var(--card-background-color));
     color: var(--primary-text-color);
-    padding: 4px 12px;
+    padding: 4px 14px;
     font-size: var(--ha-font-size-s, 12px);
     cursor: pointer;
     transition:
@@ -1184,6 +1237,7 @@ export const editorStyles = css`
     text-align: left;
     display: flex;
     align-items: center;
+    min-height: 44px;
     gap: 10px;
     padding: 8px 12px;
     border-radius: 8px;
@@ -1196,10 +1250,8 @@ export const editorStyles = css`
       background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
       border-color 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .pin-row:hover,
-  .pin-row:focus-visible {
+  .pin-row:hover {
     background: var(--secondary-background-color, rgba(0, 0, 0, 0.04));
-    outline: none;
   }
   .pin-row.pinned {
     background: color-mix(in srgb, var(--primary-color) 10%, transparent);
@@ -1232,6 +1284,30 @@ export const editorStyles = css`
   .editor-hint--muted {
     opacity: 0.7;
   }
+  /* Same treatment as the card's orphan ids. Declared again here because
+     cardOwnStyles is a separate shadow scope the editors never load. */
+  .orphan-id {
+    font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.6875rem;
+    color: var(--secondary-text-color);
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Each filter dimension (connector / amenity / payment) is its own
+     labelled group. The rule is the only thing telling a reader where
+     one dimension ends and the next begins — the three chip rows are
+     otherwise a single undifferentiated field of pills. */
+  .chip-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-2, 8px);
+  }
+  .chip-group + .chip-group {
+    margin-top: var(--ha-space-2, 8px);
+    padding-top: var(--ha-space-3, 12px);
+    border-top: 1px solid var(--divider-color);
+  }
 
   /* Palette-swatch chip — used by the parking card's "Eigene Farbe"
      picker. Pill-shaped chip tinted in the chosen colour, with a
@@ -1244,8 +1320,9 @@ export const editorStyles = css`
     position: relative;
     display: inline-flex;
     align-items: center;
+    min-height: 44px;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--swatch-color) 18%, transparent);
     color: var(--primary-text-color);
@@ -1262,9 +1339,12 @@ export const editorStyles = css`
   }
   /* Keyboard focus lands on the inner <input>, not the wrapping label —
      :focus-within catches the focus event on the actual focused
-     descendant and paints the brand-tinted ring on the visible chip. */
+     descendant and paints the ring on the visible chip. The ring uses
+     --primary-color, not --swatch-color: the swatch colour is whatever
+     the user picked, so it can land at any contrast against the editor
+     background and cannot be relied on to meet WCAG 1.4.11's 3:1. */
   .color-swatch:focus-within {
-    outline: 2px solid var(--swatch-color);
+    outline: 2px solid var(--primary-color);
     outline-offset: 2px;
   }
   .color-swatch ha-icon {
@@ -1291,7 +1371,40 @@ export const editorStyles = css`
        leaks past inset:0; clip just in case. */
     overflow: hidden;
   }
+
+  /* ── Accessibility primitives ────────────────────────────────────── */
+  /* Focus ring (WCAG 2.4.7 AA; the 2px/3:1 ring also meets 2.4.13 AAA).
+     No border-radius here, unlike cardStyles: outline already follows
+     each control's own radius, and forcing 6px would square off the
+     pill-shaped chips on focus. */
+  .filter-chip:focus-visible,
+  .pin-row:focus-visible,
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  /* Forced-colors fallback (Windows High Contrast). */
+  @media (forced-colors: active) {
+    .filter-chip:focus-visible,
+    .pin-row:focus-visible,
+    .color-swatch:focus-within,
+    a:focus-visible,
+    button:focus-visible {
+      outline-color: CanvasText;
+    }
+    .filter-chip,
+    .color-swatch {
+      forced-color-adjust: none;
+    }
+  }
 `;
+
+// Composed like cardStyles / parkingLotStyles. Exporting the bare css``
+// meant the prefers-reduced-motion catch-all never applied to either
+// editor, so their 160ms transitions kept animating.
+export const editorStyles = [sharedReducedMotion, editorOwnStyles];
 
 // ---------------------------------------------------------------------------
 // Parking-slot card styles — single station, points as parking-lot slots
@@ -1307,6 +1420,20 @@ const parkingOwnStyles = css`
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
+    /* Fill the grid cell the dashboard gave us.
+       A sections view puts a fixed pixel height on the cell WRAPPER whenever
+       the card's rows are numeric -- which a user also causes by dragging the
+       row handle, since a stored grid_options overrides what getGridOptions()
+       returns -- and styles nothing inside that wrapper.
+       This host is display: block, so IT is the containing block for the
+       ha-card below, and a percentage height against a containing block whose
+       own height is auto computes to auto. Without this line ha-card therefore
+       sizes to its content, overflows a cell too short for it, and is painted
+       over the card underneath. Taking the cell's height here is what gives
+       ha-card's 100% something to resolve against.
+       In an auto-height cell it resolves to auto -- the height it already had
+       -- so it costs nothing there. */
+    block-size: 100%;
     container-type: inline-size;
     container-name: plcard;
 
@@ -1342,6 +1469,13 @@ const parkingOwnStyles = css`
     --lade-slot-gap: 8px;
   }
   ha-card {
+    /* Resolves against the height :host just took from the cell, so
+       overflow: hidden clips inside the card rather than the card spilling
+       past its own cell. The two declarations only work as a pair: core cards
+       that set this one alone leave :host at its default inline display, where
+       the cell wrapper is ha-card's containing block instead. */
+    block-size: 100%;
+
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
   }

@@ -1,6 +1,6 @@
 // Ladestellen Austria — single-station "parking lot from above" card.
 //
-// Ships in the same Rollup bundle as the main list card. Registers its
+// Ships in the same Rolldown bundle as the main list card. Registers its
 // own @customElement + window.customCards entry so Lovelace's "Add Card"
 // picker shows both. The user picks one sensor + one station; the card
 // renders every point as a parking slot viewed from above, with
@@ -26,12 +26,15 @@ import type {
   Station,
 } from "./types";
 import { carSvg } from "./car-svg";
-import { localize, setLanguage } from "./localize/localize";
+import { localize } from "./localize/localize";
+import { renderFooter, renderVersionBanner } from "./shared-render";
 import {
-  checkCardVersionWS,
-  renderFooter,
-  renderVersionBanner,
-} from "./shared-render";
+  entitySuggestionFor,
+  findStubEntity,
+  runVersionCheckOnce,
+  shouldUpdateForEntityState,
+  syncCardLanguage,
+} from "./card-lifecycle";
 import { parkingLotStyles } from "./styles";
 import {
   formatKw,
@@ -39,9 +42,13 @@ import {
   pointPowerType,
   pointStatusLabel,
   rackSlotStatus,
+  slotAriaLabel,
+  slotClassList,
+  slotStatusBucket,
   slotStatusShortKey,
+  slotStatusWord,
   slotVariant,
-  type RackStatus,
+  type SlotOverlay,
 } from "./utils";
 
 import "./parking-editor";
@@ -54,20 +61,9 @@ window.customCards.push({
     "Single station, points rendered as parking slots viewed from above.",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
-  // 2026.6 entity-first picker: suggest this card only for our own
-  // integration's sensor entities (registry platform === domain).
-  getEntitySuggestion: (hass: HomeAssistant, entityId: string) => {
-    if (!entityId.startsWith("sensor.")) return null;
-    if (hass?.entities?.[entityId]?.platform !== "ladestellen_austria") {
-      return null;
-    }
-    return {
-      config: {
-        type: "custom:ladestellen-austria-parking-card",
-        entity: entityId,
-      },
-    };
-  },
+  getEntitySuggestion: entitySuggestionFor(
+    "custom:ladestellen-austria-parking-card",
+  ),
 });
 
 @customElement("ladestellen-austria-parking-card")
@@ -82,10 +78,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     _hass: HomeAssistant,
     entities: string[],
   ): Record<string, unknown> {
-    const found = entities.find(
-      (e) => e.startsWith("sensor.") && e.includes("ladestelle"),
-    );
-    return { entity: found ?? "", station_id: "" };
+    return { entity: findStubEntity(entities), station_id: "" };
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -96,7 +89,6 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // removes the slot's evseId; identity comparison in shouldUpdate.
   @state() private _revealedSlots: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
-  private _versionCheckDone = false;
 
   public setConfig(config: ParkingLotCardConfig): void {
     if (!config || typeof config !== "object") {
@@ -133,10 +125,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
     ) {
       return true;
     }
-    const prev = changedProps.get("hass") as HomeAssistant | undefined;
-    if (!prev || !this.config.entity) return true;
-    return (
-      prev.states[this.config.entity] !== this.hass.states[this.config.entity]
+    return shouldUpdateForEntityState(
+      changedProps,
+      this.hass,
+      this.config.entity,
     );
   }
 
@@ -163,50 +155,143 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
-    if (changedProps.has("hass")) {
-      setLanguage(this.hass?.language);
-    }
+    syncCardLanguage(changedProps, this.hass);
   }
 
   protected override firstUpdated(_changedProps: PropertyValues): void {
-    // Lit's textbook hook for one-shot init that needs the DOM. Fire
-    // the WS card-version probe once. _versionCheckDone is also
-    // checked in updated() in case `hass` arrives after the first
-    // update. isConnected guards the late .then() so the callback
-    // never writes _versionMismatch on a disconnected element.
-    this._maybeRunVersionCheck();
+    this._runVersionCheck();
   }
 
   protected override updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    if (changedProps.has("hass")) {
-      this._maybeRunVersionCheck();
-    }
+    // Also here, not just firstUpdated, in case `hass` arrives after the
+    // first update; runVersionCheckOnce makes the repeat call a no-op.
+    if (changedProps.has("hass")) this._runVersionCheck();
   }
 
-  private _maybeRunVersionCheck(): void {
-    if (this._versionCheckDone || !this.hass) return;
-    this._versionCheckDone = true;
-    void checkCardVersionWS(this.hass).then((mismatch) => {
-      if (this.isConnected && mismatch) this._versionMismatch = mismatch;
+  private _runVersionCheck(): void {
+    runVersionCheckOnce(this, (v) => {
+      this._versionMismatch = v;
     });
   }
 
-  protected override render(): TemplateResult {
-    if (!this.hass || !this.config) {
-      return html`<ha-card>
+  /**
+   * The chrome every render branch shares: `ha-card > card-content >
+   * .wrap`, the three appearance data-attributes, and the version
+   * banner.
+   *
+   * All four branches used to carry their own copy of this, which is
+   * where twelve of render()'s decision points came from — three `??`
+   * defaults per copy. Optional-chaining `config` covers the
+   * before-setConfig branch and is harmless in the other three.
+   */
+  private _renderShell(
+    body: unknown,
+    opts: { footer?: TemplateResult; accent?: boolean } = {},
+  ): TemplateResult {
+    return html`
+      <ha-card>
         <div class="card-content">
           <div
             class="wrap"
+            style=${opts.accent
+              ? "--lade-accent: var(--primary-color);"
+              : nothing}
             data-asphalt-style=${this.config?.asphalt_style ?? "default"}
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
           >
-            ${renderVersionBanner(this._versionMismatch)}
-            <div class="empty-state">${localize("common.loading")}</div>
+            ${renderVersionBanner(this._versionMismatch)} ${body}
           </div>
+          ${opts.footer ?? nothing}
         </div>
-      </ha-card>`;
+      </ha-card>
+    `;
+  }
+
+  private _cardFooter(attribution?: string): TemplateResult {
+    return renderFooter(
+      this.hass,
+      attribution,
+      this.config?.logo_adapt_to_theme === true,
+    );
+  }
+
+  /**
+   * Station header. `count` is passed only when the free-slot counter
+   * should show, so the show_free_count decision stays at the call site
+   * where the counts are already in scope.
+   */
+  private _renderHeader(
+    title: string,
+    subtitle = "",
+    count?: { avail: number; total: number; label: string },
+  ): TemplateResult {
+    return html`<header class="header">
+      <div class="icon-tile" aria-hidden="true">
+        <ha-icon icon="mdi:ev-station"></ha-icon>
+      </div>
+      <div class="header-text">
+        <h3 class="title">${title}</h3>
+        ${subtitle ? html`<p class="subtitle">${subtitle}</p>` : nothing}
+      </div>
+      ${count
+        ? html`<div
+            class=${count.avail > 0 ? "header-count has-free" : "header-count"}
+            aria-label=${count.label}
+          >
+            <div class="header-count-value">
+              <span class="header-count-num" role="status" aria-live="polite"
+                >${count.avail}</span
+              >
+              <span class="header-count-of">/ ${count.total}</span>
+            </div>
+            <div class="header-count-label">
+              ${localize("parking.slot_status_free")}
+            </div>
+          </div>`
+        : nothing}
+    </header>`;
+  }
+
+  private _renderLot(points: Point[], countText: string): TemplateResult {
+    if (points.length === 0) {
+      return html`<div class="empty-state">
+        ${localize("parking.no_points")}
+      </div>`;
+    }
+    return html`<div class="rack-block">
+      <div class="parking-lot" role="group" aria-label=${countText}>
+        ${points.map((p) => this._renderSlot(p))}
+      </div>
+    </div>`;
+  }
+
+  /**
+   * Header for the resolved-station branch. Owns all three of its
+   * config decisions (hide_header, custom title, show_free_count) so
+   * render() carries none of them — those nested ternaries were most of
+   * its remaining cognitive complexity.
+   */
+  private _stationHeader(
+    stationLabel: string,
+    customTitle: string | undefined,
+    counts: { avail: number; total: number; label: string },
+  ): TemplateResult | typeof nothing {
+    if (this.config.hide_header) return nothing;
+    const showCount = this.config.show_free_count !== false;
+    return this._renderHeader(
+      customTitle ?? stationLabel,
+      customTitle ? stationLabel : "",
+      showCount ? counts : undefined,
+    );
+  }
+
+  protected override render(): TemplateResult {
+    if (!this.hass || !this.config) {
+      return this._renderShell(
+        html`<div class="empty-state">${localize("common.loading")}</div>`,
+      );
     }
 
     const stateObj = this.config.entity
@@ -214,65 +299,33 @@ export class LadestellenAustriaParkingCard extends LitElement {
       : undefined;
 
     if (!stateObj) {
-      return html`<ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            data-asphalt-style=${this.config.asphalt_style ?? "default"}
-            data-paint-width=${this.config.paint_width ?? "medium"}
-            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
-          >
-            ${renderVersionBanner(this._versionMismatch)}
-            <div class="empty-state">${localize("card.no_entity")}</div>
-          </div>
-          ${renderFooter(
-            this.hass,
-            undefined,
-            this.config?.logo_adapt_to_theme === true,
-          )}
-        </div>
-      </ha-card>`;
+      return this._renderShell(
+        html`<div class="empty-state">${localize("card.no_entity")}</div>`,
+        { footer: this._cardFooter() },
+      );
     }
 
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
     const stationId = this.config.station_id ?? "";
     const station = stations.find((s) => s.stationId === stationId);
-
     const customTitle = this.config.name;
+    const footer = this._cardFooter(stateObj.attributes.attribution);
 
     if (!stationId || !station) {
-      return html`<ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            data-asphalt-style=${this.config.asphalt_style ?? "default"}
-            data-paint-width=${this.config.paint_width ?? "medium"}
-            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
-          >
-            ${renderVersionBanner(this._versionMismatch)}
-            ${customTitle && !this.config.hide_header
-              ? html`<header class="header">
-                  <div class="icon-tile" aria-hidden="true">
-                    <ha-icon icon="mdi:ev-station"></ha-icon>
-                  </div>
-                  <div class="header-text">
-                    <h3 class="title">${customTitle}</h3>
-                  </div>
-                </header>`
-              : nothing}
-            <div class="empty-state">
-              ${!stationId
-                ? localize("parking.no_station_selected")
-                : localize("parking.station_not_found")}
-            </div>
+      const showHeader = Boolean(customTitle) && !this.config.hide_header;
+      return this._renderShell(
+        html`
+          ${showHeader ? this._renderHeader(customTitle ?? "") : nothing}
+          <div class="empty-state">
+            ${localize(
+              stationId
+                ? "parking.station_not_found"
+                : "parking.no_station_selected",
+            )}
           </div>
-          ${renderFooter(
-            this.hass,
-            stateObj.attributes.attribution,
-            this.config.logo_adapt_to_theme === true,
-          )}
-        </div>
-      </ha-card>`;
+        `,
+        { footer },
+      );
     }
 
     // Coordinator already sorts each station's points by the trailing
@@ -287,136 +340,93 @@ export class LadestellenAustriaParkingCard extends LitElement {
       .replaceAll("{avail}", String(availCount))
       .replaceAll("{total}", String(totalCount));
 
-    const headerTitle = customTitle ?? station.label;
-    const headerSubtitle = customTitle ? station.label : "";
+    return this._renderShell(
+      html`
+        ${this._stationHeader(station.label, customTitle, {
+          avail: availCount,
+          total: totalCount,
+          label: countText,
+        })}
+        ${this._renderLot(points, countText)}
+      `,
+      { footer, accent: true },
+    );
+  }
 
+  /** The car SVG and the MDI overlay icon — at most one of them shows. */
+  private _renderSlotOverlays(
+    overlay: SlotOverlay | null,
+    carColor: string | null,
+  ): TemplateResult {
     return html`
-      <ha-card>
-        <div class="card-content">
-          <div
-            class="wrap"
-            style="--lade-accent: var(--primary-color);"
-            data-asphalt-style=${this.config.asphalt_style ?? "default"}
-            data-paint-width=${this.config.paint_width ?? "medium"}
-            data-icon-paint=${this.config.icon_paint_mode ?? "default"}
+      ${carColor
+        ? html`<span
+            class="slot-car"
+            aria-hidden="true"
+            style=${`--slot-car-color: ${carColor};`}
           >
-            ${renderVersionBanner(this._versionMismatch)}
-            ${this.config.hide_header
-              ? nothing
-              : html`<header class="header">
-                  <div class="icon-tile" aria-hidden="true">
-                    <ha-icon icon="mdi:ev-station"></ha-icon>
-                  </div>
-                  <div class="header-text">
-                    <h3 class="title">${headerTitle}</h3>
-                    ${headerSubtitle
-                      ? html`<p class="subtitle">${headerSubtitle}</p>`
-                      : nothing}
-                  </div>
-                  ${this.config.show_free_count !== false
-                    ? html`<div
-                        class=${availCount > 0
-                          ? "header-count has-free"
-                          : "header-count"}
-                        aria-label=${countText}
-                      >
-                        <div class="header-count-value">
-                          <span
-                            class="header-count-num"
-                            role="status"
-                            aria-live="polite"
-                            >${availCount}</span
-                          >
-                          <span class="header-count-of">/ ${totalCount}</span>
-                        </div>
-                        <div class="header-count-label">
-                          ${localize("parking.slot_status_free")}
-                        </div>
-                      </div>`
-                    : nothing}
-                </header>`}
-            ${points.length === 0
-              ? html`<div class="empty-state">
-                  ${localize("parking.no_points")}
-                </div>`
-              : html`<div class="rack-block">
-                  <div
-                    class="parking-lot"
-                    role="list"
-                    aria-label=${countText}
-                  >
-                    ${points.map((p) => this._renderSlot(p))}
-                  </div>
-                </div>`}
-          </div>
-          ${renderFooter(
-            this.hass,
-            stateObj.attributes.attribution,
-            this.config.logo_adapt_to_theme === true,
-          )}
-        </div>
-      </ha-card>
+            ${carSvg()}
+          </span>`
+        : nothing}
+      ${overlay
+        ? html`<span
+            class="slot-overlay-icon tone-${overlay.tone}"
+            aria-hidden="true"
+          >
+            <ha-icon icon=${overlay.icon}></ha-icon>
+          </span>`
+        : nothing}
     `;
+  }
+
+  /** The spec block inside the slot: power badge, kW, connector, status. */
+  private _renderSlotInner(
+    point: Point,
+    powerType: "dc" | "ac" | null,
+    kwText: string,
+    connector: string,
+    statusLabel: string,
+  ): TemplateResult {
+    const colorBucket = slotStatusBucket(slotVariant(point).bucket);
+    const shortKey = slotStatusShortKey(point.status);
+    return html`<span class="slot-inner">
+      ${powerType
+        ? html`<span class="slot-power-badge" data-type=${powerType}
+            >${powerType.toUpperCase()}</span
+          >`
+        : nothing}
+      <span class="slot-kw">
+        <span class="slot-kw-num">${kwText}</span
+        ><span class="slot-kw-unit">kW</span>
+      </span>
+      <span class="slot-connector">${connector}</span>
+      <span class="slot-status-word slot-status-${colorBucket}"
+        >${slotStatusWord(shortKey, statusLabel)}</span
+      >
+    </span>`;
   }
 
   private _renderSlot(point: Point): TemplateResult {
     const variant = slotVariant(point);
-    const {
-      bucket: statusCat,
-      isAvailable,
-      isBusy,
-      isWarn,
-      overlay,
-      showCar,
-      showOverlayIcon,
-    } = variant;
+    const { bucket: statusCat, overlay, showCar, showOverlayIcon } = variant;
+    const hasOverlay = showCar || showOverlayIcon;
+    const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const powerType = pointPowerType(point);
     const connector = pointConnectorLabel(point);
     const kwText = formatKw(point.capacityKw);
     const statusLabel = pointStatusLabel(point.status);
-    // colorBucket: drives the slot-status-{free|busy|warn|unknown}
-    // text colour class — kept bucket-coarse so RESERVED / BLOCKED
-    // still read red, OUT_OF_ORDER family still reads orange, etc.
-    const colorBucket = this._slotStatusBucket(statusCat);
-    // shortKey: drives the displayed word per-status (parking.slot_
-    // status_reserved / _out_of_stock / _planned / …) so users see
-    // "reserviert" instead of the bucket "belegt".
-    const shortKey = slotStatusShortKey(point.status);
-    const hasOverlay = showCar || showOverlayIcon;
-    const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
-    const slotClass = isAvailable
-      ? "is-available"
-      : isBusy
-        ? "is-busy"
-        : isWarn
-          ? "is-warn"
-          : "is-unknown";
-    const aria = [
-      powerType ? powerType.toUpperCase() : null,
-      point.capacityKw ? `${kwText} kW` : null,
-      connector && connector !== "–" ? connector : null,
+    const aria = slotAriaLabel({
+      powerType,
+      capacityKw: point.capacityKw,
+      kwText,
+      connector,
       statusLabel,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    const carColor = showCar ? this._carColor(point.evseId) : null;
-    const cls = [
-      "parking-slot",
-      slotClass,
-      hasOverlay ? "has-overlay" : "",
-      showCar ? "has-car" : "",
-      showOverlayIcon ? "has-icon" : "",
-      overlay?.bgTint ? `slot-tint-${overlay.bgTint}` : "",
-      isRevealed ? "is-revealed" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    });
     return html`
       <button
         type="button"
-        class=${cls}
+        class=${slotClassList(variant, isRevealed)}
         data-status=${statusCat}
-        role="listitem"
         tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
         aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
@@ -426,66 +436,19 @@ export class LadestellenAustriaParkingCard extends LitElement {
           if (hasOverlay) this._toggleSlot(point.evseId);
         }}
       >
-        ${showCar && carColor
-          ? html`<span
-              class="slot-car"
-              aria-hidden="true"
-              style=${`--slot-car-color: ${carColor};`}
-            >
-              ${carSvg()}
-            </span>`
-          : nothing}
-        ${overlay
-          ? html`<span
-              class="slot-overlay-icon tone-${overlay.tone}"
-              aria-hidden="true"
-            >
-              <ha-icon icon=${overlay.icon}></ha-icon>
-            </span>`
-          : nothing}
-        <span class="slot-inner">
-          ${powerType
-            ? html`<span
-                class="slot-power-badge"
-                data-type=${powerType}
-                >${powerType.toUpperCase()}</span
-              >`
-            : nothing}
-          <span class="slot-kw">
-            <span class="slot-kw-num">${kwText}</span
-            ><span class="slot-kw-unit">kW</span>
-          </span>
-          <span class="slot-connector">${connector}</span>
-          <span class="slot-status-word slot-status-${colorBucket}"
-            >${this._slotStatusWord(shortKey, statusLabel)}</span
-          >
-        </span>
+        ${this._renderSlotOverlays(
+          overlay,
+          showCar ? this._carColor(point.evseId) : null,
+        )}
+        ${this._renderSlotInner(
+          point,
+          powerType,
+          kwText,
+          connector,
+          statusLabel,
+        )}
       </button>
     `;
-  }
-
-  // Which localize key bucket to use for the bottom-of-slot status word.
-  // Short labels ("frei" / "lädt" / "kaputt" / "unbekannt") read better
-  // at slot size than the full status label.
-  private _slotStatusBucket(status: RackStatus): string {
-    switch (status) {
-      case "ok":
-        return "free";
-      case "busy":
-        return "busy";
-      case "warn":
-        return "warn";
-      case "unknown":
-        return "unknown";
-      default:
-        return "unknown";
-    }
-  }
-
-  private _slotStatusWord(bucket: string, fallback: string): string {
-    const key = `parking.slot_status_${bucket}`;
-    const resolved = localize(key);
-    return resolved === key ? fallback : resolved;
   }
 
   private _toggleSlot(evseId: string): void {

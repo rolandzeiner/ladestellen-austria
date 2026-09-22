@@ -13,14 +13,18 @@ Home Assistant custom integration for the Austrian EV charging station directory
 
 <table>
   <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card.webp" height="320" alt="Lovelace card" /></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card-config.webp" height="320" alt="Card editor" /></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/config-flow.webp" height="320" alt="Config flow" /></td>
-  </tr>
-  <tr>
-    <td align="center"><em>Lovelace card</em></td>
-    <td align="center"><em>Card editor</em></td>
-    <td align="center"><em>Config flow</em></td>
+    <td align="center" valign="top">
+      <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card.webp" height="320" alt="Main card showing distance to the nearest station and a list of nearby stations" />
+      <br/><em>Main card</em>
+    </td>
+    <td align="center" valign="top">
+      <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card-config.webp" height="320" alt="Card editor with filter and display options" />
+      <br/><em>Card editor</em>
+    </td>
+    <td align="center" valign="top">
+      <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/config-flow.webp" height="320" alt="Integration setup dialog asking for API key, domain and location" />
+      <br/><em>Config flow</em>
+    </td>
   </tr>
 </table>
 
@@ -163,17 +167,9 @@ template:
 
 ## Development
 
-Cards are TypeScript + Lit 3 + Rollup, single bundle at `custom_components/ladestellen_austria/www/ladestellen-austria-card.js`. End users install via HACS and never run `npm`; contributors do:
+The card ships pre-built, so installing via HACS needs no Node or Python tooling.
 
-```bash
-npm install && npm run build      # production bundle
-npm run dev                       # watch mode
-ruff check .
-mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
-python3 -m pytest tests/ -v
-```
-
-`src/const.ts` and `custom_components/ladestellen_austria/const.py` both carry `CARD_VERSION` — they must stay byte-identical, otherwise the frontend version check loops on a reload banner. Bump both together.
+To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, the card build (TypeScript + Lit 3 + Rolldown), version-sync rules, and the verification gate.
 
 ## Attribution
 

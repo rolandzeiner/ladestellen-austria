@@ -18,13 +18,14 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
 from homeassistant.core import (
+    CoreState,
     Event,
     EventStateChangedData,
     HomeAssistant,
     State,
     callback,
 )
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.debounce import Debouncer
@@ -56,6 +57,33 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _describe_error(err: BaseException) -> str:
+    """Render an exception for the log with its translation placeholders.
+
+    `HomeAssistantError.__str__` resolves the message through the *cached*
+    `exceptions` translation category. For a custom integration that category
+    is generally not loaded when a coordinator refresh fails, so it falls back
+    to the bare translation key — and memoises it on the exception, so it stays
+    bare even once translations are cached. Every raise in this module carries
+    `translation_key=` + `translation_placeholders=` (the
+    `exception-translations` quality-scale rule), which meant the status code
+    and reason the raise site collected never reached the log: a lone
+    `api_http_error` cannot tell a 429 from a 503, which is exactly the
+    question an outage raises.
+
+    Re-attaching the placeholders keeps the log diagnosable without
+    duplicating the English copy from `strings.json` in Python.
+    """
+    if isinstance(err, HomeAssistantError) and err.translation_placeholders:
+        detail = ", ".join(
+            f"{key}={value}" for key, value in err.translation_placeholders.items()
+        )
+        if detail:
+            return f"{err} ({detail})"
+    return str(err)
+
 
 type LadestellenAustriaConfigEntry = ConfigEntry["LadestellenAustriaCoordinator"]
 
@@ -235,17 +263,17 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             dt_util.utcnow()
         )
         # Entry-owned and named, not a bare `hass.async_create_task`.
-        # Owned so unload WAITS for the fetch (config_entries.py:1250
-        # awaits `_tasks` with timeout=10) instead of orphaning it — note
-        # unload cancels only `_background_tasks`, so this is a wait, not
-        # a cancel. Named so it is identifiable in HA's task list rather
-        # than showing up as "Task-123".
+        # Owned so unload WAITS for the fetch instead of orphaning it:
+        # `ConfigEntry._async_process_on_unload` awaits `_tasks` with a
+        # 10 s timeout and cancels only `_background_tasks`, so this is a
+        # wait, not a cancel. Named so it is identifiable in HA's task
+        # list rather than showing up as "Task-123".
         #
         # The coordinator is independently safe against a torn-down
-        # refresh: `async_shutdown` is registered as an `async_on_unload`
-        # callback (update_coordinator.py:148-149) and so runs BEFORE the
-        # task wait, setting `_shutdown_requested`, which `_async_refresh`
-        # short-circuits on (update_coordinator.py:212, :424).
+        # refresh: `DataUpdateCoordinator.async_shutdown` is registered
+        # through `config_entry.async_on_unload`, so it runs BEFORE the
+        # task wait and sets `_shutdown_requested`, which `_async_refresh`
+        # short-circuits on.
         self._entry.async_create_task(
             self.hass,
             self.async_refresh(),
@@ -257,10 +285,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Always returns a usable pair — when the tracker has no coordinates
         we fall back to the entry's configured location (HA home if the
-        user left it at defaults) and raise a Repairs issue. The fallback
-        is necessary because a degraded tracker should not block refreshes
-        entirely; the user just sees stale results near home until they
-        fix the tracker.
+        user left it at defaults), and raise a Repairs issue unless HA is
+        still starting. The fallback is necessary because a degraded
+        tracker should not block refreshes entirely; the user just sees
+        stale results near home until they fix the tracker.
         """
         if state is not None:
             lat = state.attributes.get("latitude")
@@ -274,7 +302,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 else:
                     self._clear_tracker_issue()
                     return lat_f, lng_f
-        if self._dynamic_entity:
+        # Only flag it once HA is up. During startup the tracker's own
+        # integration may not have been set up yet, so "no coordinates" is
+        # indistinguishable from "not loaded yet" and is almost always the
+        # latter — `async_config_entry_first_refresh()` routinely wins that
+        # race by a few seconds and used to raise a Repairs issue the user
+        # could do nothing about. The state-change listener picks the tracker
+        # up the moment it appears, so a genuinely missing tracker is still
+        # flagged on the next update.
+        if self._dynamic_entity and self.hass.state is CoreState.running:
             self._raise_tracker_issue()
         return self._latitude, self._longitude
 
@@ -302,9 +338,15 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _clear_tracker_issue(self) -> None:
-        """Clear the tracker-missing Repairs issue once coordinates return."""
-        if not self._tracker_issue_raised:
-            return
+        """Clear the tracker-missing Repairs issue once coordinates return.
+
+        The delete is unconditional on purpose. `_tracker_issue_raised` is
+        per-coordinator state, but the Repairs issue is global and outlives a
+        config-entry reload — so a fresh coordinator, with the flag back at
+        False, would early-return and orphan the issue its predecessor raised,
+        leaving a warning the user can only dismiss by hand. `async_delete_issue`
+        is a no-op when the issue is absent, so calling it every time is cheap.
+        """
         self._tracker_issue_raised = False
         ir.async_delete_issue(
             self.hass, DOMAIN, f"tracker_missing_{self._entry.entry_id}"
@@ -514,17 +556,29 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self._dynamic_entity:
             state = self.hass.states.get(self._dynamic_entity)
             lat, lng = self._get_entity_coords(state)
-            self._last_fetch_lat = lat
-            self._last_fetch_lng = lng
+            # The timestamp is recorded optimistically: a failed attempt still
+            # counts against the per-entry cooldown so a flapping API can't be
+            # hammered on every tracker tick. The *position* is not — it is
+            # recorded further down, once data is actually in hand.
             self._last_fetch_time = dt_util.utcnow()
         else:
             lat = self._latitude
             lng = self._longitude
 
+        was_available = self.last_update_success
+
         try:
             stations = await self._fetch_search(lat, lng)
-        except UpdateFailed:
+        except UpdateFailed as err:
             self._note_failure()
+            # Log once on the available -> unavailable transition, not on every
+            # poll of a sustained outage. Core's own "Error fetching ... data"
+            # line renders `str(err)`, which is the bare translation key — so
+            # without this the status code never reached the log at all.
+            if was_available:
+                _LOGGER.warning(
+                    "Ladestellen Austria API unavailable: %s", _describe_error(err)
+                )
             raise
         # Local-only dev hook: contributors export
         # `LADESTELLEN_AUSTRIA_DEV_FIXTURE=1` and drop a (gitignored)
@@ -557,7 +611,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if isinstance(points, list):
                 station["points"] = sorted(points, key=_evse_sort_key)
 
-        if self.last_update_success is False:
+        if not was_available:
             _LOGGER.info(
                 "Ladestellen Austria API available again (%d stations)",
                 len(truncated),
@@ -569,6 +623,18 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fire_status_transition_events(truncated)
 
         self._note_success()
+
+        if self._dynamic_entity:
+            # Only now does this position become the reference the distance
+            # guard measures against. Recording it before the fetch pinned the
+            # guard to a position we never received data for: with the car
+            # parked afterwards, `_should_update` saw "hasn't moved 1500 m"
+            # and suppressed every retry until the 6 h safety interval came
+            # round. Leaving it None after a failure makes the guard skip the
+            # distance check entirely, so the cooldown alone paces retries.
+            self._last_fetch_lat = lat
+            self._last_fetch_lng = lng
+
         return {
             "stations": truncated,
             "count": len(truncated),
@@ -592,23 +658,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         considered stable. Bumping it requires either a new event name
         or a versioned `version` field in the payload.
 
-        ⚠ Discoverability note: HA's canonical mechanisms for
-        state-transition automations are **entity triggers** and
-        **device triggers** (``device_trigger.py``). This custom
-        ``hass.bus`` event does **not** appear in the automation UI's
-        trigger picker — power users have to hand-write a
-        ``trigger: event`` YAML block. We chose this pattern because
-        EVSE row cardinality (often dozens per station, with frequent
-        churn) doesn't fit cleanly as per-row entities.
-
-        For new sibling integrations with lower row cardinality (a
-        handful of items per entry), prefer ``device_trigger.py`` with
-        ``async_get_triggers`` returning per-row triggers — that
-        surfaces them in the UI picker, fires them via
-        ``async_attach_trigger``, and integrates with the automation
-        editor's natural-language description. See
-        the portfolio-liftables reference, item 18
-        (maintainer note; the file is not in this repo).
+        A bus event, not a ``device_trigger.py`` trigger, so it does not
+        appear in the automation UI's trigger picker — users hand-write a
+        ``trigger: event`` block. EVSE row cardinality (dozens per
+        station, with churn) doesn't fit cleanly as per-row entities.
         """
         if not isinstance(self.data, dict):
             return

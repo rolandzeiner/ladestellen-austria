@@ -124,7 +124,7 @@ class JSModuleRegistration:
     async def _async_register_path(self) -> None:
         """Register the static HTTP path that serves the JS bundle.
 
-        Rollup writes the bundle to ``custom_components/<domain>/www/
+        Rolldown writes the bundle to ``custom_components/<domain>/www/
         <filename>``; serving that ``www`` subdirectory under URL_BASE
         keeps the resource URL flat (``URL_BASE/<filename>``) — no
         ``/www`` segment in the URL the user copies onto their dashboard.
