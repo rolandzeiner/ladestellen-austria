@@ -241,6 +241,21 @@ async def test_consecutive_failures_apply_exponential_backoff(
     assert coordinator.update_interval.total_seconds() == BACKOFF_CAP_SECONDS
 
 
+async def test_backoff_holds_the_cap_through_a_very_long_outage(
+    hass: HomeAssistant,
+) -> None:
+    """The 1025th failure in a row used to raise: `2 ** 1024` fits no float."""
+    from custom_components.ladestellen_austria.const import BACKOFF_CAP_SECONDS
+
+    entry = _make_entry({CONF_SCAN_INTERVAL: 10})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    for _ in range(3000):
+        coordinator._note_failure()
+    assert coordinator.update_interval == timedelta(seconds=BACKOFF_CAP_SECONDS)
+
+
 async def test_fetch_filters_non_dict_entries(hass: HomeAssistant) -> None:
     """Stray non-dict items in the array are silently dropped."""
     entry = _make_entry()
@@ -380,16 +395,19 @@ async def test_dynamic_mode_uses_safety_interval(hass: HomeAssistant) -> None:
     assert coordinator.update_interval == timedelta(hours=6)
 
 
-async def test_static_mode_clamps_stored_interval(hass: HomeAssistant) -> None:
-    """A stored interval below the form's floor is clamped, not trusted.
+@pytest.mark.parametrize(("stored", "minutes"), [(1, 5), (100000, 720)])
+async def test_static_mode_clamps_stored_interval(
+    hass: HomeAssistant, stored: int, minutes: int
+) -> None:
+    """A stored interval outside the form's range is clamped, not trusted.
 
     The NumberSelector only validates what goes through a flow; an entry
     edited by hand in `.storage` reaches the coordinator as it is.
     """
-    entry = _make_entry({CONF_SCAN_INTERVAL: 1})
+    entry = _make_entry({CONF_SCAN_INTERVAL: stored})
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
-    assert coordinator.update_interval == timedelta(minutes=5)
+    assert coordinator.update_interval == timedelta(minutes=minutes)
 
 
 # ---------------------------------------------------------------------------
