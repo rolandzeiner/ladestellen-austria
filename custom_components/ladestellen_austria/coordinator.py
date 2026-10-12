@@ -49,6 +49,8 @@ from .const import (
     DYNAMIC_DOMAIN_COOLDOWN_MINUTES,
     DYNAMIC_SAFETY_INTERVAL_HOURS,
     EVENT_SLOT_STATUS_CHANGED,
+    MAX_POLL_MINUTES,
+    MIN_POLL_MINUTES,
     REQUEST_TIMEOUT_SEC,
     SEARCH_PATH,
     build_default_headers,
@@ -178,7 +180,12 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 CONF_SCAN_INTERVAL,
                 entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             )
-            interval = timedelta(minutes=scan)
+            # Clamped here as well as in the form. The NumberSelector only
+            # validates what goes through a flow, so an entry edited by hand
+            # in `.storage` would otherwise poll at whatever it says.
+            interval = timedelta(
+                minutes=min(max(scan, MIN_POLL_MINUTES), MAX_POLL_MINUTES)
+            )
 
         # Exponential-backoff state. `_normal_interval` is immutable as
         # the user-configured cadence; `self.update_interval` is what HA

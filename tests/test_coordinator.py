@@ -380,6 +380,18 @@ async def test_dynamic_mode_uses_safety_interval(hass: HomeAssistant) -> None:
     assert coordinator.update_interval == timedelta(hours=6)
 
 
+async def test_static_mode_clamps_stored_interval(hass: HomeAssistant) -> None:
+    """A stored interval below the form's floor is clamped, not trusted.
+
+    The NumberSelector only validates what goes through a flow; an entry
+    edited by hand in `.storage` reaches the coordinator as it is.
+    """
+    entry = _make_entry({CONF_SCAN_INTERVAL: 1})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+    assert coordinator.update_interval == timedelta(minutes=5)
+
+
 # ---------------------------------------------------------------------------
 # Dynamic mode — _should_update rate-limit guards
 # ---------------------------------------------------------------------------
