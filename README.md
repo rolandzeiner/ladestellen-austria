@@ -171,7 +171,7 @@ template:
 
 The card ships pre-built, so installing via HACS needs no Node or Python tooling.
 
-To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, the card build (TypeScript + Lit 3 + Rolldown), version-sync rules, and the verification gate.
+To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, the card build, version sync and the verification gate.
 
 ## Attribution
 

@@ -66,10 +66,19 @@ pytest tests/ -v
 mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
 ruff check .
 ruff format --check .       # separate: `ruff check` never inspects formatting
+uv run --python 3.12 --no-project python -m compileall -q custom_components/ladestellen_austria
 npx vp check                # format, lint and type-check; the build does not type-check at all
 npm test                    # vp test run; the only step that runs the card's logic
 npm run build
+node -c custom_components/ladestellen_austria/www/ladestellen-austria-card.js
 ```
+
+The `compileall` line mirrors the `compile-floor-python` CI job: the venv runs
+3.14, so it is the only local check for syntax that users on Python 3.12 cannot
+parse (see `target-version` above). **Keep `--no-project`.** Without it `uv`
+treats the repo root as a project, finds no `requires-python`, and rebuilds
+`.venv` on 3.12, taking every tool in it along. Recover with
+`uv venv --clear --python 3.14 && uv pip install -r requirements_test.txt pre-commit`.
 
 Python coverage **is** gated: `pytest.ini` carries `--cov-fail-under=90` in
 `addopts`, so any `pytest` run that drops the package below 90 % fails
@@ -87,7 +96,7 @@ npx vp test run --coverage --coverage.provider=v8 --coverage.reporter=text \
   '--coverage.include=src/**/*.ts' '--coverage.exclude=src/**/*.test.ts'
 ```
 
-CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high`. Failing locally wastes a push.
+CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high` + a check that the committed bundle matches a fresh build. Failing locally wastes a push.
 
 ## Reporting issues
 
