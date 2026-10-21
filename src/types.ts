@@ -59,26 +59,19 @@ export interface LovelaceCardEditor extends HTMLElement {
 /** `LovelaceCard` is only referenced as the `hui-error-card` tag-map
  *  entry below, so an HTMLElement alias suffices — we never instantiate
  *  it directly from card code. */
-export type LovelaceCard = HTMLElement;
+type LovelaceCard = HTMLElement;
 
 /** `bubbles: true` + `composed: true` are required so the event
  *  crosses the editor's shadow boundary and reaches the dashboard's
  *  card-editor listener. */
-export function fireEvent<T>(
-  node: HTMLElement,
-  type: string,
-  detail: T,
-): void {
-  node.dispatchEvent(
-    new CustomEvent(type, { detail, bubbles: true, composed: true }),
-  );
+export function fireEvent<T>(node: HTMLElement, type: string, detail: T): void {
+  node.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
 }
 
 // Type declarations the Lovelace ecosystem exposes globally. Both cards
 // push entries onto `window.customCards` so the dashboard's "Add Card"
 // picker can list them; the field isn't typed by HA core, hence the
-// augmentation here (rather than the triple-cast each card used to
-// repeat).
+// augmentation here.
 declare global {
   interface HTMLElementTagNameMap {
     "ladestellen-austria-card-editor": LovelaceCardEditor;
@@ -99,10 +92,7 @@ declare global {
       getEntitySuggestion?: (
         hass: HomeAssistant,
         entityId: string,
-      ) =>
-        | { config: LovelaceCardConfig }
-        | Array<{ config: LovelaceCardConfig }>
-        | null;
+      ) => { config: LovelaceCardConfig } | Array<{ config: LovelaceCardConfig }> | null;
     }>;
   }
 }
@@ -207,11 +197,23 @@ export interface AmenityFilterOption {
 }
 export const AMENITY_FILTER_OPTIONS: ReadonlyArray<AmenityFilterOption> = [
   { key: "green_energy", icon: "mdi:leaf", label_key: "amenities.green_energy" },
-  { key: "austrian_ecolabel", icon: "mdi:certificate-outline", label_key: "amenities.austrian_ecolabel" },
+  {
+    key: "austrian_ecolabel",
+    icon: "mdi:certificate-outline",
+    label_key: "amenities.austrian_ecolabel",
+  },
   { key: "free_parking", icon: "mdi:parking", label_key: "amenities.free_parking" },
   { key: "roofed_parking", icon: "mdi:home-roof", label_key: "amenities.roofed_parking" },
-  { key: "illuminated_parking", icon: "mdi:lightbulb-outline", label_key: "amenities.illuminated_parking" },
-  { key: "barrier_free", icon: "mdi:wheelchair-accessibility", label_key: "amenities.barrier_free" },
+  {
+    key: "illuminated_parking",
+    icon: "mdi:lightbulb-outline",
+    label_key: "amenities.illuminated_parking",
+  },
+  {
+    key: "barrier_free",
+    icon: "mdi:wheelchair-accessibility",
+    label_key: "amenities.barrier_free",
+  },
   { key: "catering", icon: "mdi:silverware-fork-knife", label_key: "amenities.catering" },
   { key: "bathrooms", icon: "mdi:toilet", label_key: "amenities.bathrooms" },
   { key: "resting", icon: "mdi:sofa", label_key: "amenities.resting" },
@@ -233,7 +235,11 @@ export const PAYMENT_FILTER_OPTIONS: ReadonlyArray<PaymentFilterOption> = [
   { key: "CHARGING_CONTRACT", icon: "mdi:handshake-outline", label_key: "auth.contract" },
   { key: "DEBIT_CARD", icon: "mdi:credit-card-outline", label_key: "auth.debit" },
   { key: "CREDIT_CARD", icon: "mdi:credit-card", label_key: "auth.credit" },
-  { key: "CONTACTLESS_CARD_SUPPORT", icon: "mdi:contactless-payment", label_key: "auth.contactless" },
+  {
+    key: "CONTACTLESS_CARD_SUPPORT",
+    icon: "mdi:contactless-payment",
+    label_key: "auth.contactless",
+  },
 ];
 
 export interface ConnectorType {

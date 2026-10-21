@@ -49,11 +49,13 @@ Home Assistant custom integration for the Austrian EV charging station directory
 
 ### HACS (recommended)
 
+1. Open HACS and search for **Ladestellen Austria**.
+2. Select it and choose **Download**.
+3. Restart Home Assistant.
+
 [![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rolandzeiner&repository=ladestellen-austria&category=integration)
 
-1. HACS → *Integrations* → *⋮ → Custom repositories*.
-2. Add `https://github.com/rolandzeiner/ladestellen-austria` as category *Integration*.
-3. Install **Ladestellen Austria** and restart Home Assistant.
+Not in the search yet? In HACS, open ⋮ → **Custom repositories**, add `https://github.com/rolandzeiner/ladestellen-austria` with type **Integration**, then search again.
 
 ### Manually
 
@@ -169,7 +171,7 @@ template:
 
 The card ships pre-built, so installing via HACS needs no Node or Python tooling.
 
-To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, the card build (TypeScript + Lit 3 + Rolldown), version-sync rules, and the verification gate.
+To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, the card build, version sync and the verification gate.
 
 ## Attribution
 

@@ -53,12 +53,7 @@ export function rackSlotStatus(status: string): RackStatus {
   if (s === "CHARGING" || s === "OCCUPIED" || s === "RESERVED" || s === "BLOCKED") {
     return "busy";
   }
-  if (
-    s === "OUTOFORDER" ||
-    s === "FAULTED" ||
-    s === "INOPERATIVE" ||
-    s === "UNAVAILABLE"
-  ) {
+  if (s === "OUTOFORDER" || s === "FAULTED" || s === "INOPERATIVE" || s === "UNAVAILABLE") {
     return "warn";
   }
   if (s === "UNKNOWN") return "unknown";
@@ -332,14 +327,9 @@ export function safeHttpsUri(raw: unknown): string {
  * expandable section titles, falling back to the raw key when a
  * translation is missing so debugging surfaces the gap visibly.
  */
-export function computeFormLabel(schema: {
-  name: string;
-  type?: string;
-}): string {
+export function computeFormLabel(schema: { name: string; type?: string }): string {
   const key =
-    schema.type === "expandable"
-      ? `editor.section_${schema.name}`
-      : `editor.${schema.name}`;
+    schema.type === "expandable" ? `editor.section_${schema.name}` : `editor.${schema.name}`;
   const resolved = localize(key);
   return resolved === key ? schema.name : resolved;
 }
@@ -379,12 +369,8 @@ export function slotStatusWord(bucket: string, fallback: string): string {
  * conditional modifiers were inline in the renderer, where they were
  * most of its branching and none of it was reachable from a test.
  */
-export function slotClassList(
-  variant: SlotVariant,
-  isRevealed: boolean,
-): string {
-  const { isAvailable, isBusy, isWarn, overlay, showCar, showOverlayIcon } =
-    variant;
+export function slotClassList(variant: SlotVariant, isRevealed: boolean): string {
+  const { isAvailable, isBusy, isWarn, overlay, showCar, showOverlayIcon } = variant;
   const status = isAvailable
     ? "is-available"
     : isBusy

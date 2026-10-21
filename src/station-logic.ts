@@ -11,12 +11,7 @@
 // the clock here, so opening-hours behaviour is deterministic in tests.
 
 import { normStatus, safeHttpsUri, shortConnector } from "./utils";
-import type {
-  LadestellenAustriaCardConfig,
-  OpeningHours,
-  Point,
-  Station,
-} from "./types";
+import type { LadestellenAustriaCardConfig, OpeningHours, Point, Station } from "./types";
 
 export type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
 
@@ -44,19 +39,12 @@ const WEEKDAY_SHORT_TO_IDX: Record<string, number> = {
 
 /** Statuses that mean "a point is in use or held for someone". */
 function isBusyStatus(s: string): boolean {
-  return (
-    s === "CHARGING" || s === "OCCUPIED" || s === "RESERVED" || s === "BLOCKED"
-  );
+  return s === "CHARGING" || s === "OCCUPIED" || s === "RESERVED" || s === "BLOCKED";
 }
 
 /** Statuses that mean "a point is broken or withdrawn from service". */
 function isWarnStatus(s: string): boolean {
-  return (
-    s === "OUTOFORDER" ||
-    s === "FAULTED" ||
-    s === "INOPERATIVE" ||
-    s === "UNAVAILABLE"
-  );
+  return s === "OUTOFORDER" || s === "FAULTED" || s === "INOPERATIVE" || s === "UNAVAILABLE";
 }
 
 /**
@@ -203,12 +191,7 @@ export function statusLevel(
 /** The filter-relevant slice of the card config. */
 export type StationFilters = Pick<
   LadestellenAustriaCardConfig,
-  | "only_available"
-  | "only_free"
-  | "only_open"
-  | "connector_types"
-  | "amenities"
-  | "payment_methods"
+  "only_available" | "only_free" | "only_open" | "connector_types" | "amenities" | "payment_methods"
 >;
 
 /** Does any point on the station report AVAILABLE, with the station ACTIVE? */
@@ -293,17 +276,12 @@ export function filterStations(
 
 /** Highest advertised capacity across a station's points; 0 when none report one. */
 export function stationMaxKw(station: Station): number {
-  return (station.points ?? []).reduce(
-    (max, p) => Math.max(max, p.capacityKw ?? 0),
-    0,
-  );
+  return (station.points ?? []).reduce((max, p) => Math.max(max, p.capacityKw ?? 0), 0);
 }
 
 /** Does any point on the station deliver DC? Drives the row's kW accent. */
 export function stationHasDcPoint(station: Station): boolean {
-  return (station.points ?? []).some((p) =>
-    (p.electricityType ?? []).includes("DC"),
-  );
+  return (station.points ?? []).some((p) => (p.electricityType ?? []).includes("DC"));
 }
 
 /**
@@ -315,9 +293,7 @@ export function stationHasDcPoint(station: Station): boolean {
  * still goes through safeHttpsUri so a future contributor cannot wire an
  * upstream attribute through this binding and bypass the allowlist.
  */
-export function mapsDeeplink(
-  location: { lat: number; lon: number } | undefined,
-): string {
+export function mapsDeeplink(location: { lat: number; lon: number } | undefined): string {
   if (!location) return "";
   return safeHttpsUri(
     `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lon}`,

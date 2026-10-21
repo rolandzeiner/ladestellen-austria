@@ -7,14 +7,12 @@ Uses [`uv`](https://docs.astral.sh/uv/) — the same tool CI installs deps with.
 ```bash
 uv venv --python 3.14 && source .venv/bin/activate
 uv pip install -r requirements_test.txt pre-commit
-pre-commit install
+pre-commit install       # runs ruff, mypy and `vp check` on every commit
 
-npm ci
-npm run build           # → custom_components/ladestellen_austria/www/ladestellen-austria-card.js
-npm run dev             # watch mode
+npm ci                   # Node ^24.11 or 26+, npm 11+
+npm run build            # → custom_components/ladestellen_austria/www/ladestellen-austria-card.js
+npm run dev              # watch mode (development build with sourcemaps)
 ```
-
-For iterating against a live HA container, `./scripts/dev-push.sh` rebuilds the bundle and rsyncs `custom_components/ladestellen_austria/` over SSH; see the script header for prereqs and flags.
 
 ## Branching & releases
 
@@ -30,11 +28,15 @@ There is no dev-time suffix. A pre-release carries the same version as the event
 
 ## Tooling & config
 
-- `rolldown.config.mjs` — the card build. Rolldown does transpilation, minification, module resolution and JSON natively, so the card's whole `devDependencies` is `rolldown` + `typescript`; the `@rollup/plugin-*` stack and `@swc/core` were **deleted** in the 2026-09 migration, not replaced. Three things there fail silently if you change them:
+- `vite.config.ts` — the whole card toolchain, run through [Vite+](https://viteplus.dev/) (`vp`): `vp build` (Vite library mode on Rolldown), `vp test` (Vitest), and `vp check` (Oxfmt + Oxlint + type-check). The only card `devDependencies` are `vite-plus` and `happy-dom`. Vitest, Rolldown and the type-checker all ship inside `vite-plus`, and `typescript` is not installed. Six things there fail silently if you change them:
+  - **One entry, one bundle, two cards.** The list card and the parking card ship from a single `ladestellen-austria-card.js` on purpose; the reasoning sits above `entry:`. Don't split it into one bundle per card.
   - The banner must be a **legal** comment — `/*! ... */` — with `comments: { legal: true }`. A `//` banner is stripped by the minifier and nothing tells you; only the built file's first bytes do.
-  - **`dropConsole` stays `false`.** Rolldown's option is a boolean, not terser's per-method array, so it is all-or-nothing — and most `console.*` calls here sit in `catch` blocks where dropping them turns a caught error into a silent one.
+  - **`minify` lives on `rolldownOptions.output`, with `dropConsole: false`.** Vite's library mode skips whitespace minification for ES output, so `build.minify` alone ships the bundle with its whitespace left in. `dropConsole` is all-or-nothing, and a `console.*` call in a `catch` block is the only client-side failure signal a card has.
+  - **Dev vs prod comes from `--mode development`** (`npm run dev`). A plain `vp build` is production: minified, no sourcemap.
+  - **`fmt.embeddedLanguageFormatting` stays `"off"`.** Otherwise Oxfmt reformats Lit `html`/`css` templates and changes the whitespace inside rendered elements, which is a DOM change, not a style change.
   - **Decorators are not configured.** Rolldown reads `tsconfig.json` itself and enables Lit's legacy decorators from it. If that ever regresses, class fields overwrite Lit's accessors and reactivity dies while the build stays green — diff a built bundle's Lit reactive-property list to catch it.
-- **Rolldown does not type-check.** `npx tsc --noEmit` is the only thing between a type error and a green build, which is why the gate runs it as its own step.
+- **The `vite` override in `package.json` must name the same version as `vite-plus`.** It keeps npm from installing upstream Vite next to Vite+'s core. Dependabot bumps `vite-plus` but not the override, and `src/toolchain.test.ts` fails until you bump both.
+- **The build does not type-check.** `vp check` is the only thing between a type error and a green build, which is why the gate runs it as its own step.
 - `pyproject.toml` is the source of truth for ruff, mypy, and coverage rules — change them here, not in CI flags.
   - **`target-version` tracks the oldest Python we support, never the one CI runs.** `hacs.json` promises HA ≥ 2025.1.0, which runs on Python 3.12, so `target-version = "py312"` — even though the venv and CI are on 3.14. Pointing it at the CI interpreter lets ruff rewrite code into syntax our users cannot parse and then stay silent about it; that is how wiener-linien-austria v1.7.1 shipped a SyntaxError. The `compile-floor-python` CI job byte-compiles the shipped package on 3.12 as an independent backstop. Raise all three together or not at all.
 - `ATTRIBUTION` is the canonical data-source statement; it must stay in sync with `const.ATTRIBUTION` (the value every sensor emits).
@@ -64,20 +66,37 @@ pytest tests/ -v
 mypy --strict --ignore-missing-imports custom_components/ladestellen_austria
 ruff check .
 ruff format --check .       # separate: `ruff check` never inspects formatting
-npx tsc --noEmit            # rolldown does not type-check at all
-npm test                    # vitest; the only step that runs the card's logic
+uv run --python 3.12 --no-project python -m compileall -q custom_components/ladestellen_austria
+npx vp check                # format, lint and type-check; the build does not type-check at all
+npm test                    # vp test run; the only step that runs the card's logic
 npm run build
+node -c custom_components/ladestellen_austria/www/ladestellen-austria-card.js
 ```
+
+The `compileall` line mirrors the `compile-floor-python` CI job: the venv runs
+3.14, so it is the only local check for syntax that users on Python 3.12 cannot
+parse (see `target-version` above). **Keep `--no-project`.** Without it `uv`
+treats the repo root as a project, finds no `requires-python`, and rebuilds
+`.venv` on 3.12, taking every tool in it along. Recover with
+`uv venv --clear --python 3.14 && uv pip install -r requirements_test.txt pre-commit`.
 
 Python coverage **is** gated: `pytest.ini` carries `--cov-fail-under=90` in
 `addopts`, so any `pytest` run that drops the package below 90 % fails
 (it currently sits at ~94 %).
 
-The card side is not gated. `npm run test:coverage` prints a per-file v8 report
-and writes `coverage/coverage-final.json` — that number is there to show you
-which branches a change left unexercised, not to block on a percentage.
+The card side is not gated, so the v8 coverage provider is not a dependency.
+To see which branches a change left unexercised, install it for one run at the
+Vitest version Vite+ bundles (`--no-save` leaves `package.json` and the
+lockfile alone):
 
-CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high`. Failing locally wastes a push.
+```bash
+V=$(npx vp toolchain vitest | grep -oE 'vitest@[0-9.]+' | head -1 | cut -d@ -f2)
+npm i --no-save @vitest/coverage-v8@"$V"
+npx vp test run --coverage --coverage.provider=v8 --coverage.reporter=text \
+  '--coverage.include=src/**/*.ts' '--coverage.exclude=src/**/*.test.ts'
+```
+
+CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard + `npm audit --omit=dev --audit-level=high` + a check that the committed bundle matches a fresh build. Failing locally wastes a push.
 
 ## Reporting issues
 

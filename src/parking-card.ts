@@ -57,27 +57,19 @@ window.customCards = window.customCards ?? [];
 window.customCards.push({
   type: "ladestellen-austria-parking-card",
   name: "Ladestellen Austria — Parking",
-  description:
-    "Single station, points rendered as parking slots viewed from above.",
+  description: "Single station, points rendered as parking slots viewed from above.",
   preview: true,
   documentationURL: "https://github.com/rolandzeiner/ladestellen-austria",
-  getEntitySuggestion: entitySuggestionFor(
-    "custom:ladestellen-austria-parking-card",
-  ),
+  getEntitySuggestion: entitySuggestionFor("custom:ladestellen-austria-parking-card"),
 });
 
 @customElement("ladestellen-austria-parking-card")
 export class LadestellenAustriaParkingCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
-    return document.createElement(
-      "ladestellen-austria-parking-card-editor",
-    ) as LovelaceCardEditor;
+    return document.createElement("ladestellen-austria-parking-card-editor");
   }
 
-  public static getStubConfig(
-    _hass: HomeAssistant,
-    entities: string[],
-  ): Record<string, unknown> {
+  public static getStubConfig(_hass: HomeAssistant, entities: string[]): Record<string, unknown> {
     return { entity: findStubEntity(entities), station_id: "" };
   }
 
@@ -125,11 +117,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     ) {
       return true;
     }
-    return shouldUpdateForEntityState(
-      changedProps,
-      this.hass,
-      this.config.entity,
-    );
+    return shouldUpdateForEntityState(changedProps, this.hass, this.config.entity);
   }
 
   public getCardSize(): number {
@@ -194,9 +182,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
         <div class="card-content">
           <div
             class="wrap"
-            style=${opts.accent
-              ? "--lade-accent: var(--primary-color);"
-              : nothing}
+            style=${opts.accent ? "--lade-accent: var(--primary-color);" : nothing}
             data-asphalt-style=${this.config?.asphalt_style ?? "default"}
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
@@ -210,11 +196,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   private _cardFooter(attribution?: string): TemplateResult {
-    return renderFooter(
-      this.hass,
-      attribution,
-      this.config?.logo_adapt_to_theme === true,
-    );
+    return renderFooter(this.hass, attribution, this.config?.logo_adapt_to_theme === true);
   }
 
   /**
@@ -235,8 +217,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
         <h3 class="title">${title}</h3>
         ${subtitle ? html`<p class="subtitle">${subtitle}</p>` : nothing}
       </div>
-      ${count
-        ? html`<div
+      ${
+        count
+          ? html`<div
             class=${count.avail > 0 ? "header-count has-free" : "header-count"}
             aria-label=${count.label}
           >
@@ -250,7 +233,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
               ${localize("parking.slot_status_free")}
             </div>
           </div>`
-        : nothing}
+          : nothing
+      }
     </header>`;
   }
 
@@ -289,20 +273,15 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
   protected override render(): TemplateResult {
     if (!this.hass || !this.config) {
-      return this._renderShell(
-        html`<div class="empty-state">${localize("common.loading")}</div>`,
-      );
+      return this._renderShell(html`<div class="empty-state">${localize("common.loading")}</div>`);
     }
 
-    const stateObj = this.config.entity
-      ? this.hass.states[this.config.entity]
-      : undefined;
+    const stateObj = this.config.entity ? this.hass.states[this.config.entity] : undefined;
 
     if (!stateObj) {
-      return this._renderShell(
-        html`<div class="empty-state">${localize("card.no_entity")}</div>`,
-        { footer: this._cardFooter() },
-      );
+      return this._renderShell(html`<div class="empty-state">${localize("card.no_entity")}</div>`, {
+        footer: this._cardFooter(),
+      });
     }
 
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
@@ -317,11 +296,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
         html`
           ${showHeader ? this._renderHeader(customTitle ?? "") : nothing}
           <div class="empty-state">
-            ${localize(
-              stationId
-                ? "parking.station_not_found"
-                : "parking.no_station_selected",
-            )}
+            ${localize(stationId ? "parking.station_not_found" : "parking.no_station_selected")}
           </div>
         `,
         { footer },
@@ -332,9 +307,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // EMSP-ID ordinal — see _evse_sort_key in coordinator.py. We just
     // consume the array order.
     const points = station.points ?? [];
-    const availCount = points.filter(
-      (p) => rackSlotStatus(p.status) === "ok",
-    ).length;
+    const availCount = points.filter((p) => rackSlotStatus(p.status) === "ok").length;
     const totalCount = points.length;
     const countText = localize("parking.available_count")
       .replaceAll("{avail}", String(availCount))
@@ -359,23 +332,27 @@ export class LadestellenAustriaParkingCard extends LitElement {
     carColor: string | null,
   ): TemplateResult {
     return html`
-      ${carColor
-        ? html`<span
+      ${
+        carColor
+          ? html`<span
             class="slot-car"
             aria-hidden="true"
             style=${`--slot-car-color: ${carColor};`}
           >
             ${carSvg()}
           </span>`
-        : nothing}
-      ${overlay
-        ? html`<span
+          : nothing
+      }
+      ${
+        overlay
+          ? html`<span
             class="slot-overlay-icon tone-${overlay.tone}"
             aria-hidden="true"
           >
             <ha-icon icon=${overlay.icon}></ha-icon>
           </span>`
-        : nothing}
+          : nothing
+      }
     `;
   }
 
@@ -390,11 +367,13 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const colorBucket = slotStatusBucket(slotVariant(point).bucket);
     const shortKey = slotStatusShortKey(point.status);
     return html`<span class="slot-inner">
-      ${powerType
-        ? html`<span class="slot-power-badge" data-type=${powerType}
+      ${
+        powerType
+          ? html`<span class="slot-power-badge" data-type=${powerType}
             >${powerType.toUpperCase()}</span
           >`
-        : nothing}
+          : nothing
+      }
       <span class="slot-kw">
         <span class="slot-kw-num">${kwText}</span
         ><span class="slot-kw-unit">kW</span>
@@ -436,17 +415,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
           if (hasOverlay) this._toggleSlot(point.evseId);
         }}
       >
-        ${this._renderSlotOverlays(
-          overlay,
-          showCar ? this._carColor(point.evseId) : null,
-        )}
-        ${this._renderSlotInner(
-          point,
-          powerType,
-          kwText,
-          connector,
-          statusLabel,
-        )}
+        ${this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)}
+        ${this._renderSlotInner(point, powerType, kwText, connector, statusLabel)}
       </button>
     `;
   }

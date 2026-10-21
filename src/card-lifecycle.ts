@@ -27,9 +27,7 @@ const INTEGRATION_DOMAIN = "ladestellen_austria";
  * — older HA installs without the handler simply don't surface a
  * mismatch, which is correct (cache-buster URL still applies).
  */
-export async function checkCardVersionWS(
-  hass: HomeAssistant | undefined,
-): Promise<string | null> {
+export async function checkCardVersionWS(hass: HomeAssistant | undefined): Promise<string | null> {
   if (!hass?.callWS) return null;
   try {
     const r = await hass.callWS<{ version?: string }>({
@@ -84,10 +82,7 @@ export function shouldUpdateForEntityState(
  * magic value that must not drift between them.
  */
 export function findStubEntity(entities: string[]): string {
-  return (
-    entities.find((e) => e.startsWith("sensor.") && e.includes("ladestelle")) ??
-    ""
-  );
+  return entities.find((e) => e.startsWith("sensor.") && e.includes("ladestelle")) ?? "";
 }
 
 // Elements whose version probe has already been started. A WeakSet keyed
@@ -132,9 +127,10 @@ export function runVersionCheckOnce(
  * magic value that silently stops matching if the domain is ever
  * renamed in one file and not the other.
  */
-export function entitySuggestionFor(
-  cardType: `custom:${string}`,
-): (hass: HomeAssistant, entityId: string) => {
+export function entitySuggestionFor(cardType: `custom:${string}`): (
+  hass: HomeAssistant,
+  entityId: string,
+) => {
   config: { type: string; entity: string };
 } | null {
   return (hass: HomeAssistant, entityId: string) => {

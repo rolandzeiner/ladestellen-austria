@@ -45,11 +45,7 @@ type HaFormSchema = ReadonlyArray<Record<string, unknown>>;
  * pin toggle. Naming them as a union keeps `_toggleListItem` honest —
  * a typo'd key is a compile error, not a silently ignored write.
  */
-type ListConfigKey =
-  | "connector_types"
-  | "amenities"
-  | "payment_methods"
-  | "pinned_station_ids";
+type ListConfigKey = "connector_types" | "amenities" | "payment_methods" | "pinned_station_ids";
 
 const SCHEMA: HaFormSchema = [
   {
@@ -114,10 +110,7 @@ const FORM_DEFAULTS: Record<string, unknown> = {
 };
 
 @customElement("ladestellen-austria-card-editor")
-export class LadestellenAustriaCardEditor
-  extends LitElement
-  implements LovelaceCardEditor
-{
+export class LadestellenAustriaCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config: LadestellenAustriaCardConfig = {
@@ -128,12 +121,9 @@ export class LadestellenAustriaCardEditor
     // WCAG 3.3.7 (redundant entry) — derive `name` from the selected
     // sensor's friendly_name when the user hasn't explicitly set it.
     const friendlyName =
-      config.entity && this.hass?.states[config.entity]?.attributes
-        .friendly_name;
+      config.entity && this.hass?.states[config.entity]?.attributes.friendly_name;
     this._config =
-      typeof friendlyName === "string"
-        ? { name: friendlyName, ...config }
-        : { ...config };
+      typeof friendlyName === "string" ? { name: friendlyName, ...config } : { ...config };
   }
 
   // ha-form's value-changed delivers the merged config (current data +
@@ -145,12 +135,12 @@ export class LadestellenAustriaCardEditor
   // the bespoke widgets below (chip filters, pin picker) whose
   // selected-state visuals read from it. Without the local update
   // toggles flip in ha-form briefly then snap back on the next render.
-  private _formChanged(ev: CustomEvent): void {
+  private _formChanged = (ev: CustomEvent): void => {
     const next = ev.detail.value as LadestellenAustriaCardConfig;
     if (!next) return;
     this._config = next;
     fireEvent(this, "config-changed", { config: next });
-  }
+  };
 
   /**
    * Add or remove `value` in one of the config's string-array fields.
@@ -163,9 +153,7 @@ export class LadestellenAustriaCardEditor
    */
   private _toggleListItem(key: ListConfigKey, value: string): void {
     const current = this._config[key] ?? [];
-    const next = current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
     this._config = { ...this._config, [key]: next };
     fireEvent(this, "config-changed", { config: this._config });
   }
@@ -194,26 +182,28 @@ export class LadestellenAustriaCardEditor
     // selector shows its own validity styling but doesn't surface a
     // user-facing message; the alert below it does.
     const entityInvalid =
-      !!this._config.entity &&
-      !!this.hass &&
-      !this.hass.states[this._config.entity];
+      !!this._config.entity && !!this.hass && !this.hass.states[this._config.entity];
 
     return html`
       <div class="editor">
-        ${this.hass
-          ? html`<ha-form
+        ${
+          this.hass
+            ? html`<ha-form
               .hass=${this.hass}
               .data=${data}
               .schema=${SCHEMA}
               .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
-          : nothing}
-        ${entityInvalid
-          ? html`<ha-alert alert-type="error">
+            : nothing
+        }
+        ${
+          entityInvalid
+            ? html`<ha-alert alert-type="error">
               ${localize("editor.entity_missing")}
             </ha-alert>`
-          : nothing}
+            : nothing
+        }
 
         <div class="editor-section">
           <div class="section-header" role="heading" aria-level="3">
@@ -229,9 +219,9 @@ export class LadestellenAustriaCardEditor
                 (token) => html`
                   <button
                     type="button"
-                    class=${selectedConnectors.includes(token)
-                      ? "filter-chip active"
-                      : "filter-chip"}
+                    class=${
+                      selectedConnectors.includes(token) ? "filter-chip active" : "filter-chip"
+                    }
                     aria-pressed=${selectedConnectors.includes(token)}
                     @click=${() => this._toggleListItem("connector_types", token)}
                   >
@@ -251,9 +241,11 @@ export class LadestellenAustriaCardEditor
                 (opt) => html`
                   <button
                     type="button"
-                    class=${selectedAmenities.includes(opt.key)
-                      ? "filter-chip icon-chip active"
-                      : "filter-chip icon-chip"}
+                    class=${
+                      selectedAmenities.includes(opt.key)
+                        ? "filter-chip icon-chip active"
+                        : "filter-chip icon-chip"
+                    }
                     aria-pressed=${selectedAmenities.includes(opt.key)}
                     @click=${() => this._toggleListItem("amenities", opt.key)}
                   >
@@ -274,9 +266,11 @@ export class LadestellenAustriaCardEditor
                 (opt) => html`
                   <button
                     type="button"
-                    class=${selectedPayments.includes(opt.key)
-                      ? "filter-chip icon-chip active"
-                      : "filter-chip icon-chip"}
+                    class=${
+                      selectedPayments.includes(opt.key)
+                        ? "filter-chip icon-chip active"
+                        : "filter-chip icon-chip"
+                    }
                     aria-pressed=${selectedPayments.includes(opt.key)}
                     @click=${() => this._toggleListItem("payment_methods", opt.key)}
                   >
@@ -304,8 +298,7 @@ export class LadestellenAustriaCardEditor
     const pinnedSet = new Set(pinned);
     const liveIds = new Set(stations.map((s) => s.stationId));
     const orphanIds = pinned.filter((id) => !liveIds.has(id));
-    const dynamicMode =
-      (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
+    const dynamicMode = (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
     return html`
       <div class="editor-section">
         <div class="section-header" role="heading" aria-level="3">
@@ -313,26 +306,25 @@ export class LadestellenAustriaCardEditor
         </div>
         <div class="editor-hint">${localize("editor.pin_hint")}</div>
 
-        ${dynamicMode
-          ? html`<div class="editor-hint editor-hint--muted">
+        ${
+          dynamicMode
+            ? html`<div class="editor-hint editor-hint--muted">
               ${localize("editor.pin_disabled_dynamic")}
             </div>`
-          : !entityId
-          ? html`<div class="editor-hint editor-hint--muted">
+            : !entityId
+              ? html`<div class="editor-hint editor-hint--muted">
               ${localize("editor.pin_select_sensor_first")}
             </div>`
-          : stations.length === 0
-          ? html`<div class="editor-hint editor-hint--muted">
+              : stations.length === 0
+                ? html`<div class="editor-hint editor-hint--muted">
               ${localize("editor.pin_no_stations_yet")}
             </div>`
-          : html`
+                : html`
               <div class="pin-list">
                 ${stations.map((s) => {
                   const isPinned = pinnedSet.has(s.stationId);
                   const distanceText =
-                    typeof s.distance === "number"
-                      ? `${s.distance.toFixed(2)} km`
-                      : "";
+                    typeof s.distance === "number" ? `${s.distance.toFixed(2)} km` : "";
                   return html`
                     <button
                       type="button"
@@ -350,9 +342,11 @@ export class LadestellenAustriaCardEditor
                   `;
                 })}
               </div>
-            `}
-        ${!dynamicMode && orphanIds.length > 0
-          ? html`
+            `
+        }
+        ${
+          !dynamicMode && orphanIds.length > 0
+            ? html`
               <div class="editor-hint editor-hint--muted">
                 ${localize("editor.pin_orphans_heading")}
               </div>
@@ -375,7 +369,8 @@ export class LadestellenAustriaCardEditor
                 )}
               </div>
             `
-          : nothing}
+            : nothing
+        }
       </div>
     `;
   }

@@ -1,24 +1,34 @@
 {
   "name": "ladestellen-austria-card",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "description": "Lovelace custom card for the Ladestellen Austria HA integration",
   "type": "module",
   "scripts": {
-    "build": "rolldown -c",
-    "dev": "rolldown -c -w",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.reporter=json --coverage.include=src/**/*.ts --coverage.exclude=src/**/*.test.ts",
-    "build:push": "./scripts/dev-push.sh --quiet"
-  },
-  "devDependencies": {
-    "@vitest/coverage-v8": "5.0.1",
-    "happy-dom": "20.14.5",
-    "rolldown": "1.2.9",
-    "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "build": "vp build",
+    "dev": "vp build --watch --mode development",
+    "build:push": "./scripts/dev-push.sh --quiet",
+    "test": "vp test run",
+    "check": "vp check"
   },
   "dependencies": {
     "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "happy-dom": "20.14.5",
+    "vite-plus": "1.3.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.0.0"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24.11.0 || >=26.0.0"
+    }
   }
 }

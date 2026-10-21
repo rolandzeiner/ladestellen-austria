@@ -2027,19 +2027,13 @@ const parkingOwnStyles = css`
   /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */
 `;
 
-
 // ---------------------------------------------------------------------------
 // Composed exports — Lit shadow-DOM picks up all fragments in array order.
 // Per-card own styles go LAST so any token overrides land after the
 // shared baseline.
 // ---------------------------------------------------------------------------
 
-export const cardStyles = [
-  sharedVersionBanner,
-  sharedFooter,
-  sharedReducedMotion,
-  cardOwnStyles,
-];
+export const cardStyles = [sharedVersionBanner, sharedFooter, sharedReducedMotion, cardOwnStyles];
 
 export const parkingLotStyles = [
   sharedVersionBanner,

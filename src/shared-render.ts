@@ -28,18 +28,18 @@ const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
  */
 function reloadAfterCacheWipe(forVersion?: string | null): void {
   try {
-    window.caches?.keys?.().then((keys) => {
-      keys.forEach((k) => window.caches?.delete?.(k));
-    });
+    window.caches
+      ?.keys?.()
+      .then((keys) => {
+        keys.forEach((k) => void window.caches?.delete?.(k));
+      })
+      .catch(() => {});
   } catch {
     // best-effort cache wipe
   }
   if (forVersion) {
     try {
-      window.sessionStorage?.setItem(
-        `lade-reload-attempted-${forVersion}`,
-        "1",
-      );
+      window.sessionStorage?.setItem(`lade-reload-attempted-${forVersion}`, "1");
     } catch {
       // sessionStorage may be disabled (Safari private mode etc.) —
       // fall through; worst case the user gets the regular reload
@@ -61,10 +61,7 @@ function reloadAfterCacheWipe(forVersion?: string | null): void {
 function wasReloadAttemptedFor(version: string | null): boolean {
   if (!version) return false;
   try {
-    return (
-      window.sessionStorage?.getItem(`lade-reload-attempted-${version}`) ===
-      "1"
-    );
+    return window.sessionStorage?.getItem(`lade-reload-attempted-${version}`) === "1";
   } catch {
     return false;
   }
@@ -75,9 +72,7 @@ function wasReloadAttemptedFor(version: string | null): boolean {
  * when there is no mismatch so call sites can splat it unconditionally
  * into their template.
  */
-export function renderVersionBanner(
-  mismatch: string | null,
-): TemplateResult | typeof nothing {
+export function renderVersionBanner(mismatch: string | null): TemplateResult | typeof nothing {
   if (!mismatch) return nothing;
   // Stuck-reload anti-loop: if the user already clicked reload for this
   // exact mismatch in the current tab session and the mismatch is STILL
@@ -121,14 +116,11 @@ export function renderFooter(
   attr: string | undefined,
   adaptive: boolean,
 ): TemplateResult {
-  const darkMode = Boolean(
-    (hass?.themes as { darkMode?: boolean } | undefined)?.darkMode,
-  );
+  const darkMode = Boolean((hass?.themes as { darkMode?: boolean } | undefined)?.darkMode);
   const logoClasses = adaptive
     ? `brand-logo adaptive ${darkMode ? "adaptive-dark" : "adaptive-light"}`
     : "brand-logo";
-  const text =
-    attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
+  const text = attr && attr.includes("E-Control") ? attr : ATTRIBUTION_REQUIRED;
   return html`
     <div class="footer">
       <a
