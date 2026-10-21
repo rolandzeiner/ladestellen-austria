@@ -96,7 +96,7 @@ interface StationListView {
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
-    return document.createElement("ladestellen-austria-card-editor") as LovelaceCardEditor;
+    return document.createElement("ladestellen-austria-card-editor");
   }
 
   public static getStubConfig(_hass: HomeAssistant, entities: string[]): Record<string, unknown> {
@@ -377,7 +377,8 @@ export class LadestellenAustriaCard extends LitElement {
     // (rare), so behaviour matches the previous distance-sort for
     // essentially all stations. Included for consistency and to handle
     // pathological edge cases where two stations share identical coords.
-    return [...stations].sort((a, b) => {
+    const sorted = [...stations];
+    sorted.sort((a, b) => {
       if (this.config.sort_by_power) {
         const aMax = Math.max(0, ...(a.points ?? []).map((p) => p.capacityKw ?? 0));
         const bMax = Math.max(0, ...(b.points ?? []).map((p) => p.capacityKw ?? 0));
@@ -392,6 +393,7 @@ export class LadestellenAustriaCard extends LitElement {
       if (aFree !== bFree) return aFree ? -1 : 1;
       return (a.distance ?? Infinity) - (b.distance ?? Infinity);
     });
+    return sorted;
   }
 
   private _stationHasFree(s: Station): boolean {
@@ -704,7 +706,7 @@ export class LadestellenAustriaCard extends LitElement {
   //   · Bezahlung · Ausstattung · Adresse · Actions.
   private _renderStationDetail(
     station: Station,
-    isOpenNow: boolean | null,
+    openNow: boolean | null,
     showAmenities: boolean,
     mapsUrl: string,
     expanded: boolean,
@@ -757,7 +759,7 @@ export class LadestellenAustriaCard extends LitElement {
             </div>`
             : nothing
         }
-        ${this._renderOpeningHoursSection(station.openingHours, isOpenNow)}
+        ${this._renderOpeningHoursSection(station.openingHours, openNow)}
         ${
           paymentChips.length > 0
             ? html`<div class="detail-section">
@@ -971,22 +973,22 @@ export class LadestellenAustriaCard extends LitElement {
 
   private _renderOpeningHoursSection(
     hours: OpeningHours[] | undefined,
-    isOpenNow: boolean | null,
+    openNow: boolean | null,
   ): TemplateResult | typeof nothing {
     if (!hours || hours.length === 0) return nothing;
     const lines = this._formatOpeningHours(hours);
     if (lines.length === 0) return nothing;
-    const flagClass = isOpenNow === true ? "flag ok" : isOpenNow === false ? "flag warn" : null;
+    const flagClass = openNow === true ? "flag ok" : openNow === false ? "flag warn" : null;
     const flagIcon =
-      isOpenNow === true
+      openNow === true
         ? "mdi:clock-check-outline"
-        : isOpenNow === false
+        : openNow === false
           ? "mdi:clock-alert-outline"
           : null;
     const flagText =
-      isOpenNow === true
+      openNow === true
         ? localize("card.open_now")
-        : isOpenNow === false
+        : openNow === false
           ? localize("card.closed_now")
           : null;
     return html`

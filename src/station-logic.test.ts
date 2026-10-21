@@ -77,8 +77,8 @@ describe("stationHasAmenity", () => {
     ["bathrooms", "bathroomsAvailable"],
     ["resting", "restingFacilities"],
   ])("reads %s off the %s flag", (key, field) => {
-    expect(stationHasAmenity(station({ [field]: true } as Partial<Station>), key)).toBe(true);
-    expect(stationHasAmenity(station({ [field]: false } as Partial<Station>), key)).toBe(false);
+    expect(stationHasAmenity(station({ [field]: true }), key)).toBe(true);
+    expect(stationHasAmenity(station({ [field]: false }), key)).toBe(false);
   });
 
   it("treats barrier_free as a count, not a flag", () => {
@@ -380,7 +380,7 @@ describe("filterStations", () => {
 
   describe("payment_methods (OR)", () => {
     const withModes = (...modes: string[]) =>
-      station({ points: [point({ authenticationMode: modes } as Partial<Point>)] });
+      station({ points: [point({ authenticationMode: modes })] });
 
     it("keeps a station accepting any selected method", () => {
       const s = withModes("APP", "RFID");
@@ -476,7 +476,9 @@ describe("stationConnectorTokens", () => {
         } as Partial<Point>),
       ],
     });
-    expect([...stationConnectorTokens(s)].sort()).toEqual(["CHAdeMO", "Type 2"]);
+    const tokens = [...stationConnectorTokens(s)];
+    tokens.sort();
+    expect(tokens).toEqual(["CHAdeMO", "Type 2"]);
   });
 
   it("is empty for a station with no connectors", () => {

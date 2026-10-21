@@ -184,12 +184,12 @@ export class LadestellenAustriaParkingCardEditor extends LitElement implements L
   // `data` prop for ha-form AND the conditional rendering of the
   // colour swatch (only shown when car_color_mode === "fixed") and
   // the station picker's selected-state visuals.
-  private _formChanged(ev: CustomEvent): void {
+  private _formChanged = (ev: CustomEvent): void => {
     const next = ev.detail.value as ParkingLotCardConfig;
     if (!next) return;
     this._config = next;
     fireEvent(this, "config-changed", { config: next });
-  }
+  };
 
   // Two schemas — split so the station-picker section can render
   // BETWEEN them. Both ha-forms share the same `_formChanged` handler
@@ -220,14 +220,14 @@ export class LadestellenAustriaParkingCardEditor extends LitElement implements L
     fireEvent(this, "config-changed", { config: this._config });
   }
 
-  private _carColorFixedChanged(ev: Event): void {
+  private _carColorFixedChanged = (ev: Event): void => {
     const target = ev.target as HTMLInputElement | null;
     if (!target) return;
     const value = target.value;
     if (this._config.car_color_fixed === value) return;
     this._config = { ...this._config, car_color_fixed: value };
     fireEvent(this, "config-changed", { config: this._config });
-  }
+  };
 
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);

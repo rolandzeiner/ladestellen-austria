@@ -39,14 +39,14 @@ beforeAll(async () => {
   // so `customElements._registry` reads nothing. Wrap define() and
   // record names as they arrive instead.
   const realDefine = customElements.define.bind(customElements);
-  customElements.define = ((
+  customElements.define = (
     name: string,
     ctor: CustomElementConstructor,
     options?: ElementDefinitionOptions,
   ) => {
     registered.push(name);
     return realDefine(name, ctor, options);
-  }) as typeof customElements.define;
+  };
 
   // Importing the entrypoint pulls in the parking card and both editors
   // via its own side-effect imports.

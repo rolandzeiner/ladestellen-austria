@@ -183,13 +183,14 @@ describe("runVersionCheckOnce", () => {
   });
 
   it("probes only once per element", async () => {
-    const h = host();
+    const callWS = vi.fn().mockResolvedValue({ version: "9.9.9" });
+    const h = host({ hass: { callWS } as unknown as HomeAssistant });
     const onMismatch = vi.fn();
     runVersionCheckOnce(h, onMismatch);
     runVersionCheckOnce(h, onMismatch);
     runVersionCheckOnce(h, onMismatch);
     await settle();
-    expect(h.hass.callWS).toHaveBeenCalledTimes(1);
+    expect(callWS).toHaveBeenCalledTimes(1);
     expect(onMismatch).toHaveBeenCalledTimes(1);
   });
 
@@ -200,14 +201,11 @@ describe("runVersionCheckOnce", () => {
     const pending = new Promise((r) => {
       release = r;
     });
-    const h = host({
-      hass: {
-        callWS: vi.fn().mockReturnValue(pending),
-      } as unknown as HomeAssistant,
-    });
+    const callWS = vi.fn().mockReturnValue(pending);
+    const h = host({ hass: { callWS } as unknown as HomeAssistant });
     runVersionCheckOnce(h, vi.fn());
     runVersionCheckOnce(h, vi.fn());
-    expect(h.hass.callWS).toHaveBeenCalledTimes(1);
+    expect(callWS).toHaveBeenCalledTimes(1);
     release({ version: "9.9.9" });
     await settle();
   });

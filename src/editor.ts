@@ -135,12 +135,12 @@ export class LadestellenAustriaCardEditor extends LitElement implements Lovelace
   // the bespoke widgets below (chip filters, pin picker) whose
   // selected-state visuals read from it. Without the local update
   // toggles flip in ha-form briefly then snap back on the next render.
-  private _formChanged(ev: CustomEvent): void {
+  private _formChanged = (ev: CustomEvent): void => {
     const next = ev.detail.value as LadestellenAustriaCardConfig;
     if (!next) return;
     this._config = next;
     fireEvent(this, "config-changed", { config: next });
-  }
+  };
 
   /**
    * Add or remove `value` in one of the config's string-array fields.

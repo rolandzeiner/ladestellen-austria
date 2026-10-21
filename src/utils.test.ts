@@ -237,7 +237,7 @@ describe("pointConnectorLabel", () => {
 
   it("renders an en dash when the point has no connectors", () => {
     expect(pointConnectorLabel(point({}))).toBe("–");
-    expect(pointConnectorLabel(point({ connectorType: [] } as Partial<Point>))).toBe("–");
+    expect(pointConnectorLabel(point({ connectorType: [] }))).toBe("–");
   });
 });
 

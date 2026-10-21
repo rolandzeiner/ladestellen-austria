@@ -28,9 +28,12 @@ const ATTRIBUTION_REQUIRED = "Datenquelle: E-Control";
  */
 function reloadAfterCacheWipe(forVersion?: string | null): void {
   try {
-    window.caches?.keys?.().then((keys) => {
-      keys.forEach((k) => window.caches?.delete?.(k));
-    });
+    window.caches
+      ?.keys?.()
+      .then((keys) => {
+        keys.forEach((k) => void window.caches?.delete?.(k));
+      })
+      .catch(() => {});
   } catch {
     // best-effort cache wipe
   }

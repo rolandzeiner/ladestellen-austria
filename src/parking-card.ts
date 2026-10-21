@@ -66,7 +66,7 @@ window.customCards.push({
 @customElement("ladestellen-austria-parking-card")
 export class LadestellenAustriaParkingCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
-    return document.createElement("ladestellen-austria-parking-card-editor") as LovelaceCardEditor;
+    return document.createElement("ladestellen-austria-parking-card-editor");
   }
 
   public static getStubConfig(_hass: HomeAssistant, entities: string[]): Record<string, unknown> {
