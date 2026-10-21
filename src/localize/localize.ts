@@ -6,10 +6,7 @@ const languages: Record<string, Record<string, unknown>> = {
   de: de,
 };
 
-function resolveTranslation(
-  path: string,
-  dictionary: Record<string, unknown>,
-): string | undefined {
+function resolveTranslation(path: string, dictionary: Record<string, unknown>): string | undefined {
   const value = path.split(".").reduce<unknown>((acc, key) => {
     if (acc && typeof acc === "object" && key in (acc as Record<string, unknown>)) {
       return (acc as Record<string, unknown>)[key];
@@ -35,23 +32,14 @@ export function setLanguage(lang: string | undefined | null): void {
 
 function getLang(): string {
   const raw =
-    activeLanguage ||
-    (typeof navigator !== "undefined" ? navigator.language : "") ||
-    "en";
+    activeLanguage || (typeof navigator !== "undefined" ? navigator.language : "") || "en";
   return raw.replace(/['"]+/g, "").substring(0, 2).toLowerCase();
 }
 
-export function localize(
-  string: string,
-  search = "",
-  replace = "",
-): string {
+export function localize(string: string, search = "", replace = ""): string {
   const lang = getLang();
   const englishFallback = languages["en"] ?? {};
-  let translated = resolveTranslation(
-    string,
-    languages[lang] ?? englishFallback,
-  );
+  let translated = resolveTranslation(string, languages[lang] ?? englishFallback);
   if (translated === undefined) {
     translated = resolveTranslation(string, englishFallback);
   }

@@ -78,9 +78,7 @@ window.customCards.push({
 const DEFAULT_MAX_STATIONS = 10;
 
 /** One row in the rendered list: a real station, or an orphaned pin. */
-type StationListItem =
-  | { kind: "live"; station: Station }
-  | { kind: "orphan"; id: string };
+type StationListItem = { kind: "live"; station: Station } | { kind: "orphan"; id: string };
 
 /** Everything render() needs, derived once from the sensor state. */
 interface StationListView {
@@ -98,15 +96,10 @@ interface StationListView {
 @customElement("ladestellen-austria-card")
 export class LadestellenAustriaCard extends LitElement {
   public static getConfigElement(): LovelaceCardEditor {
-    return document.createElement(
-      "ladestellen-austria-card-editor",
-    ) as LovelaceCardEditor;
+    return document.createElement("ladestellen-austria-card-editor") as LovelaceCardEditor;
   }
 
-  public static getStubConfig(
-    _hass: HomeAssistant,
-    entities: string[],
-  ): Record<string, unknown> {
+  public static getStubConfig(_hass: HomeAssistant, entities: string[]): Record<string, unknown> {
     return { entity: findStubEntity(entities) };
   }
 
@@ -155,11 +148,7 @@ export class LadestellenAustriaCard extends LitElement {
     ) {
       return true;
     }
-    return shouldUpdateForEntityState(
-      changedProps,
-      this.hass,
-      this.config.entity,
-    );
+    return shouldUpdateForEntityState(changedProps, this.hass, this.config.entity);
   }
 
   public getCardSize(): number {
@@ -228,13 +217,9 @@ export class LadestellenAustriaCard extends LitElement {
     const pinnedIds = dynamicMode ? [] : (this.config.pinned_station_ids ?? []);
     const pinnedItems = this._collectPinnedItems(pinnedIds, allStations);
     const pinnedLiveStationIds = new Set(
-      pinnedItems
-        .filter((item) => item.kind === "live")
-        .map((item) => item.stationId),
+      pinnedItems.filter((item) => item.kind === "live").map((item) => item.stationId),
     );
-    const rest = allStations.filter(
-      (s) => !pinnedLiveStationIds.has(s.stationId),
-    );
+    const rest = allStations.filter((s) => !pinnedLiveStationIds.has(s.stationId));
 
     const filtered = this._filterStations(rest);
     const sorted = this._sortStations(filtered);
@@ -246,10 +231,7 @@ export class LadestellenAustriaCard extends LitElement {
     ];
     const visible = orderedAll.slice(0, cap);
     const visibleLive = visible
-      .filter(
-        (item): item is { kind: "live"; station: Station } =>
-          item.kind === "live",
-      )
+      .filter((item): item is { kind: "live"; station: Station } => item.kind === "live")
       .map((item) => item.station);
 
     return {
@@ -269,9 +251,7 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   /** Card header. Returns nothing when the user hid it. */
-  private _renderCardHeader(
-    nearest: Station | undefined,
-  ): TemplateResult | typeof nothing {
+  private _renderCardHeader(nearest: Station | undefined): TemplateResult | typeof nothing {
     if (this.config.hide_header) return nothing;
     const name = this.config.name;
     const titleText = name && name.trim() ? name : "Ladestellen Austria";
@@ -297,10 +277,7 @@ export class LadestellenAustriaCard extends LitElement {
       <span class="flag">
         <ha-icon icon="mdi:crosshairs-gps" aria-hidden="true"></ha-icon>
         <span
-          >${localize("card.dynamic_follows_entity").replace(
-            "{entity}",
-            dynamicEntity,
-          )}</span
+          >${localize("card.dynamic_follows_entity").replace("{entity}", dynamicEntity)}</span
         >
       </span>
     </div>`;
@@ -340,9 +317,7 @@ export class LadestellenAustriaCard extends LitElement {
       </ha-card>`;
     }
 
-    const stateObj = this.config.entity
-      ? this.hass.states[this.config.entity]
-      : undefined;
+    const stateObj = this.config.entity ? this.hass.states[this.config.entity] : undefined;
 
     if (!stateObj) {
       return html`
@@ -351,11 +326,7 @@ export class LadestellenAustriaCard extends LitElement {
             <div class="wrap">
               <div class="empty-state">${localize("card.no_entity")}</div>
             </div>
-            ${renderFooter(
-              this.hass,
-              undefined,
-              this.config?.logo_adapt_to_theme === true,
-            )}
+            ${renderFooter(this.hass, undefined, this.config?.logo_adapt_to_theme === true)}
           </div>
         </ha-card>
       `;
@@ -369,14 +340,16 @@ export class LadestellenAustriaCard extends LitElement {
           <div class="wrap">
             ${renderVersionBanner(this._versionMismatch)}
             ${this._renderCardHeader(view.nearestByDistance)}
-            ${this.config.show_hero !== false
-              ? this._renderHero(
-                  view.nearestByDistance,
-                  view.farthestShown,
-                  view.filteredCount,
-                  view.totalCount,
-                )
-              : nothing}
+            ${
+              this.config.show_hero !== false
+                ? this._renderHero(
+                    view.nearestByDistance,
+                    view.farthestShown,
+                    view.filteredCount,
+                    view.totalCount,
+                  )
+                : nothing
+            }
             ${this._renderDynamicFlag(view.dynamicMode, view.dynamicEntity)}
             ${this._renderStationList(view)}
           </div>
@@ -406,14 +379,8 @@ export class LadestellenAustriaCard extends LitElement {
     // pathological edge cases where two stations share identical coords.
     return [...stations].sort((a, b) => {
       if (this.config.sort_by_power) {
-        const aMax = Math.max(
-          0,
-          ...(a.points ?? []).map((p) => p.capacityKw ?? 0),
-        );
-        const bMax = Math.max(
-          0,
-          ...(b.points ?? []).map((p) => p.capacityKw ?? 0),
-        );
+        const aMax = Math.max(0, ...(a.points ?? []).map((p) => p.capacityKw ?? 0));
+        const bMax = Math.max(0, ...(b.points ?? []).map((p) => p.capacityKw ?? 0));
         if (bMax !== aMax) return bMax - aMax;
       } else {
         const aDist = a.distance ?? Infinity;
@@ -439,15 +406,11 @@ export class LadestellenAustriaCard extends LitElement {
   private _collectPinnedItems(
     ids: readonly string[],
     stations: readonly Station[],
-  ): Array<
-    | { kind: "live"; station: Station; stationId: string }
-    | { kind: "orphan"; id: string }
-  > {
+  ): Array<{ kind: "live"; station: Station; stationId: string } | { kind: "orphan"; id: string }> {
     const byId = new Map(stations.map((s) => [s.stationId, s]));
     const seen = new Set<string>();
     const out: Array<
-      | { kind: "live"; station: Station; stationId: string }
-      | { kind: "orphan"; id: string }
+      { kind: "live"; station: Station; stationId: string } | { kind: "orphan"; id: string }
     > = [];
     for (const id of ids) {
       if (seen.has(id)) continue;
@@ -520,7 +483,6 @@ export class LadestellenAustriaCard extends LitElement {
     );
   }
 
-
   // Footer rendering lives in shared-render.ts; both cards share it.
 
   private _renderHero(
@@ -542,10 +504,7 @@ export class LadestellenAustriaCard extends LitElement {
       .replaceAll("{max}", farKm);
     const countText =
       filteredTotal === rawTotal
-        ? localize("card.hero_count").replaceAll(
-            "{count}",
-            String(filteredTotal),
-          )
+        ? localize("card.hero_count").replaceAll("{count}", String(filteredTotal))
         : localize("card.hero_count_filtered")
             .replaceAll("{filtered}", String(filteredTotal))
             .replaceAll("{total}", String(rawTotal));
@@ -585,30 +544,36 @@ export class LadestellenAustriaCard extends LitElement {
     isPinned: boolean;
   }): TemplateResult {
     return html`<div class="row-primary">
-      ${v.maxKw > 0
-        ? html`<span class=${v.isDC ? "metric-kw dc" : "metric-kw"}>
+      ${
+        v.maxKw > 0
+          ? html`<span class=${v.isDC ? "metric-kw dc" : "metric-kw"}>
             <span class="kw-num">${v.maxKw}</span
             ><span class="kw-unit">kW</span>
           </span>`
-        : nothing}
-      ${v.priceText
-        ? html`<span
+          : nothing
+      }
+      ${
+        v.priceText
+          ? html`<span
             class=${v.priceIsFree ? "metric-price free" : "metric-price"}
             >${v.priceText}</span
           >`
-        : nothing}
-      ${v.visibleConnectors.map(
-        (token) => html`<span class="chip muted">${token}</span>`,
-      )}
-      ${v.extraConnectors > 0
-        ? html`<span class="chip muted">+${v.extraConnectors}</span>`
-        : nothing}
-      ${v.isPinned
-        ? html`<span class="chip pin" title=${localize("card.pinned")}>
+          : nothing
+      }
+      ${v.visibleConnectors.map((token) => html`<span class="chip muted">${token}</span>`)}
+      ${
+        v.extraConnectors > 0
+          ? html`<span class="chip muted">+${v.extraConnectors}</span>`
+          : nothing
+      }
+      ${
+        v.isPinned
+          ? html`<span class="chip pin" title=${localize("card.pinned")}>
             <ha-icon icon="mdi:pin" aria-hidden="true"></ha-icon>
             <span>${localize("card.pinned")}</span>
           </span>`
-        : nothing}
+          : nothing
+      }
     </div>`;
   }
 
@@ -630,18 +595,11 @@ export class LadestellenAustriaCard extends LitElement {
     const priceIsFree = points.some((p) => p.freeOfCharge);
 
     const totalPoints = points.length;
-    const availPoints = points.filter(
-      (p) => normStatus(p.status) === "AVAILABLE",
-    ).length;
+    const availPoints = points.filter((p) => normStatus(p.status) === "AVAILABLE").length;
     const stationActive = station.stationStatus === "ACTIVE";
     const tz = this.hass?.config?.time_zone ?? "Europe/Vienna";
     const openNow = isOpenNow(station.openingHours, new Date(), tz);
-    const level = statusLevel(
-      liveAvailable,
-      stationActive,
-      points,
-      openNow,
-    );
+    const level = statusLevel(liveAvailable, stationActive, points, openNow);
 
     const expanded = this._expanded.has(station.stationId);
     const mapsUrl = mapsDeeplink(station.location);
@@ -707,14 +665,13 @@ export class LadestellenAustriaCard extends LitElement {
               <span class="station-name" id=${nameId} lang="de"
                 >${station.label}</span
               >
-              ${locText
-                ? html`<span class="station-loc" lang="de">${locText}</span>`
-                : nothing}
+              ${locText ? html`<span class="station-loc" lang="de">${locText}</span>` : nothing}
             </div>
           </div>
           <div class="station-actions">
-            ${mapsUrl
-              ? html`<a
+            ${
+              mapsUrl
+                ? html`<a
                   class="icon-action"
                   href=${mapsUrl}
                   target="_blank"
@@ -728,7 +685,8 @@ export class LadestellenAustriaCard extends LitElement {
                     aria-hidden="true"
                   ></ha-icon>
                 </a>`
-              : nothing}
+                : nothing
+            }
             <ha-icon
               class="chevron"
               icon="mdi:chevron-down"
@@ -736,18 +694,10 @@ export class LadestellenAustriaCard extends LitElement {
             ></ha-icon>
           </div>
         </div>
-        ${this._renderStationDetail(
-          station,
-          openNow,
-          showAmenities,
-          mapsUrl,
-          expanded,
-          detailId,
-        )}
+        ${this._renderStationDetail(station, openNow, showAmenities, mapsUrl, expanded, detailId)}
       </li>
     `;
   }
-
 
   // Expanded-panel layout (top → bottom):
   //   Operator · Ladepunkte (rack [+ fees line]) · Öffnungszeiten (+ live chip)
@@ -775,37 +725,42 @@ export class LadestellenAustriaCard extends LitElement {
         ?inert=${!expanded}
       >
         <div class="detail-inner">
-        ${operatorName
-          ? html`<div class="operator-line">
+        ${
+          operatorName
+            ? html`<div class="operator-line">
               <span class="detail-label">
                 ${localize("card.operator_heading")}
               </span>
               <span class="operator-name" lang="de">${operatorName}</span>
             </div>`
-          : nothing}
-        ${station.description
-          ? html`<div class="station-note">
+            : nothing
+        }
+        ${
+          station.description
+            ? html`<div class="station-note">
               <ha-icon
                 icon="mdi:information-outline"
                 aria-hidden="true"
               ></ha-icon>
               <span>${station.description}</span>
             </div>`
-          : nothing}
-        ${points.length > 0
-          ? html`<div class="rack-block">
+            : nothing
+        }
+        ${
+          points.length > 0
+            ? html`<div class="rack-block">
               <div class="detail-label">
                 ${localize("card.charging_points_heading")}
               </div>
               ${this._renderRack(points)}
-              ${feesLine
-                ? html`<div class="fees-line">${feesLine}</div>`
-                : nothing}
+              ${feesLine ? html`<div class="fees-line">${feesLine}</div>` : nothing}
             </div>`
-          : nothing}
+            : nothing
+        }
         ${this._renderOpeningHoursSection(station.openingHours, isOpenNow)}
-        ${paymentChips.length > 0
-          ? html`<div class="detail-section">
+        ${
+          paymentChips.length > 0
+            ? html`<div class="detail-section">
               <div class="detail-label">
                 ${localize("card.payment_heading")}
               </div>
@@ -820,9 +775,11 @@ export class LadestellenAustriaCard extends LitElement {
                 )}
               </div>
             </div>`
-          : nothing}
-        ${showAmenities && amenities.length > 0
-          ? html`<div class="detail-section">
+            : nothing
+        }
+        ${
+          showAmenities && amenities.length > 0
+            ? html`<div class="detail-section">
               <div class="detail-label">
                 ${localize("card.amenities_heading")}
               </div>
@@ -837,18 +794,22 @@ export class LadestellenAustriaCard extends LitElement {
                 )}
               </div>
             </div>`
-          : nothing}
-        ${address
-          ? html`<div class="detail-section">
+            : nothing
+        }
+        ${
+          address
+            ? html`<div class="detail-section">
               <div class="detail-label">
                 ${localize("card.address_heading")}
               </div>
               <div class="detail-text" lang="de">${address}</div>
             </div>`
-          : nothing}
+            : nothing
+        }
         <div class="actions">
-          ${mapsUrl
-            ? html`<a
+          ${
+            mapsUrl
+              ? html`<a
                 class="btn-primary"
                 href=${mapsUrl}
                 target="_blank"
@@ -861,7 +822,8 @@ export class LadestellenAustriaCard extends LitElement {
                 ></ha-icon>
                 <span>${localize("card.open_in_maps")}</span>
               </a>`
-            : nothing}
+              : nothing
+          }
           ${(() => {
             const websiteUrl = safeHttpsUri(station.website);
             return websiteUrl
@@ -877,8 +839,9 @@ export class LadestellenAustriaCard extends LitElement {
                 </a>`
               : nothing;
           })()}
-          ${station.phoneNumber
-            ? html`<a
+          ${
+            station.phoneNumber
+              ? html`<a
                 class="btn-secondary"
                 href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
                 @click=${(ev: Event) => ev.stopPropagation()}
@@ -886,7 +849,8 @@ export class LadestellenAustriaCard extends LitElement {
                 <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
                 <span>${localize("card.call")}</span>
               </a>`
-            : nothing}
+              : nothing
+          }
           ${(() => {
             const priceUrl = safeHttpsUri(station.priceUrl);
             return priceUrl
@@ -935,9 +899,7 @@ export class LadestellenAustriaCard extends LitElement {
     // upgrades the slot's tint (info / error) for PLANNED / REMOVED even
     // though they share the "warn" bucket.
     if (overlay) {
-      const slotClass = overlay.bgTint
-        ? `rack-slot slot-tint-${overlay.bgTint}`
-        : "rack-slot";
+      const slotClass = overlay.bgTint ? `rack-slot slot-tint-${overlay.bgTint}` : "rack-slot";
       return html`
         <div
           class=${slotClass}
@@ -974,10 +936,7 @@ export class LadestellenAustriaCard extends LitElement {
     `;
   }
 
-  private _pointAriaLabel(
-    point: Point,
-    powerType: "dc" | "ac" | null,
-  ): string {
+  private _pointAriaLabel(point: Point, powerType: "dc" | "ac" | null): string {
     const parts: string[] = [];
     if (powerType) parts.push(powerType.toUpperCase());
     if (point.capacityKw) {
@@ -991,14 +950,10 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _pointTooltip(point: Point): string {
-    const lines = [
-      `${point.evseId ?? ""} · ${pointStatusLabel(point.status)}`.trim(),
-    ];
+    const lines = [`${point.evseId ?? ""} · ${pointStatusLabel(point.status)}`.trim()];
     const startCent = point.startFeeCent ?? 0;
     if (startCent > 0) {
-      lines.push(
-        `${localize("card.start_fee_label")}: ${formatEuro(startCent)} €`,
-      );
+      lines.push(`${localize("card.start_fee_label")}: ${formatEuro(startCent)} €`);
     }
     const blockCent = point.blockingFeeCentMin ?? 0;
     const blockFrom = point.blockingFeeFromMinute ?? 0;
@@ -1021,12 +976,7 @@ export class LadestellenAustriaCard extends LitElement {
     if (!hours || hours.length === 0) return nothing;
     const lines = this._formatOpeningHours(hours);
     if (lines.length === 0) return nothing;
-    const flagClass =
-      isOpenNow === true
-        ? "flag ok"
-        : isOpenNow === false
-          ? "flag warn"
-          : null;
+    const flagClass = isOpenNow === true ? "flag ok" : isOpenNow === false ? "flag warn" : null;
     const flagIcon =
       isOpenNow === true
         ? "mdi:clock-check-outline"
@@ -1053,12 +1003,14 @@ export class LadestellenAustriaCard extends LitElement {
               </div>`,
             )}
           </dl>
-          ${flagText && flagClass && flagIcon
-            ? html`<span class=${flagClass}>
+          ${
+            flagText && flagClass && flagIcon
+              ? html`<span class=${flagClass}>
                 <ha-icon icon=${flagIcon} aria-hidden="true"></ha-icon>
                 <span>${flagText}</span>
               </span>`
-            : nothing}
+              : nothing
+          }
         </div>
       </div>
     `;
@@ -1076,20 +1028,14 @@ export class LadestellenAustriaCard extends LitElement {
     return out;
   }
 
-  private _formatSingleRange(
-    h: OpeningHours,
-  ): { day: string; time: string } | null {
+  private _formatSingleRange(h: OpeningHours): { day: string; time: string } | null {
     const from = this._shortDay(h.fromWeekday);
     const to = this._shortDay(h.toWeekday);
     if (!from || !to) return null;
-    const isFull24h =
-      h.fromTime === "00:00" &&
-      (h.toTime === "23:59" || h.toTime === "24:00");
+    const isFull24h = h.fromTime === "00:00" && (h.toTime === "23:59" || h.toTime === "24:00");
     const sameDay = h.fromWeekday === h.toWeekday;
     const day = sameDay ? from : `${from}–${to}`;
-    const time = isFull24h
-      ? localize("card.always_open_short")
-      : `${h.fromTime}–${h.toTime}`;
+    const time = isFull24h ? localize("card.always_open_short") : `${h.fromTime}–${h.toTime}`;
     return { day, time };
   }
 
@@ -1114,10 +1060,7 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-
-  private _paymentChips(
-    points: Point[],
-  ): Array<{ icon: string; label: string }> {
+  private _paymentChips(points: Point[]): Array<{ icon: string; label: string }> {
     const seen = new Set<string>();
     const out: Array<{ icon: string; label: string }> = [];
     for (const p of points) {
@@ -1131,9 +1074,7 @@ export class LadestellenAustriaCard extends LitElement {
     return out;
   }
 
-  private _authLabel(
-    mode: string,
-  ): { icon: string; label: string } | null {
+  private _authLabel(mode: string): { icon: string; label: string } | null {
     switch (mode) {
       case "APP":
         return { icon: "mdi:cellphone", label: localize("auth.app") };
@@ -1171,9 +1112,7 @@ export class LadestellenAustriaCard extends LitElement {
   // noisier than showing the worst case. Hidden when every point is free of
   // extras.
   private _feesLine(points: Point[]): string | null {
-    const startFees = points
-      .map((p) => p.startFeeCent ?? 0)
-      .filter((v) => v > 0);
+    const startFees = points.map((p) => p.startFeeCent ?? 0).filter((v) => v > 0);
     const blocking = points
       .map((p) => ({
         cent: p.blockingFeeCentMin ?? 0,
@@ -1183,28 +1122,22 @@ export class LadestellenAustriaCard extends LitElement {
     const parts: string[] = [];
     if (startFees.length > 0) {
       const maxCent = Math.max(...startFees);
-      parts.push(
-        `+ ${formatEuro(maxCent)} € ${localize("card.start_fee_label")}`,
-      );
+      parts.push(`+ ${formatEuro(maxCent)} € ${localize("card.start_fee_label")}`);
     }
     if (blocking.length > 0) {
       const maxRate = Math.max(...blocking.map((v) => v.cent));
       const minFrom = Math.min(...blocking.map((v) => v.fromMin));
       parts.push(
-        `${formatCent(maxRate)} ${localize(
-          "card.blocking_fee_label",
-        ).replaceAll("{from}", String(minFrom))}`,
+        `${formatCent(maxRate)} ${localize("card.blocking_fee_label").replaceAll(
+          "{from}",
+          String(minFrom),
+        )}`,
       );
     }
     return parts.length > 0 ? parts.join(", ") : null;
   }
 
-
-  private _statusAria(
-    level: StatusLevel,
-    avail: number,
-    total: number,
-  ): string {
+  private _statusAria(level: StatusLevel, avail: number, total: number): string {
     if (level === "inactive") return localize("card.inactive");
     if (level === "unknown") return localize("card.status_unknown");
     return localize("card.available_count")
@@ -1245,9 +1178,7 @@ export class LadestellenAustriaCard extends LitElement {
     return parts.join(", ");
   }
 
-  private _amenityItems(
-    station: Station,
-  ): Array<{ flag: boolean; icon: string; label: string }> {
+  private _amenityItems(station: Station): Array<{ flag: boolean; icon: string; label: string }> {
     return [
       {
         flag: station.greenEnergy,
@@ -1298,8 +1229,7 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _formatKm(value: string | number | undefined): string {
-    const n =
-      typeof value === "number" ? value : parseFloat(String(value ?? ""));
+    const n = typeof value === "number" ? value : parseFloat(String(value ?? ""));
     if (!Number.isFinite(n)) return "–";
     try {
       return new Intl.NumberFormat("de-AT", {

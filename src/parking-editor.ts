@@ -167,10 +167,7 @@ function buildAppearanceSchema(): HaFormSchema {
 }
 
 @customElement("ladestellen-austria-parking-card-editor")
-export class LadestellenAustriaParkingCardEditor
-  extends LitElement
-  implements LovelaceCardEditor
-{
+export class LadestellenAustriaParkingCardEditor extends LitElement implements LovelaceCardEditor {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config: ParkingLotCardConfig = {
@@ -252,25 +249,28 @@ export class LadestellenAustriaParkingCardEditor
       ...FORM_DEFAULTS,
       ...this._config,
     };
-    const entityInvalid =
-      !!entityId && !!this.hass && !this.hass.states[entityId];
+    const entityInvalid = !!entityId && !!this.hass && !this.hass.states[entityId];
 
     return html`
       <div class="editor">
-        ${this.hass
-          ? html`<ha-form
+        ${
+          this.hass
+            ? html`<ha-form
               .hass=${this.hass}
               .data=${data}
               .schema=${TOP_SCHEMA}
               .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
-          : nothing}
-        ${entityInvalid
-          ? html`<ha-alert alert-type="error">
+            : nothing
+        }
+        ${
+          entityInvalid
+            ? html`<ha-alert alert-type="error">
               ${localize("editor.entity_missing")}
             </ha-alert>`
-          : nothing}
+            : nothing
+        }
 
         <div class="editor-section">
           <div
@@ -284,15 +284,16 @@ export class LadestellenAustriaParkingCardEditor
           <div class="editor-hint">
             ${localize("parking.pick_station_hint")}
           </div>
-          ${!entityId
-            ? html`<div class="editor-hint editor-hint--muted">
+          ${
+            !entityId
+              ? html`<div class="editor-hint editor-hint--muted">
                 ${localize("editor.pin_select_sensor_first")}
               </div>`
-            : stations.length === 0
-            ? html`<div class="editor-hint editor-hint--muted">
+              : stations.length === 0
+                ? html`<div class="editor-hint editor-hint--muted">
                 ${localize("editor.pin_no_stations_yet")}
               </div>`
-            : html`
+                : html`
                 <div
                   class="pin-list"
                   role="radiogroup"
@@ -301,9 +302,7 @@ export class LadestellenAustriaParkingCardEditor
                   ${stations.map((s) => {
                     const isSelected = s.stationId === selectedId;
                     const distanceText =
-                      typeof s.distance === "number"
-                        ? `${s.distance.toFixed(2)} km`
-                        : "";
+                      typeof s.distance === "number" ? `${s.distance.toFixed(2)} km` : "";
                     return html`
                       <button
                         type="button"
@@ -313,9 +312,7 @@ export class LadestellenAustriaParkingCardEditor
                         @click=${() => this._selectStation(s.stationId)}
                       >
                         <ha-icon
-                          icon=${isSelected
-                            ? "mdi:radiobox-marked"
-                            : "mdi:radiobox-blank"}
+                          icon=${isSelected ? "mdi:radiobox-marked" : "mdi:radiobox-blank"}
                           aria-hidden="true"
                         ></ha-icon>
                         <span class="pin-label">${s.label}</span>
@@ -324,45 +321,47 @@ export class LadestellenAustriaParkingCardEditor
                     `;
                   })}
                 </div>
-              `}
-          ${selectedId && !stations.some((s) => s.stationId === selectedId)
-            ? html`<div class="editor-hint editor-hint--muted">
+              `
+          }
+          ${
+            selectedId && !stations.some((s) => s.stationId === selectedId)
+              ? html`<div class="editor-hint editor-hint--muted">
                 ${localize("parking.station_not_in_range")}
                 <span class="orphan-id">${selectedId}</span>
               </div>`
-            : nothing}
+              : nothing
+          }
         </div>
 
-        ${this.hass
-          ? html`<ha-form
+        ${
+          this.hass
+            ? html`<ha-form
               .hass=${this.hass}
               .data=${data}
               .schema=${this._appearanceSchema()}
               .computeLabel=${computeFormLabel}
               @value-changed=${this._formChanged}
             ></ha-form>`
-          : nothing}
+            : nothing
+        }
 
-        ${this._config.car_color_mode === "fixed"
-          ? html`<div class="editor-section">
+        ${
+          this._config.car_color_mode === "fixed"
+            ? html`<div class="editor-section">
               <div class="section-header" role="heading" aria-level="3">
                 ${localize("editor.car_color_pick")}
               </div>
               <div class="toggle-row">
                 <label
                   class="color-swatch"
-                  style=${`--swatch-color: ${
-                    this._config.car_color_fixed || "#1d4ed8"
-                  };`}
+                  style=${`--swatch-color: ${this._config.car_color_fixed || "#1d4ed8"};`}
                 >
                   <ha-icon
                     icon="mdi:palette-swatch-variant"
                     aria-hidden="true"
                   ></ha-icon>
                   <span class="color-swatch-hex"
-                    >${(
-                      this._config.car_color_fixed || "#1d4ed8"
-                    ).toUpperCase()}</span
+                    >${(this._config.car_color_fixed || "#1d4ed8").toUpperCase()}</span
                   >
                   <input
                     type="color"
@@ -375,7 +374,8 @@ export class LadestellenAustriaParkingCardEditor
                 </label>
               </div>
             </div>`
-          : nothing}
+            : nothing
+        }
 
         <div class="editor-hint">${localize("editor.hint_compliance")}</div>
       </div>
