@@ -14,8 +14,6 @@ npm run build           # → custom_components/ladestellen_austria/www/ladestel
 npm run dev             # watch mode
 ```
 
-For iterating against a live HA container, `./scripts/dev-push.sh` rebuilds the bundle and rsyncs `custom_components/ladestellen_austria/` over SSH; see the script header for prereqs and flags.
-
 ## Branching & releases
 
 - Work on `dev`. PRs target `dev`.
