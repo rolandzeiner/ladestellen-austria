@@ -14,7 +14,7 @@
 //    standing between a compromised upstream feed and script execution
 //    in HA's frontend origin.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   computeFormLabel,
@@ -70,9 +70,7 @@ describe("pointPowerType", () => {
   });
 
   it("prefers DC when a point reports both", () => {
-    expect(
-      pointPowerType(point({ electricityType: ["AC_3_PHASE", "DC"] })),
-    ).toBe("dc");
+    expect(pointPowerType(point({ electricityType: ["AC_3_PHASE", "DC"] }))).toBe("dc");
   });
 
   it("returns null for missing or unrecognised types", () => {
@@ -87,12 +85,9 @@ describe("rackSlotStatus", () => {
     expect(rackSlotStatus("AVAILABLE")).toBe("ok");
   });
 
-  it.each(["CHARGING", "OCCUPIED", "RESERVED", "BLOCKED"])(
-    "maps %s to busy",
-    (s) => {
-      expect(rackSlotStatus(s)).toBe("busy");
-    },
-  );
+  it.each(["CHARGING", "OCCUPIED", "RESERVED", "BLOCKED"])("maps %s to busy", (s) => {
+    expect(rackSlotStatus(s)).toBe("busy");
+  });
 
   it.each(["OUT_OF_ORDER", "OUTOFORDER", "FAULTED", "INOPERATIVE", "UNAVAILABLE"])(
     "maps %s to warn",
@@ -105,12 +100,9 @@ describe("rackSlotStatus", () => {
     expect(rackSlotStatus("UNKNOWN")).toBe("unknown");
   });
 
-  it.each(["PLANNED", "REMOVED", "WAT", ""])(
-    "maps %s to empty",
-    (s) => {
-      expect(rackSlotStatus(s)).toBe("empty");
-    },
-  );
+  it.each(["PLANNED", "REMOVED", "WAT", ""])("maps %s to empty", (s) => {
+    expect(rackSlotStatus(s)).toBe("empty");
+  });
 });
 
 describe("slotStatusShortKey", () => {
@@ -286,9 +278,7 @@ describe("pointStatusLabel", () => {
 
   it("never leaks a raw status token for an unrecognised bucket", () => {
     expect(pointStatusLabel("SOMETHING_NEW")).not.toBe("SOMETHING_NEW");
-    expect(pointStatusLabel("SOMETHING_NEW")).toBe(
-      pointStatusLabel("UNKNOWN"),
-    );
+    expect(pointStatusLabel("SOMETHING_NEW")).toBe(pointStatusLabel("UNKNOWN"));
   });
 
   it("resolves a known status to a non-empty label", () => {
@@ -300,17 +290,13 @@ describe("pointStatusLabel", () => {
 
 describe("computeFormLabel", () => {
   it("falls back to the raw field name when no translation exists", () => {
-    expect(computeFormLabel({ name: "definitely_not_a_key" })).toBe(
-      "definitely_not_a_key",
-    );
+    expect(computeFormLabel({ name: "definitely_not_a_key" })).toBe("definitely_not_a_key");
   });
 
   it("looks expandable sections up under a different prefix", () => {
     // Both resolve to the raw name when untranslated; the point is that
     // the two branches build different keys and neither throws.
-    expect(
-      computeFormLabel({ name: "nope_xyz", type: "expandable" }),
-    ).toBe("nope_xyz");
+    expect(computeFormLabel({ name: "nope_xyz", type: "expandable" })).toBe("nope_xyz");
   });
 });
 
@@ -330,9 +316,7 @@ describe("slotStatusWord", () => {
   it("falls back to the full status label when the short key is untranslated", () => {
     // A new upstream status must degrade to something readable rather
     // than leaking `parking.slot_status_whatever` into the UI.
-    expect(slotStatusWord("definitely_not_a_key", "Out of order")).toBe(
-      "Out of order",
-    );
+    expect(slotStatusWord("definitely_not_a_key", "Out of order")).toBe("Out of order");
   });
 
   it("uses the translation when one exists", () => {
@@ -365,12 +349,8 @@ describe("slotClassList", () => {
   });
 
   it("marks has-overlay for either a car or an icon", () => {
-    expect(slotClassList({ ...base, showCar: true }, false)).toContain(
-      "has-overlay",
-    );
-    expect(slotClassList({ ...base, showOverlayIcon: true }, false)).toContain(
-      "has-overlay",
-    );
+    expect(slotClassList({ ...base, showCar: true }, false)).toContain("has-overlay");
+    expect(slotClassList({ ...base, showOverlayIcon: true }, false)).toContain("has-overlay");
   });
 
   it("distinguishes the car from the icon", () => {
@@ -381,16 +361,10 @@ describe("slotClassList", () => {
 
   it("adds the background tint class only when the overlay carries one", () => {
     expect(
-      slotClassList(
-        { ...base, overlay: { icon: "mdi:x", tone: "info", bgTint: "info" } },
-        false,
-      ),
+      slotClassList({ ...base, overlay: { icon: "mdi:x", tone: "info", bgTint: "info" } }, false),
     ).toContain("slot-tint-info");
     expect(
-      slotClassList(
-        { ...base, overlay: { icon: "mdi:x", tone: "muted" } },
-        false,
-      ),
+      slotClassList({ ...base, overlay: { icon: "mdi:x", tone: "muted" } }, false),
     ).not.toContain("slot-tint");
   });
 
@@ -403,7 +377,11 @@ describe("slotClassList", () => {
     // The array is filtered before joining; a stray "" would render as a
     // double space and break exact class matching in CSS tests.
     expect(slotClassList(base, false)).not.toMatch(/\s{2,}/);
-    expect(slotClassList(base, false).split(" ").filter((c) => !c)).toEqual([]);
+    expect(
+      slotClassList(base, false)
+        .split(" ")
+        .filter((c) => !c),
+    ).toEqual([]);
   });
 });
 
@@ -425,25 +403,17 @@ describe("slotAriaLabel", () => {
   });
 
   it("drops a missing power type rather than reading a blank", () => {
-    expect(slotAriaLabel({ ...base, powerType: null })).toBe(
-      "22 kW · Type 2 · Available",
-    );
+    expect(slotAriaLabel({ ...base, powerType: null })).toBe("22 kW · Type 2 · Available");
   });
 
   it("treats 0 kW as not reported", () => {
     // The API uses 0 for 'no capacity published'.
-    expect(slotAriaLabel({ ...base, capacityKw: 0 })).toBe(
-      "AC · Type 2 · Available",
-    );
-    expect(slotAriaLabel({ ...base, capacityKw: undefined })).toBe(
-      "AC · Type 2 · Available",
-    );
+    expect(slotAriaLabel({ ...base, capacityKw: 0 })).toBe("AC · Type 2 · Available");
+    expect(slotAriaLabel({ ...base, capacityKw: undefined })).toBe("AC · Type 2 · Available");
   });
 
   it("drops the en-dash placeholder connector", () => {
-    expect(slotAriaLabel({ ...base, connector: "–" })).toBe(
-      "AC · 22 kW · Available",
-    );
+    expect(slotAriaLabel({ ...base, connector: "–" })).toBe("AC · 22 kW · Available");
   });
 
   it("always keeps the status, even when everything else is absent", () => {

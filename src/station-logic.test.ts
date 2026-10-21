@@ -12,7 +12,7 @@
 // stations that are almost certainly reachable), and the week-wrapping
 // range is easy to regress into an AND when it must stay an OR.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   filterStations,
@@ -161,21 +161,19 @@ describe("isOpenNow", () => {
   });
 
   it("is open inside a same-day range", () => {
-    expect(
-      isOpenNow([hours("WEDNESDAY", "08:00", "WEDNESDAY", "18:00")], wedNoon, VIENNA),
-    ).toBe(true);
+    expect(isOpenNow([hours("WEDNESDAY", "08:00", "WEDNESDAY", "18:00")], wedNoon, VIENNA)).toBe(
+      true,
+    );
   });
 
   it("is closed outside a same-day range", () => {
-    expect(
-      isOpenNow([hours("WEDNESDAY", "13:00", "WEDNESDAY", "18:00")], wedNoon, VIENNA),
-    ).toBe(false);
+    expect(isOpenNow([hours("WEDNESDAY", "13:00", "WEDNESDAY", "18:00")], wedNoon, VIENNA)).toBe(
+      false,
+    );
   });
 
   it("is closed on a day the schedule does not cover", () => {
-    expect(
-      isOpenNow([hours("MONDAY", "08:00", "MONDAY", "18:00")], wedNoon, VIENNA),
-    ).toBe(false);
+    expect(isOpenNow([hours("MONDAY", "08:00", "MONDAY", "18:00")], wedNoon, VIENNA)).toBe(false);
   });
 
   it("handles a range that wraps the week boundary", () => {
@@ -214,9 +212,7 @@ describe("isOpenNow", () => {
   });
 
   it("reports closed when every range is unparseable", () => {
-    expect(
-      isOpenNow([hours("FUNDAY", "x", "FUNDAY", "y")], wedNoon, VIENNA),
-    ).toBe(false);
+    expect(isOpenNow([hours("FUNDAY", "x", "FUNDAY", "y")], wedNoon, VIENNA)).toBe(false);
   });
 
   it("returns null when the timezone makes the clock unreadable", () => {
@@ -227,9 +223,9 @@ describe("isOpenNow", () => {
 
   it("includes both range endpoints", () => {
     const wedEight = viennaDate("2026-09-23T06:00:00Z"); // 08:00 Vienna
-    expect(
-      isOpenNow([hours("WEDNESDAY", "08:00", "WEDNESDAY", "18:00")], wedEight, VIENNA),
-    ).toBe(true);
+    expect(isOpenNow([hours("WEDNESDAY", "08:00", "WEDNESDAY", "18:00")], wedEight, VIENNA)).toBe(
+      true,
+    );
   });
 });
 
@@ -313,7 +309,9 @@ describe("filterStations", () => {
 
   describe("only_free", () => {
     it("keeps a station with at least one free-of-charge point", () => {
-      const s = station({ points: [point({ freeOfCharge: false }), point({ freeOfCharge: true })] });
+      const s = station({
+        points: [point({ freeOfCharge: false }), point({ freeOfCharge: true })],
+      });
       expect(filterStations([s], { only_free: true }, now, VIENNA)).toEqual([s]);
     });
 
@@ -386,7 +384,9 @@ describe("filterStations", () => {
 
     it("keeps a station accepting any selected method", () => {
       const s = withModes("APP", "RFID");
-      expect(filterStations([s], { payment_methods: ["CREDIT_CARD", "RFID"] }, now, VIENNA)).toEqual([s]);
+      expect(
+        filterStations([s], { payment_methods: ["CREDIT_CARD", "RFID"] }, now, VIENNA),
+      ).toEqual([s]);
     });
 
     it("drops a station accepting none of them", () => {

@@ -15,7 +15,7 @@
 // No DOM needed — the helpers take plain objects — so this runs in
 // vitest's default node environment.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
   checkCardVersionWS,
@@ -40,9 +40,9 @@ function hassWith(states: Record<string, unknown>): HomeAssistant {
 
 describe("findStubEntity", () => {
   it("finds the integration's sensor", () => {
-    expect(
-      findStubEntity(["light.kitchen", "sensor.ladestellen_austria"]),
-    ).toBe("sensor.ladestellen_austria");
+    expect(findStubEntity(["light.kitchen", "sensor.ladestellen_austria"])).toBe(
+      "sensor.ladestellen_austria",
+    );
   });
 
   it("requires both the sensor domain and the name fragment", () => {
@@ -57,9 +57,9 @@ describe("findStubEntity", () => {
   });
 
   it("takes the first match when several qualify", () => {
-    expect(
-      findStubEntity(["sensor.ladestellen_a", "sensor.ladestellen_b"]),
-    ).toBe("sensor.ladestellen_a");
+    expect(findStubEntity(["sensor.ladestellen_a", "sensor.ladestellen_b"])).toBe(
+      "sensor.ladestellen_a",
+    );
   });
 });
 
@@ -102,9 +102,7 @@ describe("shouldUpdateForEntityState", () => {
   });
 
   it("updates when the entity's state object changed identity", () => {
-    const props = new Map<string, unknown>([
-      ["hass", hassWith({ [entity]: stateA })],
-    ]);
+    const props = new Map<string, unknown>([["hass", hassWith({ [entity]: stateA })]]);
     const next = hassWith({ [entity]: stateB });
     expect(shouldUpdateForEntityState(props, next, entity)).toBe(true);
   });
@@ -113,17 +111,13 @@ describe("shouldUpdateForEntityState", () => {
     // This is the whole point of the helper: HA hands the card a new
     // hass object constantly, but only an identity change on OUR entity
     // is worth a re-render.
-    const props = new Map<string, unknown>([
-      ["hass", hassWith({ [entity]: stateA })],
-    ]);
+    const props = new Map<string, unknown>([["hass", hassWith({ [entity]: stateA })]]);
     const next = hassWith({ [entity]: stateA });
     expect(shouldUpdateForEntityState(props, next, entity)).toBe(false);
   });
 
   it("compares by identity, not by value", () => {
-    const props = new Map<string, unknown>([
-      ["hass", hassWith({ [entity]: { state: "3" } })],
-    ]);
+    const props = new Map<string, unknown>([["hass", hassWith({ [entity]: { state: "3" } })]]);
     const next = hassWith({ [entity]: { state: "3" } });
     expect(shouldUpdateForEntityState(props, next, entity)).toBe(true);
   });
@@ -132,9 +126,7 @@ describe("shouldUpdateForEntityState", () => {
 describe("checkCardVersionWS", () => {
   it("returns null when hass has no callWS", async () => {
     await expect(checkCardVersionWS(undefined)).resolves.toBeNull();
-    await expect(
-      checkCardVersionWS({} as HomeAssistant),
-    ).resolves.toBeNull();
+    await expect(checkCardVersionWS({} as HomeAssistant)).resolves.toBeNull();
   });
 
   it("reports the backend version when it differs", async () => {
@@ -292,9 +284,7 @@ describe("entitySuggestionFor", () => {
   });
 
   it("carries the card type it was built for", () => {
-    const parking = entitySuggestionFor(
-      "custom:ladestellen-austria-parking-card",
-    );
+    const parking = entitySuggestionFor("custom:ladestellen-austria-parking-card");
     expect(parking(registry("ladestellen_austria"), "sensor.x")).toEqual({
       config: {
         type: "custom:ladestellen-austria-parking-card",
