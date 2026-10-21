@@ -26,7 +26,7 @@
  * components behave.
  */
 
-import { beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { LitElement } from "lit";
 
 import type { HomeAssistant, Station } from "./types";
@@ -318,6 +318,115 @@ describe("station row disclosure", () => {
   });
 });
 
+describe("station detail", () => {
+  // The detail panel is rendered for every row (inert until expanded), so
+  // its content can be read without clicking the trigger.
+  const mountWith = (over: Partial<Station>) =>
+    mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+      "ladestellen-austria-card",
+      (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria" });
+        e.hass = hass([station(over)]);
+      },
+    );
+
+  /** The detail section whose heading reads `heading`, or null. */
+  const section = (el: LitElement, heading: string) =>
+    [...el.shadowRoot!.querySelectorAll(".detail-section")].find(
+      (s) => s.querySelector(".detail-label")?.textContent?.trim() === heading,
+    ) ?? null;
+
+  // Wednesday 2026-10-21, 12:00 in Vienna. Only Date is faked, so Lit's
+  // microtask scheduling is untouched.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T10:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("formats single days, ranges and round-the-clock hours", async () => {
+    const el = await mountWith({
+      openingHours: [
+        { fromWeekday: "MONDAY", fromTime: "08:00", toWeekday: "MONDAY", toTime: "18:00" },
+        { fromWeekday: "tuesday", fromTime: "07:30", toWeekday: "FRIDAY", toTime: "20:00" },
+        { fromWeekday: "SATURDAY", fromTime: "00:00", toWeekday: "SUNDAY", toTime: "24:00" },
+        { fromWeekday: "HOLIDAY", fromTime: "09:00", toWeekday: "HOLIDAY", toTime: "12:00" },
+      ],
+    });
+    const lines = [...section(el, "Opening hours")!.querySelectorAll(".hours-line")].map(
+      (l) =>
+        `${l.querySelector(".hours-day")!.textContent.trim()} ${l.querySelector(".hours-time")!.textContent.trim()}`,
+    );
+    // The unknown weekday is dropped rather than shown with an empty label.
+    expect(lines).toEqual(["Mo 08:00–18:00", "Tu–Fr 07:30–20:00", "Sa–Su 24h"]);
+  });
+
+  it("flags the station as open now", async () => {
+    const el = await mountWith({
+      openingHours: [
+        { fromWeekday: "WEDNESDAY", fromTime: "08:00", toWeekday: "WEDNESDAY", toTime: "18:00" },
+      ],
+    });
+    const flag = section(el, "Opening hours")!.querySelector(".flag")!;
+    expect(flag.classList.contains("ok")).toBe(true);
+    expect(flag.textContent.trim()).toBe("Open now");
+  });
+
+  it("flags the station as closed now", async () => {
+    const el = await mountWith({
+      openingHours: [
+        { fromWeekday: "MONDAY", fromTime: "08:00", toWeekday: "MONDAY", toTime: "18:00" },
+      ],
+    });
+    const flag = section(el, "Opening hours")!.querySelector(".flag")!;
+    expect(flag.classList.contains("warn")).toBe(true);
+    expect(flag.textContent.trim()).toBe("Closed");
+  });
+
+  it("leaves the section out when no range can be shown", async () => {
+    const el = await mountWith({
+      openingHours: [
+        { fromWeekday: "HOLIDAY", fromTime: "09:00", toWeekday: "HOLIDAY", toTime: "12:00" },
+      ],
+    });
+    expect(section(el, "Opening hours")).toBeNull();
+  });
+
+  it("lists every known payment method once and skips unknown ones", async () => {
+    const modes = [
+      "APP",
+      "QR",
+      "RFID_READER",
+      "CHARGING_CONTRACT",
+      "DEBIT_CARD",
+      "CREDIT_CARD",
+      "CONTACTLESS_CARD_SUPPORT",
+      "CARRIER_PIGEON",
+    ];
+    const el = await mountWith({
+      points: [
+        { ...basePoint(), authenticationMode: modes },
+        { ...basePoint(), evseId: "AT*TST*E2", authenticationMode: ["APP", "QR"] },
+      ] as Station["points"],
+    });
+    const chips = [...section(el, "Payment")!.querySelectorAll(".chip")];
+    expect(chips.map((c) => c.getAttribute("title"))).toEqual([
+      "App",
+      "QR code",
+      "RFID",
+      "Contract",
+      "Debit card",
+      "Credit card",
+      "Contactless",
+    ]);
+    expect(
+      chips.every((c) => c.querySelector("ha-icon")!.getAttribute("icon")!.startsWith("mdi:")),
+    ).toBe(true);
+  });
+});
+
 describe("station ordering", () => {
   // These assertions exist because a refactor of render() silently
   // deleted _sortStations and every test still passed — nothing
@@ -602,5 +711,52 @@ describe("editors", () => {
       expect(headers.every((h) => h.getAttribute("role") === "heading")).toBe(true);
       expect(headers.every((h) => h.getAttribute("aria-level") === "3")).toBe(true);
     }
+  });
+});
+
+describe("parking editor forms", () => {
+  type ParkingEditor = LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant };
+  type FormEl = HTMLElement & { schema: unknown };
+
+  const withLanguage = (language: string) => ({ ...hass(), language }) as HomeAssistant;
+  const forms = (el: LitElement) => [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")];
+
+  const mountEditor = () =>
+    mount<ParkingEditor>("ladestellen-austria-parking-card-editor", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria" });
+      e.hass = withLanguage("en");
+    });
+
+  it("keeps the appearance schema identity until the language changes", async () => {
+    const el = await mountEditor();
+    expect(forms(el)).toHaveLength(2);
+    const english = forms(el)[1]!.schema;
+
+    // A new hass object in the same language must not rebuild the schema:
+    // ha-form skips work on an identical array.
+    el.hass = withLanguage("en");
+    await el.updateComplete;
+    expect(forms(el)[1]!.schema).toBe(english);
+
+    el.hass = withLanguage("de");
+    await el.updateComplete;
+    const german = forms(el)[1]!.schema;
+    expect(german).not.toBe(english);
+    expect(JSON.stringify(german)).not.toBe(JSON.stringify(english));
+  });
+
+  it("forwards a form change as config-changed and keeps it locally", async () => {
+    const el = await mountEditor();
+    const seen: unknown[] = [];
+    el.addEventListener("config-changed", (ev) => seen.push((ev as CustomEvent).detail.config));
+    const next = { entity: "sensor.ladestellen_austria", car_color_mode: "fixed" };
+
+    forms(el)[1]!.dispatchEvent(new CustomEvent("value-changed", { detail: { value: next } }));
+    await el.updateComplete;
+
+    expect(seen).toEqual([next]);
+    // The fixed-colour picker renders from the editor's own copy of the
+    // config, which the dashboard never pushes back via setConfig.
+    expect(el.shadowRoot!.querySelector('input[type="color"]')).not.toBeNull();
   });
 });
