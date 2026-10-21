@@ -1,11 +1,12 @@
 // One config for the whole card toolchain under Vite+ (`vp`): build (Vite 8
 // library mode on Rolldown), test (Vitest), lint + type-check (Oxlint with
-// tsgolint) and format (Oxfmt). Replaces rolldown.config.mjs.
+// tsgolint) and format (Oxfmt).
 //
 // Decorators are deliberately not configured here. Rolldown reads
 // tsconfig.json itself and turns on Lit's legacy (experimental) decorators
-// from it; src/card-smoke.test.ts renders both cards, which only works while
-// Lit's reactive properties survive the build.
+// from it. src/card-smoke.test.ts reads `elementProperties` back off each
+// element and fails if the tsconfig decorator flags regress; it tests the
+// source as Vitest compiles it, not the built bundle.
 import { defineConfig } from "vite-plus";
 
 // MUST be a legal comment — `/*! ... */` — not `//`. The minifier strips
@@ -24,17 +25,17 @@ export default defineConfig(({ mode }) => {
       lib: {
         // Single-bundle decision: this card ships TWO Lovelace registrations
         // (ladestellen-austria-card + ladestellen-austria-parking-card) from
-        // one JS file. The default rule of thumb is one bundle per card, with
-        // an explicit carve-out for cards that share >=40 % of their code AND
-        // are always deployed together — both apply here. The list card and
-        // the parking card share the localize helper, formatters, status
-        // mapping, the rack-slot status palette, the footer + version banner,
-        // design tokens, and the CSS Grid 0fr<->1fr collapse pattern.
-        // Splitting them would duplicate ~70 % of code AND ship two HACS
-        // resources for users who use both — which is the common case since
-        // the parking card's typical use is "drill into one station from the
-        // list card". One entry, one bundle; don't reflexively split it into
-        // per-card environments the way the multi-bundle siblings do.
+        // one JS file. The portfolio rule of thumb (ha-lovelace-card skill) is
+        // one bundle per card, with an explicit carve-out for cards that share
+        // >=40 % of their code AND are always deployed together — both apply
+        // here. The list card and the parking card share the localize helper,
+        // formatters, status mapping, the rack-slot status palette, the footer
+        // + version banner, design tokens, and the CSS Grid 0fr<->1fr collapse
+        // pattern. Splitting them would duplicate ~70 % of code AND ship two
+        // HACS resources for users who use both — which is the common case
+        // since the parking card's typical use is "drill into one station from
+        // the list card". One entry, one bundle; don't reflexively split it
+        // into per-card environments the way the multi-bundle siblings do.
         entry: "src/ladestellen-austria-card.ts",
         formats: ["es"],
         fileName: () => "ladestellen-austria-card.js",
@@ -48,8 +49,9 @@ export default defineConfig(({ mode }) => {
       rolldownOptions: {
         output: {
           banner,
-          // HACS users get a single .js file, not a chunked dist/. The
-          // editors' dynamic imports (getConfigElement) are inlined.
+          // HACS users get a single .js file, not a chunked dist/. Nothing is
+          // dynamically imported today; this keeps a future `import()` from
+          // emitting a chunk next to the bundle.
           codeSplitting: false,
           comments: { legal: true },
           // Set on the Rolldown output, not `build.minify`: Vite's library
@@ -65,8 +67,10 @@ export default defineConfig(({ mode }) => {
       // Leave Lit html/css templates alone. Formatting them rewrites the
       // whitespace inside rendered elements, which changes the DOM.
       embeddedLanguageFormatting: "off",
-      // Format the card source only. The bundle is build output; Markdown,
-      // YAML and TOML keep their hand formatting.
+      // Skip the integration package (Python side plus the built bundle),
+      // Markdown, workflow YAML under .github/, root TOML and any Vitest
+      // snapshots. Everything else, root JSON/YAML and this file included,
+      // is formatted.
       ignorePatterns: [
         "custom_components/**",
         "**/*.md",

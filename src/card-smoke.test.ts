@@ -5,8 +5,9 @@
  *
  * Two jobs, neither of which a green build proves on its own:
  *
- * 1. **The decorator check.** Rolldown reads `experimentalDecorators` /
- *    `useDefineForClassFields` out of tsconfig.json and lowers Lit's
+ * 1. **The decorator check.** The build (Rolldown) and this suite (Vite's
+ *    Oxc transform) both read `experimentalDecorators` /
+ *    `useDefineForClassFields` out of tsconfig.json and lower Lit's
  *    legacy decorators from it. If that ever regresses, plain class
  *    fields overwrite Lit's generated accessors, reactivity dies
  *    silently, and the build still succeeds. Reading `elementProperties`
@@ -336,8 +337,9 @@ describe("station detail", () => {
       (s) => s.querySelector(".detail-label")?.textContent?.trim() === heading,
     ) ?? null;
 
-  // Wednesday 2026-10-21, 12:00 in Vienna. Only Date is faked, so Lit's
-  // microtask scheduling is untouched.
+  // Wednesday 2026-10-21, 12:00 in Vienna. Only Date is faked: the card reads
+  // the clock through `new Date()` and needs nothing else, so setTimeout and
+  // requestAnimationFrame stay real for happy-dom.
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T10:00:00Z"));
@@ -756,7 +758,8 @@ describe("parking editor forms", () => {
 
     expect(seen).toEqual([next]);
     // The fixed-colour picker renders from the editor's own copy of the
-    // config, which the dashboard never pushes back via setConfig.
+    // config; the dashboard does not push a config-changed it received from
+    // the editor back via setConfig.
     expect(el.shadowRoot!.querySelector('input[type="color"]')).not.toBeNull();
   });
 });

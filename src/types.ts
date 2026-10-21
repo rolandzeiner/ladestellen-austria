@@ -71,8 +71,7 @@ export function fireEvent<T>(node: HTMLElement, type: string, detail: T): void {
 // Type declarations the Lovelace ecosystem exposes globally. Both cards
 // push entries onto `window.customCards` so the dashboard's "Add Card"
 // picker can list them; the field isn't typed by HA core, hence the
-// augmentation here (rather than the triple-cast each card used to
-// repeat).
+// augmentation here.
 declare global {
   interface HTMLElementTagNameMap {
     "ladestellen-austria-card-editor": LovelaceCardEditor;
