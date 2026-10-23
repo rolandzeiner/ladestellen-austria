@@ -185,14 +185,13 @@ def build_default_headers(api_key: str, domain: str) -> dict[str, str]:
     bare domain registered at ladestellen.at; hard-coding https is fine
     because the gateway strips scheme/port/path before matching.
 
-    `Accept-Encoding: gzip` is sent unconditionally — aiohttp transparently
-    decompresses gzipped responses and harmlessly accepts identity if the
-    upstream doesn't compress.
+    No `Accept-Encoding`: aiohttp sends its own offer (`gzip, deflate,
+    zstd` on aiohttp 3.14.5) and decompresses whatever comes back, while
+    a value set here would replace that offer rather than add to it.
     """
     return {
         "User-Agent": USER_AGENT,
         API_KEY_HEADER: api_key,
         REFERER_HEADER: f"https://{domain}",
         "Accept": "application/json",
-        "Accept-Encoding": "gzip",
     }

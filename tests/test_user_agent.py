@@ -50,6 +50,8 @@ async def test_coordinator_sends_canonical_user_agent(hass: HomeAssistant) -> No
     assert sent["User-Agent"] == USER_AGENT
     assert sent[API_KEY_HEADER] == "REDACTED_API_KEY"
     assert sent[REFERER_HEADER] == "https://www.meineseite.at"
+    # Passing Accept-Encoding would replace aiohttp's own, wider offer.
+    assert "Accept-Encoding" not in sent
 
 
 async def test_config_flow_probe_sends_canonical_user_agent(
@@ -70,3 +72,4 @@ async def test_config_flow_probe_sends_canonical_user_agent(
     assert sent["User-Agent"] == USER_AGENT
     assert sent[API_KEY_HEADER] == "REDACTED_API_KEY"
     assert sent[REFERER_HEADER] == "https://www.meineseite.at"
+    assert "Accept-Encoding" not in sent
