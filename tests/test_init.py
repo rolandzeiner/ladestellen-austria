@@ -8,7 +8,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.ladestellen_austria.const import DOMAIN
 
 from .conftest import make_entry
 
@@ -67,6 +70,36 @@ async def test_remove_one_of_two_entries_keeps_card(
         assert await hass.config_entries.async_remove(entry_a.entry_id)
         await hass.async_block_till_done()
         unregister.assert_not_awaited()
+
+
+async def test_remove_entry_deletes_its_repair_issue(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """The removed entry's issue goes, even while other entries remain."""
+    entry_a = _entry(hass, unique_id="www.meineseite.at:48.21:16.37")
+    entry_b = _entry(hass, unique_id="www.meineseite.at:48.30:16.40")
+    for entry in (entry_a, entry_b):
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            f"tracker_missing_{entry.entry_id}",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="tracker_missing",
+            translation_placeholders={
+                "entity_id": "device_tracker.car",
+                "entry_title": entry.title,
+            },
+        )
+
+    assert await hass.config_entries.async_remove(entry_a.entry_id)
+    await hass.async_block_till_done()
+
+    registry = ir.async_get(hass)
+    assert (
+        registry.async_get_issue(DOMAIN, f"tracker_missing_{entry_a.entry_id}") is None
+    )
+    assert registry.async_get_issue(DOMAIN, f"tracker_missing_{entry_b.entry_id}")
 
 
 async def test_setup_uses_no_deprecated_ha_api(

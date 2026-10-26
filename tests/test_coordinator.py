@@ -333,31 +333,6 @@ async def test_config_entry_not_ready_on_first_refresh_failure(
     assert entry.state is ConfigEntryState.SETUP_RETRY
 
 
-async def test_repair_issue_lifecycle(hass: HomeAssistant) -> None:
-    """Degraded-condition issue raises once and clears on recovery."""
-    from homeassistant.helpers import issue_registry as ir
-
-    entry = _make_entry()
-    entry.add_to_hass(hass)
-    coordinator = LadestellenAustriaCoordinator(hass, entry)
-
-    coordinator._raise_degraded_issue("example_degraded", details="simulated")
-    coordinator._raise_degraded_issue("example_degraded", details="simulated")
-
-    registry = ir.async_get(hass)
-    issues = [
-        i
-        for i in registry.issues.values()
-        if i.domain == DOMAIN and i.issue_id.startswith("example_degraded_")
-    ]
-    assert len(issues) == 1
-
-    coordinator._clear_degraded_issue("example_degraded")
-    assert (
-        registry.async_get_issue(DOMAIN, f"example_degraded_{entry.entry_id}") is None
-    )
-
-
 # ---------------------------------------------------------------------------
 # Dynamic tracker mode — properties + update_interval selection
 # ---------------------------------------------------------------------------

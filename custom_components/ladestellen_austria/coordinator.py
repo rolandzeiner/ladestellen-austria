@@ -155,7 +155,6 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._dynamic_entity: str | None = entry.data.get(CONF_DYNAMIC_ENTITY)
         self._session = async_get_clientsession(hass)
 
-        self._issue_raised: bool = False
         self._tracker_issue_raised: bool = False
         self._unsub: list[Callable[[], None]] = []
         self._unsubscribe_tracker: Callable[[], None] | None = None
@@ -403,33 +402,6 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return False
 
         return True
-
-    def _raise_degraded_issue(self, translation_key: str, **placeholders: str) -> None:
-        """Raise a Repairs issue for a user-actionable degraded condition."""
-        if self._issue_raised:
-            return
-        self._issue_raised = True
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            f"{translation_key}_{self._entry.entry_id}",
-            is_fixable=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key=translation_key,
-            translation_placeholders={
-                **placeholders,
-                "entry_title": self._entry.title,
-            },
-        )
-
-    def _clear_degraded_issue(self, translation_key: str) -> None:
-        """Clear a previously-raised Repairs issue."""
-        if not self._issue_raised:
-            return
-        self._issue_raised = False
-        ir.async_delete_issue(
-            self.hass, DOMAIN, f"{translation_key}_{self._entry.entry_id}"
-        )
 
     def _note_success(self) -> None:
         """Reset the consecutive-failure counter and restore normal cadence."""
