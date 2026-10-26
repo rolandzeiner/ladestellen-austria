@@ -20,6 +20,7 @@ from homeassistant.helpers import device_registry as dr
 from .card_registration import JSModuleRegistration
 from .const import CARD_VERSION, DOMAIN, INTEGRATION_VERSION
 from .coordinator import LadestellenAustriaConfigEntry, LadestellenAustriaCoordinator
+from .outage import async_clear_outage
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -148,5 +149,7 @@ async def async_remove_entry(
     ]
     if remaining:
         return
+    # Nothing is left to report an outage for.
+    async_clear_outage(hass)
     registration = JSModuleRegistration(hass)
     await registration.async_unregister()

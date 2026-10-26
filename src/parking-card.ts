@@ -27,7 +27,7 @@ import type {
 } from "./types";
 import { carSvg } from "./car-svg";
 import { localize } from "./localize/localize";
-import { renderFooter, renderVersionBanner } from "./shared-render";
+import { renderFooter, renderUnreachable, renderVersionBanner } from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
@@ -284,17 +284,30 @@ export class LadestellenAustriaParkingCard extends LitElement {
       });
     }
 
+    const customTitle = this.config.name;
+    const showCustomHeader = Boolean(customTitle) && !this.config.hide_header;
+
+    // An unavailable sensor carries no stations, which would read as
+    // "The selected station is not in the sensor's current results".
+    if (stateObj.state === "unavailable") {
+      return this._renderShell(
+        html`
+          ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
+          ${renderUnreachable()}
+        `,
+        { footer: this._cardFooter() },
+      );
+    }
+
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
     const stationId = this.config.station_id ?? "";
     const station = stations.find((s) => s.stationId === stationId);
-    const customTitle = this.config.name;
     const footer = this._cardFooter(stateObj.attributes.attribution);
 
     if (!stationId || !station) {
-      const showHeader = Boolean(customTitle) && !this.config.hide_header;
       return this._renderShell(
         html`
-          ${showHeader ? this._renderHeader(customTitle ?? "") : nothing}
+          ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
           <div class="empty-state">
             ${localize(stationId ? "parking.station_not_found" : "parking.no_station_selected")}
           </div>

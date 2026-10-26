@@ -57,6 +57,7 @@ from .const import (
     classify_probe_status,
     normalize_status,
 )
+from .outage import Fault, async_note_fault, classify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -468,7 +469,25 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _fetch_search(
         self, latitude: float, longitude: float
     ) -> list[dict[str, Any]]:
-        """Fetch nearest stations from /search. Raises UpdateFailed on failure.
+        """Fetch /search and report its outcome to the outage tracker.
+
+        The one place every real request passes, static and dynamic mode and
+        setup retries alike (``async_config_entry_first_refresh`` lands here
+        too). The ``_should_update`` gate and the debouncer skip without
+        calling it, so a skipped tick never counts.
+        """
+        try:
+            stations = await self._request_search(latitude, longitude)
+        except (UpdateFailed, ConfigEntryAuthFailed) as err:
+            async_note_fault(self.hass, classify(err))
+            raise
+        async_note_fault(self.hass, Fault.ANSWERED)
+        return stations
+
+    async def _request_search(
+        self, latitude: float, longitude: float
+    ) -> list[dict[str, Any]]:
+        """Request nearest stations from /search. Raises UpdateFailed on failure.
 
         This call carries the auth contract — 401/403 responses here
         translate to ConfigEntryAuthFailed so HA drives the reauth flow.

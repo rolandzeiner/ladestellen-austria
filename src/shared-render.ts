@@ -1,5 +1,5 @@
-// Shared render helpers used by both cards: the version banner and the
-// attribution footer live here so neither card carries its own copy.
+// Shared render helpers used by both cards: the version banner, the
+// "can't reach E-Control" notice and the attribution footer live here so neither card carries its own copy.
 // Pure functions — the cards keep their own @state and call these from
 // render() / event handlers. Lifecycle helpers (language sync, the
 // version probe, the shouldUpdate tail) live in card-lifecycle.ts.
@@ -99,6 +99,23 @@ export function renderVersionBanner(mismatch: string | null): TemplateResult | t
       >
         ${localize("common.version_reload")}
       </button>
+    </div>
+  `;
+}
+
+/**
+ * The notice both cards show while their sensor is unavailable. Without it
+ * an outage reads like a real answer ("No stations match the current
+ * filters", "not in the sensor's current results"), which looks like a
+ * broken setup. It doesn't say whose fault it is: the integration's Repairs
+ * issue does that, once it can tell E-Control's side from the user's own
+ * network.
+ */
+export function renderUnreachable(): TemplateResult {
+  return html`
+    <div class="empty-state unreachable" role="status" aria-live="polite">
+      <div class="unreachable-title">${localize("card.unreachable")}</div>
+      <div class="unreachable-detail">${localize("card.unreachable_detail")}</div>
     </div>
   `;
 }

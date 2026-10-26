@@ -146,7 +146,7 @@ def classify_probe_status(status: int) -> str | None:
     """Map an HTTP status code from /search to a config-flow error key.
 
     Single source of truth for the credentials-probe outcome contract;
-    both `coordinator._fetch_search` and `config_flow._test_api_connection`
+    both `coordinator._request_search` and `config_flow._test_api_connection`
     consult this so the two sites can't drift on the 4xx → translation
     key mapping. Returns None when the response is OK (2xx/3xx).
 

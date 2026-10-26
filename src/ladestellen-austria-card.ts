@@ -28,7 +28,7 @@ import {
   type Station,
 } from "./types";
 import { localize } from "./localize/localize";
-import { renderFooter, renderVersionBanner } from "./shared-render";
+import { renderFooter, renderUnreachable, renderVersionBanner } from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
@@ -327,6 +327,24 @@ export class LadestellenAustriaCard extends LitElement {
               <div class="empty-state">${localize("card.no_entity")}</div>
             </div>
             ${renderFooter(this.hass, undefined, this.config?.logo_adapt_to_theme === true)}
+          </div>
+        </ha-card>
+      `;
+    }
+
+    // An unavailable sensor carries no stations, so the hero and the list
+    // would both claim "No stations match the current filters" and every
+    // pin would turn into a "not in range" row with an unpin button, which
+    // invites unpinning mid-outage. Show the notice in place of both.
+    if (stateObj.state === "unavailable") {
+      return html`
+        <ha-card>
+          <div class="card-content">
+            <div class="wrap">
+              ${renderVersionBanner(this._versionMismatch)}
+              ${this._renderCardHeader(undefined)} ${renderUnreachable()}
+            </div>
+            ${renderFooter(this.hass, undefined, this.config.logo_adapt_to_theme === true)}
           </div>
         </ha-card>
       `;

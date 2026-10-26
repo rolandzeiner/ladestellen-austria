@@ -120,6 +120,23 @@ function hass(stations: Station[] = [station()]): HomeAssistant {
   } as unknown as HomeAssistant;
 }
 
+/**
+ * The sensor as Home Assistant shows it while E-Control can't be reached:
+ * `unavailable`, with none of the integration's attributes left on it.
+ */
+function unavailableHass(): HomeAssistant {
+  return {
+    ...hass(),
+    states: {
+      "sensor.ladestellen_austria": {
+        entity_id: "sensor.ladestellen_austria",
+        state: "unavailable",
+        attributes: { friendly_name: "Ladestellen Austria" },
+      },
+    },
+  };
+}
+
 /** Mount an element, let Lit settle, and hand it back. */
 async function mount<T extends LitElement>(tag: string, setup: (el: T) => void): Promise<T> {
   const el = document.createElement(tag) as T;
@@ -255,6 +272,77 @@ describe("ladestellen-austria-card", () => {
       },
     );
     expect(el.shadowRoot?.querySelector(".empty-state")).not.toBeNull();
+  });
+});
+
+// An outage used to read as "No stations match the current filters", and
+// every pin turned into a "not in range" row offering to unpin it, so a dead
+// API looked like a broken setup and invited the user to undo their config.
+describe("unreachable notice", () => {
+  type Card = LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant };
+
+  const mountList = (h: HomeAssistant, config: Record<string, unknown> = {}) =>
+    mount<Card>("ladestellen-austria-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", ...config });
+      e.hass = h;
+    });
+
+  it("says it can't reach E-Control when the sensor is unavailable", async () => {
+    const el = await mountList(unavailableHass());
+    const notice = el.shadowRoot?.querySelector(".unreachable");
+    expect(notice?.querySelector(".unreachable-title")?.textContent?.trim()).toBe(
+      "Can't reach E-Control",
+    );
+    expect(notice?.getAttribute("role")).toBe("status");
+    expect(el.shadowRoot?.textContent ?? "").not.toContain("No stations match");
+  });
+
+  it("hides pinned stations instead of offering to unpin them", async () => {
+    const el = await mountList(unavailableHass(), { pinned_station_ids: ["at-1", "at-2"] });
+    expect(el.shadowRoot?.querySelector(".is-orphan")).toBeNull();
+    expect(el.shadowRoot?.querySelector("ha-icon-button")).toBeNull();
+    expect(el.shadowRoot?.textContent ?? "").not.toContain("Pinned station not in range");
+  });
+
+  it("keeps the E-Control attribution while unavailable (ToU §3d)", async () => {
+    const el = await mountList(unavailableHass());
+    expect(el.shadowRoot?.querySelector(".attribution-text")?.textContent).toContain(
+      "Datenquelle: E-Control",
+    );
+  });
+
+  it("still says no stations match for an available, empty result", async () => {
+    const el = await mountList(hass([]));
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(text).toContain("No stations match the current filters.");
+    expect(text).not.toContain("Can't reach");
+  });
+
+  it("follows Home Assistant's language", async () => {
+    const el = await mountList({ ...unavailableHass(), language: "de" });
+    expect(el.shadowRoot?.textContent ?? "").toContain("Keine Verbindung zur E-Control");
+  });
+
+  it("replaces the parking card's station-not-found message", async () => {
+    const el = await mount<Card>("ladestellen-austria-parking-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1", name: "Garage" });
+      e.hass = unavailableHass();
+    });
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(el.shadowRoot?.querySelector(".unreachable")).not.toBeNull();
+    expect(text).toContain("Can't reach E-Control");
+    expect(text).toContain("Garage");
+    expect(text).not.toContain("not in the sensor's current results");
+  });
+
+  it("still tells the parking card a missing station isn't in the results", async () => {
+    const el = await mount<Card>("ladestellen-austria-parking-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "not-here" });
+      e.hass = hass();
+    });
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(text).toContain("not in the sensor's current results");
+    expect(text).not.toContain("Can't reach");
   });
 });
 

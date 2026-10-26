@@ -11,6 +11,8 @@
   "card": {
     "no_entity": "Bitte einen Ladestellen-Austria-Sensor im Karten-Editor auswählen.",
     "no_stations": "Keine Ladestellen entsprechen den aktuellen Filtern.",
+    "unreachable": "Keine Verbindung zur E-Control",
+    "unreachable_detail": "Die Ladestellen erscheinen von selbst wieder, sobald die Verbindung funktioniert.",
     "hero_count": "{count} Ladestellen",
     "hero_count_filtered": "{filtered} von {total} Ladestellen",
     "hero_range": "{min}–{max} km Umkreis",

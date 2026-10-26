@@ -93,6 +93,19 @@ const sharedFooter = css`
  * have requested reduced motion. Identical in both cards; the per-card
  * forced-colors fallback differs (different selectors) and stays local.
  */
+// "Can't reach E-Control": a headline the eye can find on top of the
+// muted .empty-state, so it doesn't read as one more quiet empty-list remark.
+const sharedUnreachable = css`
+  .unreachable-title {
+    color: var(--primary-text-color);
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .unreachable-detail {
+    margin-block-start: 4px;
+  }
+`;
+
 const sharedReducedMotion = css`
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -2033,10 +2046,17 @@ const parkingOwnStyles = css`
 // shared baseline.
 // ---------------------------------------------------------------------------
 
-export const cardStyles = [sharedVersionBanner, sharedFooter, sharedReducedMotion, cardOwnStyles];
+export const cardStyles = [
+  sharedVersionBanner,
+  sharedUnreachable,
+  sharedFooter,
+  sharedReducedMotion,
+  cardOwnStyles,
+];
 
 export const parkingLotStyles = [
   sharedVersionBanner,
+  sharedUnreachable,
   sharedFooter,
   sharedReducedMotion,
   parkingOwnStyles,

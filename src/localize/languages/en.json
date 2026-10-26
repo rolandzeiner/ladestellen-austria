@@ -11,6 +11,8 @@
   "card": {
     "no_entity": "Select a Ladestellen Austria sensor in the card editor.",
     "no_stations": "No stations match the current filters.",
+    "unreachable": "Can't reach E-Control",
+    "unreachable_detail": "Stations come back on their own once the connection works again.",
     "hero_count": "{count} stations",
     "hero_count_filtered": "{filtered} of {total} stations",
     "hero_range": "{min}–{max} km range",

@@ -37,6 +37,7 @@ Home Assistant custom integration for the Austrian EV charging station directory
 - **Entity-first card picker.** Pick one of the integration's sensors when adding a dashboard card and the matching card offers itself, already configured. Home Assistant 2026.6 or newer; older versions are unaffected. *(0.5.0)*
 - WCAG 2.2 A+AA accessibility across both cards and editors.
 - **Robust polling.** Exponential backoff on consecutive coordinator failures (10 → 20 → 40 min doubling, 12 h cap, snap-back to the configured interval on first success) so a sustained upstream outage settles into a slow poll instead of hammering. *(0.4.0)*
+- **Outage notice.** When E-Control's charging station directory fails, you can tell it's their fault, not your setup. After 10 minutes of errors from their side, a Repairs issue says so, and it clears itself once stations return. Both cards show *Can't reach E-Control* instead of an empty list, and your pinned stations stay pinned. *(1.2.0)*
 - Strict-typed, async-only.
 
 ## Requirements
@@ -143,7 +144,7 @@ template:
 - Nearest-station lookup (`GET /search`) with live per-point status inline (AVAILABLE / CHARGING / OCCUPIED / OUTOFORDER / BLOCKED / INOPERATIVE / UNKNOWN).
 - Reauth flow on HTTP 401/403.
 - Diagnostics export with redacted credentials.
-- Repairs issues for recoverable degraded conditions (e.g. dynamic-tracker without coordinates).
+- Repairs issues for recoverable degraded conditions (e.g. dynamic-tracker without coordinates, an E-Control outage).
 
 ## Data update
 
@@ -159,6 +160,7 @@ template:
 - **`invalid_auth` / 401** — API key was rotated or disabled at ladestellen.at.
 - **`domain_mismatch` / 403** — HA's Referer hostname doesn't match a registered domain. Update your external URL, reconfigure with the correct domain, or add the HA domain at ladestellen.at.
 - **`cannot_connect`** — DNS / network issue reaching `api.e-control.at`.
+- **Card says *Can't reach E-Control*** — the sensor is unavailable because its last search at E-Control failed, or none has worked since Home Assistant started. Check **Settings → Repairs**. If the outage issue is there, the fault is on E-Control's side and stations return on their own. If it isn't, check that your Home Assistant host can reach `api.e-control.at`.
 - For deeper debugging, download *Diagnostics* from the integration's three-dot menu — secrets are redacted.
 
 ## Removal
