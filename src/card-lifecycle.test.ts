@@ -7,6 +7,8 @@
 //
 //  - shouldUpdateForEntityState returns TRUE on a missing previous hass
 //    (conservative: render rather than risk a stale card)
+//  - ... and TRUE when only hass.language changed: a profile language
+//    switch leaves every state object as it was
 //  - runVersionCheckOnce marks the element BEFORE awaiting, so a second
 //    call during the in-flight probe cannot start a second one
 //  - the isConnected check happens in the late callback, not up front,
@@ -120,6 +122,14 @@ describe("shouldUpdateForEntityState", () => {
     const props = new Map<string, unknown>([["hass", hassWith({ [entity]: { state: "3" } })]]);
     const next = hassWith({ [entity]: { state: "3" } });
     expect(shouldUpdateForEntityState(props, next, entity)).toBe(true);
+  });
+
+  it("updates when only the language changed", () => {
+    // A profile language switch hands over a new hass with the same state
+    // objects; skipping it would leave the card in the old language.
+    const prev = { ...hassWith({ [entity]: stateA }), language: "en" };
+    const props = new Map<string, unknown>([["hass", prev]]);
+    expect(shouldUpdateForEntityState(props, { ...prev, language: "de" }, entity)).toBe(true);
   });
 });
 

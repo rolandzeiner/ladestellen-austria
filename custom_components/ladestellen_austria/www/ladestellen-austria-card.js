@@ -81,7 +81,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
       </a>
       <span class="attribution-text">${t&&t.includes(`E-Control`)?t:nt}</span>
     </div>
-  `}var st=`ladestellen_austria`;async function ct(e){if(!e?.callWS)return null;try{let t=await e.callWS({type:`ladestellen_austria/card_version`});if(t?.version&&t.version!==`1.1.1`)return t.version}catch{}return null}function K(e,t){e.has(`hass`)&&et(t?.language)}function lt(e,t,n){let r=e.get(`hass`);return!r||!n||r.states[n]!==t.states[n]}function ut(e){return e.find(e=>e.startsWith(`sensor.`)&&e.includes(`ladestelle`))??``}var dt=/* @__PURE__ */ new WeakSet;function ft(e,t){e.hass&&!dt.has(e)&&(dt.add(e),ct(e.hass).then(n=>{e.isConnected&&n&&t(n)}))}function pt(e){return(t,n)=>!n.startsWith(`sensor.`)||t?.entities?.[n]?.platform!==st?null:{config:{type:e,entity:n}}}var mt=c`
+  `}var st=`ladestellen_austria`;async function ct(e){if(!e?.callWS)return null;try{let t=await e.callWS({type:`ladestellen_austria/card_version`});if(t?.version&&t.version!==`1.1.1`)return t.version}catch{}return null}function K(e,t){e.has(`hass`)&&et(t?.language)}function lt(e,t,n){let r=e.get(`hass`);return!r||!n||r.language!==t.language||r.states[n]!==t.states[n]}function ut(e){return e.find(e=>e.startsWith(`sensor.`)&&e.includes(`ladestelle`))??``}var dt=/* @__PURE__ */ new WeakSet;function ft(e,t){e.hass&&!dt.has(e)&&(dt.add(e),ct(e.hass).then(n=>{e.isConnected&&n&&t(n)}))}function pt(e){return(t,n)=>!n.startsWith(`sensor.`)||t?.entities?.[n]?.platform!==st?null:{config:{type:e,entity:n}}}var mt=c`
   .version-notice {
     display: flex;
     align-items: center;

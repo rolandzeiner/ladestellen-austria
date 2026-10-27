@@ -73,6 +73,9 @@ export function shouldUpdateForEntityState(
 ): boolean {
   const prev = changedProps.get("hass") as HomeAssistant | undefined;
   if (!prev || !entity) return true;
+  // A language switch changes no entity state; without this the card keeps
+  // the old language until its sensor next updates.
+  if (prev.language !== hass.language) return true;
   return prev.states[entity] !== hass.states[entity];
 }
 
