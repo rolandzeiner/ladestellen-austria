@@ -12,13 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.ladestellen_austria.api import API_KEY_HEADER, REFERER_HEADER
 from custom_components.ladestellen_austria.config_flow import _test_api_connection
-from custom_components.ladestellen_austria.const import (
-    API_KEY_HEADER,
-    DOMAIN,
-    REFERER_HEADER,
-    USER_AGENT,
-)
+from custom_components.ladestellen_austria.const import DOMAIN, USER_AGENT
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )

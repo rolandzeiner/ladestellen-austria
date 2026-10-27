@@ -20,11 +20,8 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import (
     AiohttpClientMocker,
 )
 
-from custom_components.ladestellen_austria.const import (
-    API_BASE_URL,
-    DOMAIN,
-    SEARCH_PATH,
-)
+from custom_components.ladestellen_austria.api import SEARCH_URL
+from custom_components.ladestellen_austria.const import DOMAIN
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
@@ -40,7 +37,6 @@ from custom_components.ladestellen_austria.outage import (
 
 from .conftest import EXAMPLE_STATIONS, make_entry
 
-SEARCH_URL = f"{API_BASE_URL}{SEARCH_PATH}"
 _PAST_THRESHOLD = timedelta(seconds=OUTAGE_MIN_SECONDS + 1)
 
 

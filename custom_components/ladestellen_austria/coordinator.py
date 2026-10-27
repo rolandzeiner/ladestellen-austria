@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_LATITUDE,
@@ -34,8 +33,17 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 from homeassistant.util.location import distance
 
+from .api import (
+    REQUEST_TIMEOUT_SEC,
+    EControlConnectionError,
+    EControlError,
+    EControlHttpError,
+    EControlPayloadError,
+    EControlTimeoutError,
+    Station,
+    fetch_search,
+)
 from .const import (
-    API_BASE_URL,
     BACKOFF_CAP_SECONDS,
     CONF_API_KEY,
     CONF_DOMAIN,
@@ -51,9 +59,7 @@ from .const import (
     EVENT_SLOT_STATUS_CHANGED,
     MAX_POLL_MINUTES,
     MIN_POLL_MINUTES,
-    REQUEST_TIMEOUT_SEC,
-    SEARCH_PATH,
-    build_default_headers,
+    USER_AGENT,
     classify_probe_status,
     normalize_status,
 )
@@ -86,6 +92,49 @@ def _describe_error(err: BaseException) -> str:
         if detail:
             return f"{err} ({detail})"
     return str(err)
+
+
+def _translate_error(err: EControlError) -> UpdateFailed | ConfigEntryAuthFailed:
+    """Translate an API error into the exception the rest of HA sees.
+
+    The translation keys and placeholders are what `outage.classify` and the
+    `exceptions` block in strings.json key on, so they stay as they were when
+    the HTTP code lived here. Auth failures drive HA's reauth flow; the
+    status → outcome mapping is `classify_probe_status`, shared with the
+    config-flow probe.
+    """
+    key: str
+    placeholders: dict[str, str]
+    match err:
+        case EControlHttpError() if classify_probe_status(err.status) in (
+            "invalid_auth",
+            "domain_mismatch",
+        ):
+            return ConfigEntryAuthFailed(
+                translation_domain=DOMAIN,
+                translation_key="api_auth_error",
+                translation_placeholders={"status": str(err.status)},
+            )
+        case EControlHttpError():
+            key = "api_http_error"
+            placeholders = {"status": str(err.status), "reason": err.reason}
+        case EControlPayloadError():
+            key = "api_invalid_response"
+            placeholders = {"status": str(err.status), "error": err.error}
+        case EControlTimeoutError():
+            key = "api_timeout"
+            placeholders = {"seconds": str(REQUEST_TIMEOUT_SEC)}
+        case EControlConnectionError():
+            key = "api_connection_error"
+            placeholders = {"error_type": err.error_type, "error": err.error}
+        case _:
+            key = "api_connection_error"
+            placeholders = {"error_type": type(err).__name__, "error": str(err)}
+    return UpdateFailed(
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders=placeholders,
+    )
 
 
 type LadestellenAustriaConfigEntry = ConfigEntry["LadestellenAustriaCoordinator"]
@@ -434,13 +483,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.update_interval != new_interval:
             self.update_interval = new_interval
 
-    def _build_headers(self) -> dict[str, str]:
-        """Build outbound request headers via the shared helper."""
-        return build_default_headers(self._api_key, self._domain)
-
-    async def _fetch_search(
-        self, latitude: float, longitude: float
-    ) -> list[dict[str, Any]]:
+    async def _fetch_search(self, latitude: float, longitude: float) -> list[Station]:
         """Fetch /search and report its outcome to the outage tracker.
 
         The one place every real request passes, static and dynamic mode and
@@ -456,9 +499,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         async_note_fault(self.hass, Fault.ANSWERED)
         return stations
 
-    async def _request_search(
-        self, latitude: float, longitude: float
-    ) -> list[dict[str, Any]]:
+    async def _request_search(self, latitude: float, longitude: float) -> list[Station]:
         """Request nearest stations from /search. Raises UpdateFailed on failure.
 
         This call carries the auth contract — 401/403 responses here
@@ -467,77 +508,17 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         pass live tracker coords while static mode passes the fixed
         self._latitude/self._longitude.
         """
-        url = f"{API_BASE_URL}{SEARCH_PATH}"
-        params = {
-            "latitude": str(latitude),
-            "longitude": str(longitude),
-        }
-        timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SEC)
         try:
-            async with self._session.get(
-                url,
-                headers=self._build_headers(),
-                params=params,
-                timeout=timeout,
-            ) as resp:
-                resp.raise_for_status()
-                status = resp.status
-                try:
-                    payload = await resp.json()
-                except (aiohttp.ContentTypeError, ValueError) as err:
-                    raise UpdateFailed(
-                        translation_domain=DOMAIN,
-                        translation_key="api_invalid_response",
-                        translation_placeholders={
-                            "status": str(status),
-                            "error": str(err),
-                        },
-                    ) from err
-        except TimeoutError as err:
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="api_timeout",
-                translation_placeholders={"seconds": str(REQUEST_TIMEOUT_SEC)},
-            ) from err
-        except aiohttp.ClientResponseError as err:
-            # Single source of truth for "what does this status mean" lives
-            # in classify_probe_status. Auth failures here drive HA's
-            # reauth flow; everything else degrades to UpdateFailed.
-            outcome = classify_probe_status(err.status)
-            if outcome in ("invalid_auth", "domain_mismatch"):
-                raise ConfigEntryAuthFailed(
-                    translation_domain=DOMAIN,
-                    translation_key="api_auth_error",
-                    translation_placeholders={"status": str(err.status)},
-                ) from err
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="api_http_error",
-                translation_placeholders={
-                    "status": str(err.status),
-                    "reason": err.message or "",
-                },
-            ) from err
-        except aiohttp.ClientError as err:
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="api_connection_error",
-                translation_placeholders={
-                    "error_type": type(err).__name__,
-                    "error": str(err),
-                },
-            ) from err
-
-        if not isinstance(payload, list):
-            raise UpdateFailed(
-                translation_domain=DOMAIN,
-                translation_key="api_invalid_response",
-                translation_placeholders={
-                    "status": str(status),
-                    "error": f"expected list, got {type(payload).__name__}",
-                },
+            return await fetch_search(
+                self._session,
+                latitude=latitude,
+                longitude=longitude,
+                api_key=self._api_key,
+                domain=self._domain,
+                user_agent=USER_AGENT,
             )
-        return [s for s in payload if isinstance(s, dict)]
+        except EControlError as err:
+            raise _translate_error(err) from err
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch nearest stations from /search and return.

@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import urlparse
 
-import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -35,8 +34,8 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
+from .api import EControlError, EControlHttpError, check_connection
 from .const import (
-    API_BASE_URL,
     CONF_API_KEY,
     CONF_DOMAIN,
     CONF_DYNAMIC_ENTITY,
@@ -45,9 +44,7 @@ from .const import (
     MAX_POLL_MINUTES,
     MIN_POLL_MINUTES,
     REGISTRATION_URL,
-    REQUEST_TIMEOUT_SEC,
-    SEARCH_PATH,
-    build_default_headers,
+    USER_AGENT,
     classify_probe_status,
 )
 
@@ -273,29 +270,20 @@ async def _test_api_connection(
     longitude: float,
 ) -> str | None:
     """Probe /search with the supplied credentials. Return an error key or None."""
-    session = async_get_clientsession(hass)
-    headers = build_default_headers(api_key, domain)
-    params = {"latitude": str(latitude), "longitude": str(longitude)}
-    timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SEC)
     try:
-        async with session.get(
-            f"{API_BASE_URL}{SEARCH_PATH}",
-            headers=headers,
-            params=params,
-            timeout=timeout,
-        ) as resp:
-            outcome = classify_probe_status(resp.status)
-            if outcome is not None:
-                return outcome
-            # 2xx — confirm the body is the JSON list /search must return.
-            # A misconfigured gateway answering 200 with an HTML error page
-            # would otherwise pass the probe and only fail on the first
-            # coordinator refresh; mirror _fetch_search's shape contract so
-            # the probe validates the API the same way the coordinator uses it.
-            payload = await resp.json()
-            return None if isinstance(payload, list) else "cannot_connect"
-    except (aiohttp.ClientError, ValueError, TimeoutError):
+        await check_connection(
+            async_get_clientsession(hass),
+            latitude=latitude,
+            longitude=longitude,
+            api_key=api_key,
+            domain=domain,
+            user_agent=USER_AGENT,
+        )
+    except EControlHttpError as err:
+        return classify_probe_status(err.status) or "cannot_connect"
+    except EControlError:
         return "cannot_connect"
+    return None
 
 
 class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):

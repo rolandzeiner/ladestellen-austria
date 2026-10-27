@@ -112,14 +112,6 @@ DYNAMIC_SAFETY_INTERVAL_HOURS: Final = 6
 # (datetime) used for the domain-wide cooldown check.
 DOMAIN_LAST_API_CALL_KEY: Final = "last_api_call_ts"
 
-API_BASE_URL: Final = "https://api.e-control.at/charge/1.0"
-SEARCH_PATH: Final = "/search"
-
-API_KEY_HEADER: Final = "Apikey"
-REFERER_HEADER: Final = "Referer"
-
-REQUEST_TIMEOUT_SEC: Final = 30
-
 # Confirmed against the Angular route table in admin.ladestellen.at's
 # main.dbdfff82cb88e9da.js bundle (path "api/registrieren"). Retrieved
 # 2026-04-23. If the SPA rebuilds, the hash fragment remains stable —
@@ -148,7 +140,9 @@ def classify_probe_status(status: int) -> str | None:
     Single source of truth for the credentials-probe outcome contract;
     both `coordinator._request_search` and `config_flow._test_api_connection`
     consult this so the two sites can't drift on the 4xx → translation
-    key mapping. Returns None when the response is OK (2xx/3xx).
+    key mapping. Returns None when the response is OK (2xx/3xx). It lives
+    here rather than in the HA-free `api.py` because the keys it returns
+    are Home Assistant's: config-flow errors and the reauth trigger.
 
     - 401 → invalid_auth   (api_key rejected)
     - 403 → domain_mismatch (referer not in user's registered set)
@@ -175,23 +169,3 @@ def normalize_status(status: str | None) -> str:
     function to update on the other (CI test enforces parity).
     """
     return (status or "").upper().replace("_", "")
-
-
-def build_default_headers(api_key: str, domain: str) -> dict[str, str]:
-    """Build the canonical outbound header set used by every API call.
-
-    Single source of truth for the coordinator and the config-flow trial
-    probe. The gateway compares the Referer header's hostname against the
-    bare domain registered at ladestellen.at; hard-coding https is fine
-    because the gateway strips scheme/port/path before matching.
-
-    No `Accept-Encoding`: aiohttp sends its own offer (`gzip, deflate,
-    zstd` on aiohttp 3.14.5) and decompresses whatever comes back, while
-    a value set here would replace that offer rather than add to it.
-    """
-    return {
-        "User-Agent": USER_AGENT,
-        API_KEY_HEADER: api_key,
-        REFERER_HEADER: f"https://{domain}",
-        "Accept": "application/json",
-    }
