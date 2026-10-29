@@ -11,21 +11,12 @@ EV charging stations near you in Home Assistant, from E-Control's official [Lade
 
 ## Screenshots
 
-### Cards
-
 <table>
   <tr>
     <td align="center" valign="top">
       <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card.webp" height="320" alt="Main card showing distance to the nearest station and a list of nearby stations" />
       <br/><em>Main card</em>
     </td>
-  </tr>
-</table>
-
-### Setup
-
-<table>
-  <tr>
     <td align="center" valign="top">
       <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card-config.webp" height="320" alt="Card editor with filter and display options" />
       <br/><em>Card editor</em>
