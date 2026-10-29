@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/custom_components/ladestellen_austria/brand/icon.png" width="40" height="40" alt="" align="absmiddle"> Ladestellen Austria
+# <sub><sub><img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/custom_components/ladestellen_austria/brand/icon.png" width="40" height="40" alt=""></sub></sub> Ladestellen Austria
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2025.1-blue.svg)](https://www.home-assistant.io/)
