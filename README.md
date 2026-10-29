@@ -1,15 +1,17 @@
 # <sub><sub><img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/custom_components/ladestellen_austria/brand/icon.png" width="40" height="40" alt=""></sub></sub> Ladestellen Austria
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Catalog-41BDF5.svg)](https://www.home-assistant.io/integrations/marketplace/)
 [![HA min version](https://img.shields.io/badge/Home%20Assistant-%3E%3D2025.1-blue.svg)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/github/v/release/rolandzeiner/ladestellen-austria?label=version&color=blue)](https://github.com/rolandzeiner/ladestellen-austria/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![vibe-coded](https://img.shields.io/badge/vibe-coded-ff69b4?logo=musicbrainz&logoColor=white)](https://en.wikipedia.org/wiki/Vibe_coding)
 [![Live demo](https://img.shields.io/badge/live-demo-2196F3.svg)](https://demo.rolandzeiner.at/#ladestellen)
 
-Home Assistant custom integration for the Austrian EV charging station directory (*Ladestellenverzeichnis*), powered by **E-Control Austria's** official API.
+EV charging stations near you in Home Assistant, from E-Control's official [Ladestellenverzeichnis](https://www.e-control.at/ladestellenverzeichnis), the Austrian directory of public charging points. You get the distance to the nearest station, the ten nearest with live status per charging point, and two dashboard cards.
 
 ## Screenshots
+
+### Cards
 
 <table>
   <tr>
@@ -17,6 +19,13 @@ Home Assistant custom integration for the Austrian EV charging station directory
       <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card.webp" height="320" alt="Main card showing distance to the nearest station and a list of nearby stations" />
       <br/><em>Main card</em>
     </td>
+  </tr>
+</table>
+
+### Setup
+
+<table>
+  <tr>
     <td align="center" valign="top">
       <img src="https://raw.githubusercontent.com/rolandzeiner/ladestellen-austria/main/screenshots/card-config.webp" height="320" alt="Card editor with filter and display options" />
       <br/><em>Card editor</em>
@@ -30,107 +39,231 @@ Home Assistant custom integration for the Austrian EV charging station directory
 
 ## Features
 
-- Distance-to-nearest-station sensor + full nearby list (label, address, connectors, power, live status, operator, pricing) as state attributes.
-- Bilingual config flow (EN/DE), with reauth and reconfigure flows.
-- **Dynamic location mode** — point the entry at a `device_tracker` and the search origin follows live GPS, with rate-limit guards (see [Dynamic location mode](#dynamic-location-mode)).
-- **Two Lovelace cards** — a list view (kW-led tile rows, expandable per-station detail) and a parking-lot view (top-down vector cars on occupied spots, wrench overlay on out-of-order, hover or tap reveals the slot's spec).
-- **Entity-first card picker.** Pick one of the integration's sensors when adding a dashboard card and the matching card offers itself, already configured. Home Assistant 2026.6 or newer; older versions are unaffected. *(0.5.0)*
-- WCAG 2.2 A+AA accessibility across both cards and editors.
-- **Robust polling.** Exponential backoff on consecutive coordinator failures (10 → 20 → 40 min doubling, 12 h cap, snap-back to the configured interval on first success) so a sustained upstream outage settles into a slow poll instead of hammering. *(0.4.0)*
-- **Outage notice.** When E-Control's charging station directory fails, you can tell it's their fault, not your setup. After 10 minutes of errors from their side, a Repairs issue says so, and it clears itself once stations return. Both cards show *Can't reach E-Control* instead of an empty list, and your pinned stations stay pinned. *(1.2.0)*
-- Strict-typed, async-only.
+- Distance to the nearest charging station, plus the ten nearest with connectors, power, live status, operator, prices and opening hours.
+- A sensor that turns on when any nearby charging point is free, and an event whenever a charging point changes status.
+- Follow a phone or car tracker instead of a fixed location, so the station list moves with you.
+- Two cards: a station list with filters and pinned stations, and a top-down parking-lot view of a single station.
+- Pick one of the integration's sensors in the card picker, and the matching card offers itself already set up.
+- When E-Control is down, a repair says so, and the cards show it instead of an empty list.
+- Setup, cards and card editors in English and German. Both cards and their editors meet WCAG 2.2 AA.
 
 ## Requirements
 
-- Home Assistant **2025.1** or newer.
-- An **API key + domain** registered (free) at [ladestellen.at](https://www.ladestellen.at/).
-- An accessible HA external URL whose hostname matches the registered domain — the API enforces a `Referer` header check.
+- Home Assistant **2025.1.0** or newer.
+- A free API key from [ladestellen.at](https://admin.ladestellen.at/#/api/registrieren), registered for a domain name (see *Known limitations*).
+
+> [!IMPORTANT]
+> Registering an API key is a contract between you and E-Control, with obligations and a contractual penalty. Read *Legal* before you register.
 
 ## Installation
 
-### HACS (recommended)
+### Marketplace (recommended)
 
-1. Open HACS and search for **Ladestellen Austria**.
-2. Select it and choose **Download**.
+The Marketplace is HACS, built into Home Assistant since 2026.11.
+
+1. In Home Assistant, go to **Settings → Marketplace** and search for **Ladestellen Austria**.
+2. Select it, then select **Install**. The setup starts right away, no restart needed.
+
+[![Open this repository in the Marketplace of your Home Assistant.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rolandzeiner&repository=ladestellen-austria&category=integration)
+
+On Home Assistant older than 2026.11, use HACS instead: search for **Ladestellen Austria**, select **Download**, then restart Home Assistant.
+
+### Manual
+
+1. Download `ladestellen_austria.zip` from the [latest release](https://github.com/rolandzeiner/ladestellen-austria/releases/latest).
+2. Extract it into `config/custom_components/ladestellen_austria/`.
 3. Restart Home Assistant.
-
-[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rolandzeiner&repository=ladestellen-austria&category=integration)
-
-Not in the search yet? In HACS, open ⋮ → **Custom repositories**, add `https://github.com/rolandzeiner/ladestellen-austria` with type **Integration**, then search again.
-
-### Manually
-
-Copy `custom_components/ladestellen_austria/` into `config/custom_components/` and restart HA.
 
 ## Setup
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ladestellen_austria)
 
-1. Register an API key at [ladestellen.at](https://www.ladestellen.at/). Enter the **bare hostname** of your HA external URL (no protocol, no port, no path) — e.g. `www.example.com` — as your authorized referer domain.
-2. *Settings → Devices & services → Add integration → Ladestellen Austria*. Fields are described in [Configuration parameters](#configuration-parameters).
-3. The integration probes `/search` once before creating the entry to confirm both key and domain are accepted.
+1. Register an API key at [ladestellen.at](https://admin.ladestellen.at/#/api/registrieren). As the referer domain, enter the bare hostname of your Home Assistant external URL, such as `www.example.com`: no protocol, no port, no path.
+2. Go to **Settings → Devices & services → Add integration** and search for **Ladestellen Austria**.
+3. Enter the API key and the domain, place the location on the map, and save. The integration runs one search with your key and domain before it saves the entry, so a rejected key or domain shows up right away.
 
-### Dynamic location mode
+| Field | Default | Description |
+|---|---|---|
+| **Name** | Ladestellen Austria | The entry's title and the device name. |
+| **API key** | none | Your key from ladestellen.at. Stored as a password and redacted in diagnostics. |
+| **Registered domain** | the hostname of your external URL | The domain you registered at ladestellen.at, without protocol, port or path. A pasted full URL is trimmed to its hostname. Redacted in diagnostics. |
+| **Location** | your Home Assistant home | Where the search starts. With a tracker, the fallback when the tracker has no position. |
+| **Update interval (minutes)** | 10 | How often the list refreshes, from 5 to 720 in steps of 5. Not used with a tracker. |
+| **Dynamic location tracker** | empty | A `device_tracker`, such as your phone from the companion app. Leave it empty for a fixed location. See *Dynamic location*. |
 
-Set the **Dynamic location tracker** field to a `device_tracker` (e.g. `device_tracker.<your_phone>` from the HA companion app) and refreshes follow live GPS instead of the fixed *Location*. Rate-limit guards: 1.5 km movement threshold, 10-min per-entry cooldown, 5-min domain-wide cooldown, 6-hour fallback timer if the device never moves. The pinned-stations list hides in dynamic mode (the list shifts as you move). When the tracker has no coordinates (phone off, permission revoked), the static *Location* is used as a fallback and the integration raises a Repairs issue.
+For a second location, add the integration again with the same key. To change the key, domain, location, interval or tracker later, select **Reconfigure** on the entry.
 
-## Lovelace Cards
+## Options
 
-Both cards ship in a single bundle and auto-register as a Lovelace resource — add either via the visual *Add card* picker.
+Under **Settings → Devices & services → Ladestellen Austria**, select **Configure** on an entry:
 
-### Main card — `ladestellen-austria-card`
-
-Header icon-tile + a distance-to-nearest hero, then an expandable list of nearby stations. Each row leads with bold kW (DC fast-charge in amber) and price (free in green) plus connector chips and a halo status dot; station name + city + distance sit below as a subtitle, with a circular Maps button on the right. Tapping a row reveals opening hours, a per-point rack (DC/AC, kW, connector, status, wrench for out-of-order), payment + amenity chips, fees, and address — with a filled *Open in Maps* CTA. Filters: only-available, only-free, only-open, connector types, amenities, payment methods. Pinned stations bypass filters; the pin list hides in dynamic mode.
-
-### Parking card — `ladestellen-austria-parking-card`
-
-Single-station, top-down view: dark asphalt, sharp-cornered slots separated by solid white painted lane-lines, a free / total counter pinned to the header. Free spots glow green; charging / occupied / reserved / blocked spots show a top-down vector car (deterministic per-EVSE colour by default, or theme accent / single picked colour); out-of-order / empty / planned / removed / unknown spots show a tone-tinted MDI overlay (wrench, battery-off, progress-wrench, close-circle, help-circle) keyed to the upstream status, with a state-coloured radial-glow background — orange for faults / empty, blue for planned, red for removed. Hover or tap fades the overlay to reveal the slot's spec. Slots render in the operator-issued EVSE-ID order. Editor exposes a free-count toggle, a car-colour mode picker, the same logo-adapt-to-theme switch the main card has, and three styling presets *(0.4.0)*: **asphalt style** (flat theme-tinted grey vs textured dark asphalt with CSS-only speckle), **painted lane-line width** (thin 2 px / medium 3 px / wide 5 px), and **slot-info icon paint mode** (semantic theme colours vs flat white "painted on the asphalt"). All three default to the current visual.
-
-Both cards always show the E-Control logo-link and *Datenquelle: E-Control* attribution footer (§3c/§3d) — these cannot be hidden.
+| Option | Default | Description |
+|---|---|---|
+| **Update interval (minutes)** | 10 | From 5 to 720. Not used with a tracker. |
 
 ## Entities
 
-| Entity | State | Attributes |
+Each entry gets one device with two entities. Home Assistant names them in your interface language:
+
+| Entity | English install | German install |
 |---|---|---|
-| `sensor.<entry_name>_nearest_station` | Distance to the nearest station (km) | `station_count`, `stations[]` (id, label, address, distance, status, points, connectors, pricing), `live_status_available`, `dynamic_mode`, `dynamic_entity` |
-| `binary_sensor.<entry_name>_has_free_slot` | `on` if any EVSE in range reports `AVAILABLE` | `free_slot_count`, `total_slot_count`, `stations_with_free` |
+| Nearest station | `sensor.<entry>_nearest_station` | `sensor.<entry>_nachste_ladestelle` |
+| Free slot available | `binary_sensor.<entry>_free_slot_available` | `binary_sensor.<entry>_freier_ladepunkt_verfugbar` |
 
-Icons: `mdi:ev-station` / `mdi:ev-plug-type2`. Sensor device-class: `distance` (no state-class — distance-to-nearest-POI isn't a statistical measurement and HA's unit-system can flip km vs mi underfoot, which trips the recorder's stable-unit invariant). Binary-sensor device-class: `presence`.
+### Nearest station
 
-## Events
+The distance to the nearest station in kilometres (device class `distance`, no long-term statistics).
 
-The integration fires `ladestellen_austria_slot_status_changed` on the HA bus whenever a single EVSE's status changes between two successful refreshes — skipped on first refresh, on no-change, and on slots that appear or disappear from the result list. Payload: `entry_id`, `station_id`, `station_label`, `station_distance`, `evse_id`, `old_status`, `new_status`.
+| Attribute | Notes |
+|---|---|
+| `attribution` | `Datenquelle: E-Control` |
+| `station_count` | How many stations the last search returned, at most 10. |
+| `stations` | Up to 10 stations, nearest first, as E-Control sends them. See *Station shape*. |
+| `live_status_available` | `true` after every successful search: the status of each charging point is live. |
+| `dynamic_mode` | `true` when the entry follows a tracker. |
+| `dynamic_entity` | The tracker's entity ID, or `null`. |
+
+`stations` and `live_status_available` aren't recorded in history.
+
+#### Station shape
+
+Each entry in `stations` carries E-Control's fields, among them:
+
+- The station: `stationId`, `label`, `operatorName`, `stationStatus`, `street`, `postCode`, `city`, `location`, `distance` (km) and `openingHours`.
+- Amenities as booleans: `greenEnergy`, `austrianEcoLabel`, `freeParking`, `roofedParking`, `illuminatedParking`, `cateringService`, `bathroomsAvailable`, `restingFacilities`, plus `barrierFreeParkingPlaces`.
+- `points`, one per charging point, ordered by the number at the end of `evseId`: `evseId`, `capacityKw`, `connectorType`, `status`, `freeOfCharge`, `priceCentKwh`, `priceCentMin`, `startFeeCent`, `blockingFeeCentMin` and `authenticationMode`.
+
+`status` is E-Control's value as sent, such as `AVAILABLE`, `CHARGING`, `OCCUPIED`, `RESERVED`, `BLOCKED`, `OUTOFORDER`, `INOPERATIVE`, `PLANNED`, `REMOVED` or `UNKNOWN`.
+
+### Free slot available
+
+On when at least one charging point among the nearby stations reports `AVAILABLE` (device class `presence`).
+
+| Attribute | Notes |
+|---|---|
+| `attribution` | `Datenquelle: E-Control` |
+| `free_slot_count` | Charging points reporting `AVAILABLE`. |
+| `total_slot_count` | All charging points among the nearby stations. |
+| `stations_with_free` | Stations with at least one free charging point. |
+
+### Events
+
+`ladestellen_austria_slot_status_changed` fires once for each charging point whose status differs between two successful searches. It doesn't fire on the first search after a start, for a point that appears or disappears from the list, or when either status is empty.
+
+| Field | Notes |
+|---|---|
+| `entry_id` | The config entry. |
+| `station_id`, `station_label`, `station_distance` | The station the point belongs to. |
+| `evse_id` | The charging point. |
+| `old_status`, `new_status` | E-Control's values, such as `CHARGING` and `AVAILABLE`. |
+
+It's a bus event, so it isn't in the automation editor's trigger list: write the trigger in YAML (see *Examples*).
+
+## Cards
+
+Both cards ship in one bundle, `ladestellen-austria-card.js`, which the integration serves and adds to your dashboard resources itself. Add either card with **Add card**. Each card checks its version and shows a reload banner when your browser holds an older copy, so hard-refresh the page after an update.
+
+### Station list
+
+The ten nearest stations with distance, power, price, connectors and live status. Select a station to see opening hours, every charging point, payment methods, amenities, fees and the address, with a button that opens it in your maps app. In the card picker it's **Ladestellen Austria**.
 
 ```yaml
-# Notify when any nearby slot transitions to AVAILABLE
-trigger:
-  - platform: event
-    event_type: ladestellen_austria_slot_status_changed
-    event_data:
-      new_status: AVAILABLE
+type: custom:ladestellen-austria-card
+entity: sensor.ladestellen_austria_nearest_station
 ```
 
-## Configuration parameters
+| Option | Default | Description |
+|---|---|---|
+| `entity` | required | A **Nearest station** sensor. |
+| `name` | `Ladestellen Austria` | The card title. |
+| `max_stations` | `10` | Stations to show, from 1 to 10. Pinned stations count toward it. |
+| `hide_header` | `false` | Hides the header. |
+| `show_hero` | `true` | Shows the distance to the nearest station large. |
+| `show_pricing` | `true` | Shows prices. |
+| `show_amenities` | `true` | Shows amenity details. |
+| `sort_by_power` | `false` | Sorts by power, fastest first, instead of by distance. |
+| `logo_adapt_to_theme` | `false` | Shows the E-Control logo black on light themes and white on dark ones. |
+| `only_available` | `false` | Only stations with a free charging point right now. |
+| `only_free` | `false` | Only stations with free charging. |
+| `only_open` | `false` | Only stations open right now. |
+| `connector_types` | none | Only stations with at least one of these: `Type 2`, `CCS`, `CHAdeMO`, `Type 1`, `Tesla`, `Schuko`, `CEE`. |
+| `amenities` | none | Only stations with all of these: `green_energy`, `austrian_ecolabel`, `free_parking`, `roofed_parking`, `illuminated_parking`, `barrier_free`, `catering`, `bathrooms`, `resting`. |
+| `payment_methods` | none | Only stations accepting at least one of these: `APP`, `QR`, `RFID_READER`, `CHARGING_CONTRACT`, `DEBIT_CARD`, `CREDIT_CARD`, `CONTACTLESS_CARD_SUPPORT`. |
+| `pinned_station_ids` | none | Station IDs shown first, in this order, regardless of filters. The editor lets you pick them from the list. Ignored while the entry follows a tracker. |
 
-| Field | Required | Default | Notes |
-|---|---|---|---|
-| `name` | yes | `Ladestellen Austria` | Entry title; becomes the device name. |
-| `api_key` | yes | — | From ladestellen.at. Stored as a secret; redacted in diagnostics. |
-| `domain` | yes | HA external URL hostname | Bare hostname, no protocol. Stored as a secret; redacted in diagnostics. |
-| `location` | yes | HA home coordinates | Map picker. In dynamic mode this is the fallback when the tracker has no coords. |
-| `scan_interval` | no | `10` | Minutes (5–720) between refreshes. Ignored in dynamic mode. |
-| `dynamic_entity` | no | *(empty)* | `device_tracker` entity. See [Dynamic location mode](#dynamic-location-mode). |
+### Parking lot
 
-## Use cases
+One station seen from above, each charging point a parking spot, in the order of their charging-point numbers. Free spots glow green, occupied ones show a car, and faulty, planned or removed ones show an icon for their status. Hover or tap a spot to see its power, connector and status. In the card picker it's **Ladestellen Austria — Parking**.
 
-- Range-anxiety dashboards — distance to the nearest fast charger on a glance card.
-- Trip-planning automations — trigger routines when arriving in a region with specific connector types available.
-- "On the road" scenes — flip when the nearest station reports ACTIVE while you're away.
+```yaml
+type: custom:ladestellen-austria-parking-card
+entity: sensor.ladestellen_austria_nearest_station
+station_id: <stationId>
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `entity` | required | A **Nearest station** sensor. |
+| `station_id` | required | The station to show. The editor lets you pick it from the sensor's stations. |
+| `name` | the station's name | The card title. |
+| `hide_header` | `false` | Hides the header. |
+| `show_free_count` | `true` | Shows the free / total counter. |
+| `logo_adapt_to_theme` | `false` | Shows the E-Control logo black on light themes and white on dark ones. |
+| `car_color_mode` | `random` | `random` (a fixed colour per spot), `theme` (your theme's accent colour) or `fixed`. |
+| `car_color_fixed` | none | The car colour as `#rrggbb`, for `car_color_mode: fixed`. |
+| `asphalt_style` | `default` | `default` (flat grey from your theme) or `textured` (dark asphalt). |
+| `paint_width` | `medium` | Width of the painted lines: `thin` (2 px), `medium` (3 px) or `wide` (5 px). |
+| `icon_paint_mode` | `default` | `default` (status colours) or `white` (painted on the asphalt). |
+
+## Data updates
+
+Each entry sends one `GET /search` to E-Control's `api.e-control.at` per refresh, every 10 minutes by default and every 5 to 720 minutes as you set it. The answer carries the live status of every charging point, so there is no second request.
+
+### Dynamic location
+
+With a tracker set, the tracker's position starts each search instead of **Location**, and the update interval isn't used. A position change refreshes the list when all three hold:
+
+- the tracker has moved at least 1.5 km since the last search,
+- this entry hasn't searched in the last 10 minutes,
+- no entry of this integration has searched in the last 5 minutes.
+
+A timer still refreshes every 6 hours, in case the tracker doesn't move. When the tracker has no position, because the phone is off or location access is revoked, the search falls back to **Location** and a repair names the tracker. It clears once the tracker reports a position again.
+
+### When E-Control fails
+
+The sensors become unavailable, and both cards show *Can't reach E-Control* instead of an empty list. Pinned stations stay pinned. The first failure keeps the interval. From the second failure in a row the interval doubles each time (10, 20, 40 minutes with the default), up to 12 hours, and the first successful search restores it.
+
+After 10 minutes of server errors or unreadable answers from E-Control, a repair says the fault is on their side, and it clears itself once stations return. Timeouts and connection errors don't count toward it, because those can come from your own network. When E-Control rejects your key or domain, Home Assistant asks you to enter them again.
 
 ## Examples
 
+- Show the distance to the nearest fast charger on a wall tablet.
+- Get a notification when a charging point near home becomes free.
+- Follow your car's tracker on a trip and see the chargers around you.
+- Count nearby stations that run on green energy.
+
+Get a notification when a nearby charging point becomes free:
+
 ```yaml
-# Template sensor: count of green-energy stations nearby
+alias: "Charger free nearby"
+triggers:
+  - trigger: event
+    event_type: ladestellen_austria_slot_status_changed
+    event_data:
+      new_status: AVAILABLE
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      title: "Charger free"
+      message: >
+        {{ trigger.event.data.station_label }}
+        ({{ trigger.event.data.station_distance | round(1) }} km) has a free charging point.
+```
+
+<details>
+<summary>Template sensor: nearby stations on green energy</summary>
+
+```yaml
 template:
   - sensor:
       - name: "Green-energy chargers nearby"
@@ -139,95 +272,113 @@ template:
              | selectattr('greenEnergy', 'eq', true) | list | count }}
 ```
 
-## Supported functions
+</details>
 
-- Nearest-station lookup (`GET /search`) with live per-point status inline (AVAILABLE / CHARGING / OCCUPIED / OUTOFORDER / BLOCKED / INOPERATIVE / UNKNOWN).
-- Reauth flow on HTTP 401/403.
-- Diagnostics export with redacted credentials.
-- Repairs issues for recoverable degraded conditions (e.g. dynamic-tracker without coordinates, an E-Control outage).
+<details>
+<summary>Turn on a dashboard light while no charging point nearby is free</summary>
 
-## Data update
+```yaml
+alias: "No free charger nearby"
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.ladestellen_austria_free_slot_available
+actions:
+  - action: >
+      {{ 'light.turn_on' if trigger.to_state.state == 'off' else 'light.turn_off' }}
+    target:
+      entity_id: light.hallway_indicator
+```
 
-`GET /search?latitude=…&longitude=…` runs every **10 minutes** by default (configurable 5–720). Station metadata rarely changes; `stationStatus` and per-point `status` flip during outages. In [Dynamic location mode](#dynamic-location-mode) refreshes are triggered by tracker movement (rate-limited) instead of by the scan interval.
+</details>
 
 ## Known limitations
 
-- Nearest-N only — the upstream API has no radius query. Truncated to 10 stations.
-- `Referer` header match required — bare-IP or `homeassistant.local` setups cannot be used; you need a registered domain.
+- **Ten stations at most.** The API returns the nearest stations and has no radius search. The integration keeps the ten nearest.
+- **You need a registered domain name.** E-Control checks the `Referer` of every request against the domains you registered. The integration builds it from **Registered domain**, so that domain has to be one you registered at ladestellen.at.
+- **Pinning doesn't work with a tracker.** The list follows your position, so the station list card hides pinned stations while the entry follows a tracker. They come back when you switch to a fixed location.
+- **The parking lot needs its station in the list.** It shows only a station among the sensor's ten nearest. With a tracker, it shows *not found* once you've moved away.
+- **YAML dashboards don't get the resource added.** The integration adds the card to the dashboard resources only for dashboards edited in the UI. For a YAML dashboard, add `/ladestellen_austria/ladestellen-austria-card.js` as a JavaScript module yourself.
 
 ## Troubleshooting
 
-- **`invalid_auth` / 401** — API key was rotated or disabled at ladestellen.at.
-- **`domain_mismatch` / 403** — HA's Referer hostname doesn't match a registered domain. Update your external URL, reconfigure with the correct domain, or add the HA domain at ladestellen.at.
-- **`cannot_connect`** — DNS / network issue reaching `api.e-control.at`.
-- **Card says *Can't reach E-Control*** — the sensor is unavailable because its last search at E-Control failed, or none has worked since Home Assistant started. Check **Settings → Repairs**. If the outage issue is there, the fault is on E-Control's side and stations return on their own. If it isn't, check that your Home Assistant host can reach `api.e-control.at`.
-- For deeper debugging, download *Diagnostics* from the integration's three-dot menu — secrets are redacted.
+- **"The API key was rejected (HTTP 401)."** The key is wrong, or was disabled or replaced at ladestellen.at.
+- **"The API accepted the key but rejected this referer domain (HTTP 403)."** **Registered domain** doesn't match a domain registered for your key. Correct it with **Reconfigure**, or add the domain at ladestellen.at.
+- **Setup can't reach E-Control.** A DNS or network problem between your Home Assistant host and `api.e-control.at`, or E-Control is down. Try again in a few minutes.
+- **A card says *Can't reach E-Control*.** The last search failed, or none has worked since Home Assistant started. Check **Settings → Repairs**. If the outage issue is there, the fault is on E-Control's side and stations return on their own. If it isn't, check that your Home Assistant host can reach `api.e-control.at`.
+- **Problems with the API itself.** Write to `support@ladestellen.at`. For bugs in this integration, open a [GitHub issue](https://github.com/rolandzeiner/ladestellen-austria/issues).
+- **Bug reports.** Go to **Settings → Devices & services → Ladestellen Austria**, open the entry's menu and select **Download diagnostics**. The API key, the domain and the coordinates are redacted.
+- **Debug logging.** Add this to `configuration.yaml`, restart, and reproduce the problem:
+
+  ```yaml
+  logger:
+    default: info
+    logs:
+      custom_components.ladestellen_austria: debug
+  ```
 
 ## Removal
 
-1. *Settings → Devices & services → Ladestellen Austria → ⋮ → Delete*.
-2. In HACS, *Remove* on the integration card.
-3. Optionally revoke your API key at ladestellen.at.
-
-## Development
-
-The card ships pre-built, so installing via HACS needs no Node or Python tooling.
-
-To work on the integration, see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, the card build, version sync and the verification gate.
+1. Go to **Settings → Devices & services → Ladestellen Austria**, open the entry's menu and select **Delete**. Removing the last entry also removes the card from your dashboard resources.
+2. To uninstall, go to **Settings → Marketplace**, open **Ladestellen Austria**, then ⋮ → **Uninstall**. Restart Home Assistant when a repair asks you to. On Home Assistant older than 2026.11, remove it in HACS. For a manual install, delete `config/custom_components/ladestellen_austria/`.
+3. If you no longer need it, revoke your API key at ladestellen.at.
 
 ## Attribution
 
-Data is served by the official [Ladestellenverzeichnis](https://api.e-control.at) operated by [E-Control Austria](https://www.e-control.at/) (the federal energy regulator), an initiative of the [BMK](https://www.bmk.gv.at/). Catalogued on [data.gv.at](https://www.data.gv.at/katalog/dataset/e-control-ladestellenverzeichnis-api).
+Every entity, every diagnostics download and both cards' footer carry:
 
-Upstream issues: `support@ladestellen.at` (API) / `office@e-control.at` (general). Bugs in *this* integration: open a GitHub issue.
+> Datenquelle: E-Control
 
-## Terms of Use — integration compliance
+In full: Energie-Control Austria für die Regulierung der Elektrizitäts- und Erdgaswirtschaft (E-Control). The data comes from the [Ladestellenverzeichnis](https://www.e-control.at/ladestellenverzeichnis) API under E-Control's [Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use), whose §3(d) requires this exact line next to the data. If you build your own card or dashboard on this data, keep it visible.
 
-Registering an API key at [admin.ladestellen.at](https://admin.ladestellen.at/#/api/registrieren) binds you to a contract with E-Control (full ToU at [admin.ladestellen.at/#/api/terms-of-use](https://admin.ladestellen.at/#/api/terms-of-use); §9 carries a €10,000 penalty for breach of §1–§5). Read it.
+Icon: Font Awesome Free, CC BY 4.0.
 
-### What this integration handles automatically
+## Legal
 
-- **§3(c) E-Control logo + §3(d) Attribution:** both cards render the E-Control logo as a clickable link to `https://www.e-control.at/` and the verbatim *Datenquelle: E-Control* footer; sensors carry the same attribution. Frozen, can't be hidden.
-- **§3(i) No data mutation:** values flow through unchanged; precision and ordering preserved as received.
-- **§3(j) API-key confidentiality:** stored as a password field, never logged, redacted in diagnostics.
-- **§4 Rate limits** (max 2 500 req/hour per user, 30 concurrent fair-use): one outbound `/search` per refresh, 10-min default (5-min minimum). [Dynamic location mode](#dynamic-location-mode) replaces interval polling with movement-triggered refreshes under their own cooldown guards.
-- **§7 No bulk redistribution:** no export feature, no re-served API.
+Registering an API key at [admin.ladestellen.at](https://admin.ladestellen.at/#/api/registrieren) is a contract between you and E-Control. Its §9 sets a contractual penalty of €10,000 for breaching §1 to §5. Read the terms before you register.
 
-### What YOU must do (every user, even private HA)
+### What the integration handles for you
 
-- **§3(j) Don't share your key.** Don't post it in screenshots, configs, or issue reports. Diagnostics redact it automatically.
-- **§3(k) No third-party / ad / sponsor links** anchored on the data.
-- **§3(l) Don't charge visitors** in any form for the E-Control-sourced data.
-- **§7 Don't redistribute** the data as bulk export or re-served API.
+- **§3(c) logo and §3(d) attribution.** Both cards' footer shows the E-Control logo, linked to `https://www.e-control.at/`, and *Datenquelle: E-Control*. Neither can be hidden.
+- **§3(i) no changes to the data.** Values pass through as received, with their precision.
+- **§3(j) a confidential key.** The key is stored as a password, never logged, and redacted in diagnostics.
+- **§4 rate limits** of 2,500 requests an hour and 30 at once. Each entry makes one request per refresh, well below that (see *Data updates*).
+- **§7 no bulk redistribution.** There is no export and no re-served API.
 
-### Additional obligations for PUBLIC-FACING applications
+### What you must do
 
-If you expose the integration's data on a publicly-accessible website (anything beyond your own private HA dashboard), the following clauses kick in. A single-user private HA instance with no external dashboard has no "Nutzer-Service visitors" in the sense of §3(g) and so doesn't meaningfully owe the email rituals — but the moment you put the data on a public URL, all of these apply:
+- **§3(j) Keep your key to yourself.** Not in screenshots, shared configuration or issue reports.
+- **§3(k) No third-party, advertising or sponsor links** attached to the data.
+- **§3(l) Don't charge anyone** for the E-Control data, in any form.
+- **§7 Don't redistribute** the data as a bulk export or a re-served API.
 
-- **§3(a) — Notify go-live.** Email `support@ladestellen.at` stating from when and in which way you are using the *Nutzer-Service*.
-- **§3(b) — Disclose the URL.** Email `support@ladestellen.at` with the public URL/IP where the *Nutzer-Service* is reachable.
-- **§3(f) — Notify shutdown.** If you take the public app offline (permanently or temporarily), email `support@ladestellen.at`.
-- **§3(g) — Quarterly access stats.** Email `support@ladestellen.at` once per quarter with the *Unique-Visits* and *Unique-Visitors* of the public app during that quarter.
-- **§3(e) — Data-accuracy disclaimer.** Display the following text *"gut sichtbar"* (clearly visible) next to the data source, verbatim:
+### Once you publish the data
+
+A private Home Assistant dashboard has no visitors in the sense of §3(g). As soon as the data appears on a page anyone can open, these apply as well:
+
+- **§3(a) Go-live.** Tell `support@ladestellen.at` from when and how you use the *Nutzer-Service*.
+- **§3(b) Address.** Send `support@ladestellen.at` the public URL or IP where the *Nutzer-Service* can be reached.
+- **§3(f) Shutdown.** Tell `support@ladestellen.at` when you take the page offline, for good or for a while.
+- **§3(g) Quarterly figures.** Once a quarter, send `support@ladestellen.at` the page's *Unique-Visits* and *Unique-Visitors* for that quarter.
+- **§3(e) Accuracy notice.** Show this text *"gut sichtbar"* (clearly visible) next to the data source, word for word:
 
   > Die Dateneingaben der angegebenen Standorte und Informationen werden ausschließlich durch die Betreiber der Ladepunkte direkt und selbst vorgenommen. Diese Betreiber haben die Möglichkeit, die Informationen tagesaktuell zu halten. Für die Richtigkeit, Vollständigkeit und Aktualität der von den Betreibern selbst vorgenommenen Angaben kann keine Haftung übernommen werden. Für Schäden, die sich aus fehlerhaften Inhalten oder Handlungen ergeben, welche im Vertrauen auf die Richtigkeit des Inhaltes gemacht wurden, übernimmt die E-Control keine Haftung.
 
-- **§3(h) — Service-disruption disclaimer.** Add a *Haftungs- und Gewährleistungsausschluss für Störungen der Dienste* on the website (covering availability of the embedded service itself, separate from §3(e)'s data-accuracy clause).
+- **§3(h) Service notice.** Add a *Haftungs- und Gewährleistungsausschluss für Störungen der Dienste* to the page. It covers the availability of the service itself, apart from §3(e).
 
-For the exact wording of §3(e) and the obligations that apply, refer to the [official Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use). The integration's developer is not a lawyer; how you implement these obligations on your own deployment is your responsibility.
+The binding text is E-Control's [Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use); this section summarises it. The developer isn't a lawyer, and how you meet these obligations on your own deployment is up to you.
 
-### Termination
-
-E-Control can revoke API access with **three months' notice** without giving reasons (§10), or **immediately** on breach or suspected misuse of §1–§5. Keep the obligations above in good order.
+E-Control can end your API access with three months' notice and without giving reasons (§10), or at once on a breach or suspected misuse of §1 to §5.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](https://github.com/rolandzeiner/ladestellen-austria/blob/main/LICENSE).
+
+Dev setup, tests and the verification gate: [CONTRIBUTING.md](https://github.com/rolandzeiner/ladestellen-austria/blob/main/CONTRIBUTING.md).
 
 ## Disclaimer
 
-This integration is not affiliated with or endorsed by E-Control Austria, the BMK, or the operators of ladestellen.at. All charging-station data is provided by the [E-Control Ladestellenverzeichnis API](https://www.ladestellen.at/) under the [official Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use). The developer assumes no liability for the accuracy, completeness, or timeliness of the displayed data. Use at your own risk.
+This integration is not affiliated with or endorsed by E-Control. Charging-station data comes from the [E-Control Ladestellenverzeichnis](https://www.e-control.at/ladestellenverzeichnis) under E-Control's [Terms of Use](https://admin.ladestellen.at/#/api/terms-of-use). The developer assumes no liability for the accuracy, completeness or timeliness of the displayed data. Use at your own risk.
 
 ---
 
-Diese Integration steht in keiner Verbindung zur E-Control Austria, dem BMK oder den Betreibern von ladestellen.at und wird von diesen nicht unterstützt. Alle Ladestellen-Daten stammen vom [E-Control-Ladestellenverzeichnis](https://www.ladestellen.at/) und unterliegen den [offiziellen Nutzungsbedingungen](https://admin.ladestellen.at/#/api/terms-of-use). Für die Richtigkeit, Vollständigkeit und Aktualität der angezeigten Daten wird keine Haftung übernommen. Nutzung auf eigene Verantwortung.
+Diese Integration steht in keiner Verbindung zur E-Control und wird von ihr nicht unterstützt. Die Ladestellen-Daten stammen aus dem [E-Control-Ladestellenverzeichnis](https://www.e-control.at/ladestellenverzeichnis) und stehen unter den [Nutzungsbedingungen](https://admin.ladestellen.at/#/api/terms-of-use) der E-Control. Für die Richtigkeit, Vollständigkeit und Aktualität der angezeigten Daten wird keine Haftung übernommen. Nutzung auf eigene Verantwortung.

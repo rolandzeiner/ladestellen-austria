@@ -102,5 +102,5 @@ CI runs the same checks plus hassfest + HACS validation + the dev-fixture guard 
 
 Open an issue with:
 - HA version + Ladestellen Austria version
-- Diagnostics download (Settings → Devices & Services → Ladestellen Austria → Download diagnostics) — secrets are auto-redacted
+- Diagnostics download (Settings → Devices & services → Ladestellen Austria, then the entry's ⋮ menu → Download diagnostics). The API key, the domain and the coordinates are redacted.
 - Steps to reproduce
