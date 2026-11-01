@@ -74,6 +74,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
+  // Set by HA: "grid" in a sections view, "panel" in a panel view, unset in
+  // the add-card picker and masonry. Reflected so the styles can fill the
+  // cell only when there is one -- see the grid-cell rules in styles.ts.
+  @property({ reflect: true }) public layout?: string;
   @state() private config!: ParkingLotCardConfig;
   // Slots whose info-overlay is currently revealed by tap. Hover already
   // reveals on desktop via CSS :hover; this set covers touch devices
@@ -110,8 +114,12 @@ export class LadestellenAustriaParkingCard extends LitElement {
   protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // setConfig is called synchronously before mount; this.config is
     // non-null by the time any property change can fire shouldUpdate.
+    // Lit reflects attributes inside update(), so returning false here in
+    // the cycle that changes layout leaves the attribute stale and the
+    // grid-cell selectors in styles.ts never match.
     if (
       changedProps.has("config") ||
+      changedProps.has("layout") ||
       changedProps.has("_revealedSlots") ||
       changedProps.has("_versionMismatch")
     ) {

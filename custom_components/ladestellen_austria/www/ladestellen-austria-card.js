@@ -172,20 +172,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
-    /* Fill the grid cell the dashboard gave us.
-       A sections view puts a fixed pixel height on the cell WRAPPER whenever
-       the card's rows are numeric -- which a user also causes by dragging the
-       row handle, since a stored grid_options overrides what getGridOptions()
-       returns -- and styles nothing inside that wrapper.
-       This host is display: block, so IT is the containing block for the
-       ha-card below, and a percentage height against a containing block whose
-       own height is auto computes to auto. Without this line ha-card therefore
-       sizes to its content, overflows a cell too short for it, and is painted
-       over the card underneath. Taking the cell's height here is what gives
-       ha-card's 100% something to resolve against.
-       In an auto-height cell it resolves to auto -- the height it already had
-       -- so it costs nothing there. */
-    block-size: 100%;
     container-type: inline-size;
     container-name: lscard;
 
@@ -268,15 +254,28 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
        to keep the noise visible.) */
   }
   ha-card {
-    /* Resolves against the height :host just took from the cell, so
-       overflow: hidden clips inside the card rather than the card spilling
-       past its own cell. The two declarations only work as a pair: core cards
-       that set this one alone leave :host at its default inline display, where
-       the cell wrapper is ha-card's containing block instead. */
-    block-size: 100%;
-
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
+  }
+  /* Fill the grid cell the dashboard hands us. A sections view puts a fixed
+     pixel height on the cell WRAPPER when rows is numeric -- which the user
+     also causes by dragging the row handle -- and styles nothing inside it.
+     Because :host is display: block, it is ha-card's containing block, so
+     the two declarations only work as a pair: without the host's, ha-card's
+     100% computes to auto and the card renders at content height on top of
+     the card beneath it.
+     Gated on the layout HA sets on the card ("grid" in a sections view and
+     its edit dialog, "panel" in a panel view), the way Mushroom and HA's tile
+     card gate it. The add-card picker sets none and centres each preview in
+     a tile as tall as the tallest preview in its row; an ungated 100%
+     resolves against that tile and stretches the card down to it. */
+  :host([layout="grid"]),
+  :host([layout="panel"]) {
+    block-size: 100%;
+  }
+  :host([layout="grid"]) ha-card,
+  :host([layout="panel"]) ha-card {
+    block-size: 100%;
   }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
@@ -1451,20 +1450,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
-    /* Fill the grid cell the dashboard gave us.
-       A sections view puts a fixed pixel height on the cell WRAPPER whenever
-       the card's rows are numeric -- which a user also causes by dragging the
-       row handle, since a stored grid_options overrides what getGridOptions()
-       returns -- and styles nothing inside that wrapper.
-       This host is display: block, so IT is the containing block for the
-       ha-card below, and a percentage height against a containing block whose
-       own height is auto computes to auto. Without this line ha-card therefore
-       sizes to its content, overflows a cell too short for it, and is painted
-       over the card underneath. Taking the cell's height here is what gives
-       ha-card's 100% something to resolve against.
-       In an auto-height cell it resolves to auto -- the height it already had
-       -- so it costs nothing there. */
-    block-size: 100%;
     container-type: inline-size;
     container-name: plcard;
 
@@ -1500,15 +1485,28 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     --lade-slot-gap: 8px;
   }
   ha-card {
-    /* Resolves against the height :host just took from the cell, so
-       overflow: hidden clips inside the card rather than the card spilling
-       past its own cell. The two declarations only work as a pair: core cards
-       that set this one alone leave :host at its default inline display, where
-       the cell wrapper is ha-card's containing block instead. */
-    block-size: 100%;
-
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
+  }
+  /* Fill the grid cell the dashboard hands us. A sections view puts a fixed
+     pixel height on the cell WRAPPER when rows is numeric -- which the user
+     also causes by dragging the row handle -- and styles nothing inside it.
+     Because :host is display: block, it is ha-card's containing block, so
+     the two declarations only work as a pair: without the host's, ha-card's
+     100% computes to auto and the card renders at content height on top of
+     the card beneath it.
+     Gated on the layout HA sets on the card ("grid" in a sections view and
+     its edit dialog, "panel" in a panel view), the way Mushroom and HA's tile
+     card gate it. The add-card picker sets none and centres each preview in
+     a tile as tall as the tallest preview in its row; an ungated 100%
+     resolves against that tile and stretches the card down to it. */
+  :host([layout="grid"]),
+  :host([layout="panel"]) {
+    block-size: 100%;
+  }
+  :host([layout="grid"]) ha-card,
+  :host([layout="panel"]) ha-card {
+    block-size: 100%;
   }
   .card-content {
     padding: 0;
@@ -2335,7 +2333,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
           />
         </label>
       </div>
-    </div>`}static{this.styles=yt}};Y([V({attribute:!1})],Z.prototype,`hass`,void 0),Y([H()],Z.prototype,`_config`,void 0),Z=Y([B(`ladestellen-austria-parking-card-editor`)],Z),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-parking-card`,name:`Ladestellen Austria — Parking`,description:`Single station, points rendered as parking slots viewed from above.`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-parking-card`)});var Q=class extends z{constructor(...e){super(...e),this._revealedSlots=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-parking-card-editor`)}static getStubConfig(e,t){return{entity:ut(t),station_id:``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));if(e.station_id!==void 0&&typeof e.station_id!=`string`)throw Error(W(`common.invalid_station_id`));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`,...e}}shouldUpdate(e){return e.has(`config`)||e.has(`_revealedSlots`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:`auto`,min_columns:4,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_renderShell(e,t={}){return M`
+    </div>`}static{this.styles=yt}};Y([V({attribute:!1})],Z.prototype,`hass`,void 0),Y([H()],Z.prototype,`_config`,void 0),Z=Y([B(`ladestellen-austria-parking-card-editor`)],Z),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-parking-card`,name:`Ladestellen Austria — Parking`,description:`Single station, points rendered as parking slots viewed from above.`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-parking-card`)});var Q=class extends z{constructor(...e){super(...e),this._revealedSlots=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-parking-card-editor`)}static getStubConfig(e,t){return{entity:ut(t),station_id:``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));if(e.station_id!==void 0&&typeof e.station_id!=`string`)throw Error(W(`common.invalid_station_id`));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`,...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_revealedSlots`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:`auto`,min_columns:4,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_renderShell(e,t={}){return M`
       <ha-card>
         <div class="card-content">
           <div
@@ -2429,7 +2427,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
         ${this._renderSlotOverlays(r,i?this._carColor(e.evseId):null)}
         ${this._renderSlotInner(e,c,u,l,d)}
       </button>
-    `}_toggleSlot(e){if(!e)return;let t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){let t=this.config?.car_color_mode??`random`;if(t===`theme`)return`var(--primary-color)`;if(t===`fixed`)return this.config?.car_color_fixed||`var(--primary-color)`;let n=[`#e63946`,`#1d4ed8`,`#15803d`,`#facc15`,`#fb923c`,`#ec4899`,`#0e7490`,`#6b21a8`,`#1f2937`,`#e5e7eb`],r=e??``,i=0;for(let e=0;e<r.length;e++)i=i*31+r.charCodeAt(e)>>>0;return n[i%n.length]??`#1f2937`}static{this.styles=St}};Y([V({attribute:!1})],Q.prototype,`hass`,void 0),Y([H()],Q.prototype,`config`,void 0),Y([H()],Q.prototype,`_revealedSlots`,void 0),Y([H()],Q.prototype,`_versionMismatch`,void 0),Q=Y([B(`ladestellen-austria-parking-card`)],Q),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-card`,name:`Ladestellen Austria`,description:`Nearby EV charging stations, powered by E-Control Austria`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-card`)});var cn=10,$=class extends z{constructor(...e){super(...e),this._expanded=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-card-editor`)}static getStubConfig(e,t){return{entity:ut(t)}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));this.config={name:`Ladestellen Austria`,max_stations:cn,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){return e.has(`config`)||e.has(`_expanded`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){let e=this.config?.max_stations??cn;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:`auto`,min_columns:6,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_buildListView(e){let t=e.attributes.stations??[],n=e.attributes.live_status_available===!0,r=e.attributes.dynamic_mode===!0,i=e.attributes.dynamic_entity??null,a=r?[]:this.config.pinned_station_ids??[],o=this._collectPinnedItems(a,t),s=new Set(o.filter(e=>e.kind===`live`).map(e=>e.stationId)),c=t.filter(e=>!s.has(e.stationId)),l=this._filterStations(c),u=this._sortStations(l),d=Math.max(1,this.config.max_stations??cn),f=[...o,...u.map(e=>({kind:`live`,station:e}))].slice(0,d),p=f.filter(e=>e.kind===`live`).map(e=>e.station);return{visible:f,liveAvailable:n,pinnedLiveStationIds:s,dynamicMode:r,dynamicEntity:i,filteredCount:l.length,totalCount:t.length,nearestByDistance:t[0],farthestShown:p[p.length-1]}}_renderCardHeader(e){if(this.config.hide_header)return P;let t=this.config.name,n=t&&t.trim()?t:`Ladestellen Austria`,r=e?this._heroCity(e):``;return M`<header class="header">
+    `}_toggleSlot(e){if(!e)return;let t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){let t=this.config?.car_color_mode??`random`;if(t===`theme`)return`var(--primary-color)`;if(t===`fixed`)return this.config?.car_color_fixed||`var(--primary-color)`;let n=[`#e63946`,`#1d4ed8`,`#15803d`,`#facc15`,`#fb923c`,`#ec4899`,`#0e7490`,`#6b21a8`,`#1f2937`,`#e5e7eb`],r=e??``,i=0;for(let e=0;e<r.length;e++)i=i*31+r.charCodeAt(e)>>>0;return n[i%n.length]??`#1f2937`}static{this.styles=St}};Y([V({attribute:!1})],Q.prototype,`hass`,void 0),Y([V({reflect:!0})],Q.prototype,`layout`,void 0),Y([H()],Q.prototype,`config`,void 0),Y([H()],Q.prototype,`_revealedSlots`,void 0),Y([H()],Q.prototype,`_versionMismatch`,void 0),Q=Y([B(`ladestellen-austria-parking-card`)],Q),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-card`,name:`Ladestellen Austria`,description:`Nearby EV charging stations, powered by E-Control Austria`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-card`)});var cn=10,$=class extends z{constructor(...e){super(...e),this._expanded=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-card-editor`)}static getStubConfig(e,t){return{entity:ut(t)}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));this.config={name:`Ladestellen Austria`,max_stations:cn,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_expanded`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){let e=this.config?.max_stations??cn;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:`auto`,min_columns:6,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_buildListView(e){let t=e.attributes.stations??[],n=e.attributes.live_status_available===!0,r=e.attributes.dynamic_mode===!0,i=e.attributes.dynamic_entity??null,a=r?[]:this.config.pinned_station_ids??[],o=this._collectPinnedItems(a,t),s=new Set(o.filter(e=>e.kind===`live`).map(e=>e.stationId)),c=t.filter(e=>!s.has(e.stationId)),l=this._filterStations(c),u=this._sortStations(l),d=Math.max(1,this.config.max_stations??cn),f=[...o,...u.map(e=>({kind:`live`,station:e}))].slice(0,d),p=f.filter(e=>e.kind===`live`).map(e=>e.station);return{visible:f,liveAvailable:n,pinnedLiveStationIds:s,dynamicMode:r,dynamicEntity:i,filteredCount:l.length,totalCount:t.length,nearestByDistance:t[0],farthestShown:p[p.length-1]}}_renderCardHeader(e){if(this.config.hide_header)return P;let t=this.config.name,n=t&&t.trim()?t:`Ladestellen Austria`,r=e?this._heroCity(e):``;return M`<header class="header">
       <div class="icon-tile" aria-hidden="true">
         <ha-icon icon="mdi:ev-station"></ha-icon>
       </div>
@@ -2741,4 +2739,4 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
               </span>`:P}
         </div>
       </div>
-    `}_formatOpeningHours(e){let t=[];for(let n of e){let e=this._formatSingleRange(n);e&&t.push(e)}return t}_formatSingleRange(e){let t=this._shortDay(e.fromWeekday),n=this._shortDay(e.toWeekday);if(!t||!n)return null;let r=e.fromTime===`00:00`&&(e.toTime===`23:59`||e.toTime===`24:00`);return{day:e.fromWeekday===e.toWeekday?t:`${t}–${n}`,time:r?W(`card.always_open_short`):`${e.fromTime}–${e.toTime}`}}_shortDay(e){switch((e??``).toUpperCase()){case`MONDAY`:return W(`weekday.mo`);case`TUESDAY`:return W(`weekday.tu`);case`WEDNESDAY`:return W(`weekday.we`);case`THURSDAY`:return W(`weekday.th`);case`FRIDAY`:return W(`weekday.fr`);case`SATURDAY`:return W(`weekday.sa`);case`SUNDAY`:return W(`weekday.su`);default:return``}}_paymentChips(e){let t=/* @__PURE__ */ new Set,n=[];for(let r of e)for(let e of r.authenticationMode??[]){if(t.has(e))continue;t.add(e);let r=this._authLabel(e);r&&n.push(r)}return n}_authLabel(e){switch(e){case`APP`:return{icon:`mdi:cellphone`,label:W(`auth.app`)};case`QR`:return{icon:`mdi:qrcode`,label:W(`auth.qr`)};case`RFID_READER`:return{icon:`mdi:credit-card-wireless-outline`,label:W(`auth.rfid`)};case`CHARGING_CONTRACT`:return{icon:`mdi:handshake-outline`,label:W(`auth.contract`)};case`DEBIT_CARD`:return{icon:`mdi:credit-card-outline`,label:W(`auth.debit`)};case`CREDIT_CARD`:return{icon:`mdi:credit-card`,label:W(`auth.credit`)};case`CONTACTLESS_CARD_SUPPORT`:return{icon:`mdi:contactless-payment`,label:W(`auth.contactless`)};default:return null}}_feesLine(e){let t=e.map(e=>e.startFeeCent??0).filter(e=>e>0),n=e.map(e=>({cent:e.blockingFeeCentMin??0,fromMin:e.blockingFeeFromMinute??0})).filter(e=>e.cent>0&&e.fromMin>0),r=[];if(t.length>0){let e=Math.max(...t);r.push(`+ ${J(e)} € ${W(`card.start_fee_label`)}`)}if(n.length>0){let e=Math.max(...n.map(e=>e.cent)),t=Math.min(...n.map(e=>e.fromMin));r.push(`${At(e)} ${W(`card.blocking_fee_label`).replaceAll(`{from}`,String(t))}`)}return r.length>0?r.join(`, `):null}_statusAria(e,t,n){return e===`inactive`?W(`card.inactive`):e===`unknown`?W(`card.status_unknown`):W(`card.available_count`).replaceAll(`{avail}`,String(t)).replaceAll(`{total}`,String(n))}_toggle(e){let t=new Set(this._expanded);t.has(e)?t.delete(e):t.add(e),this._expanded=t}_priceText(e){if(e.length===0)return``;if(e.some(e=>e.freeOfCharge))return W(`card.free_of_charge`);let t=e.filter(e=>!e.freeOfCharge&&e.priceCentKwh>0).map(e=>e.priceCentKwh);if(t.length>0)return`${J(Math.min(...t))} €/kWh`;let n=e.filter(e=>!e.freeOfCharge&&e.priceCentMin>0).map(e=>e.priceCentMin);return n.length>0?`${J(Math.min(...n))} €/min`:``}_address(e){let t=[];e.street&&t.push(e.street);let n=[e.postCode,e.city].filter(Boolean).join(` `);return n&&t.push(n),t.join(`, `)}_amenityItems(e){return[{flag:e.greenEnergy,icon:`mdi:leaf`,label:W(`amenities.green_energy`)},{flag:e.austrianEcoLabel,icon:`mdi:certificate-outline`,label:W(`amenities.austrian_ecolabel`)},{flag:e.freeParking,icon:`mdi:parking`,label:W(`amenities.free_parking`)},{flag:e.roofedParking,icon:`mdi:home-roof`,label:W(`amenities.roofed_parking`)},{flag:e.illuminatedParking,icon:`mdi:lightbulb-outline`,label:W(`amenities.illuminated_parking`)},{flag:(e.barrierFreeParkingPlaces??0)>0,icon:`mdi:wheelchair-accessibility`,label:W(`amenities.barrier_free`)},{flag:e.cateringService,icon:`mdi:silverware-fork-knife`,label:W(`amenities.catering`)},{flag:e.bathroomsAvailable,icon:`mdi:toilet`,label:W(`amenities.bathrooms`)},{flag:e.restingFacilities,icon:`mdi:sofa`,label:W(`amenities.resting`)}].filter(e=>e.flag)}_formatKm(e){let t=typeof e==`number`?e:parseFloat(String(e??``));if(!Number.isFinite(t))return`–`;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}static{this.styles=xt}};Y([V({attribute:!1})],$.prototype,`hass`,void 0),Y([H()],$.prototype,`config`,void 0),Y([H()],$.prototype,`_expanded`,void 0),Y([H()],$.prototype,`_versionMismatch`,void 0),$=Y([B(`ladestellen-austria-card`)],$);export{$ as LadestellenAustriaCard};
+    `}_formatOpeningHours(e){let t=[];for(let n of e){let e=this._formatSingleRange(n);e&&t.push(e)}return t}_formatSingleRange(e){let t=this._shortDay(e.fromWeekday),n=this._shortDay(e.toWeekday);if(!t||!n)return null;let r=e.fromTime===`00:00`&&(e.toTime===`23:59`||e.toTime===`24:00`);return{day:e.fromWeekday===e.toWeekday?t:`${t}–${n}`,time:r?W(`card.always_open_short`):`${e.fromTime}–${e.toTime}`}}_shortDay(e){switch((e??``).toUpperCase()){case`MONDAY`:return W(`weekday.mo`);case`TUESDAY`:return W(`weekday.tu`);case`WEDNESDAY`:return W(`weekday.we`);case`THURSDAY`:return W(`weekday.th`);case`FRIDAY`:return W(`weekday.fr`);case`SATURDAY`:return W(`weekday.sa`);case`SUNDAY`:return W(`weekday.su`);default:return``}}_paymentChips(e){let t=/* @__PURE__ */ new Set,n=[];for(let r of e)for(let e of r.authenticationMode??[]){if(t.has(e))continue;t.add(e);let r=this._authLabel(e);r&&n.push(r)}return n}_authLabel(e){switch(e){case`APP`:return{icon:`mdi:cellphone`,label:W(`auth.app`)};case`QR`:return{icon:`mdi:qrcode`,label:W(`auth.qr`)};case`RFID_READER`:return{icon:`mdi:credit-card-wireless-outline`,label:W(`auth.rfid`)};case`CHARGING_CONTRACT`:return{icon:`mdi:handshake-outline`,label:W(`auth.contract`)};case`DEBIT_CARD`:return{icon:`mdi:credit-card-outline`,label:W(`auth.debit`)};case`CREDIT_CARD`:return{icon:`mdi:credit-card`,label:W(`auth.credit`)};case`CONTACTLESS_CARD_SUPPORT`:return{icon:`mdi:contactless-payment`,label:W(`auth.contactless`)};default:return null}}_feesLine(e){let t=e.map(e=>e.startFeeCent??0).filter(e=>e>0),n=e.map(e=>({cent:e.blockingFeeCentMin??0,fromMin:e.blockingFeeFromMinute??0})).filter(e=>e.cent>0&&e.fromMin>0),r=[];if(t.length>0){let e=Math.max(...t);r.push(`+ ${J(e)} € ${W(`card.start_fee_label`)}`)}if(n.length>0){let e=Math.max(...n.map(e=>e.cent)),t=Math.min(...n.map(e=>e.fromMin));r.push(`${At(e)} ${W(`card.blocking_fee_label`).replaceAll(`{from}`,String(t))}`)}return r.length>0?r.join(`, `):null}_statusAria(e,t,n){return e===`inactive`?W(`card.inactive`):e===`unknown`?W(`card.status_unknown`):W(`card.available_count`).replaceAll(`{avail}`,String(t)).replaceAll(`{total}`,String(n))}_toggle(e){let t=new Set(this._expanded);t.has(e)?t.delete(e):t.add(e),this._expanded=t}_priceText(e){if(e.length===0)return``;if(e.some(e=>e.freeOfCharge))return W(`card.free_of_charge`);let t=e.filter(e=>!e.freeOfCharge&&e.priceCentKwh>0).map(e=>e.priceCentKwh);if(t.length>0)return`${J(Math.min(...t))} €/kWh`;let n=e.filter(e=>!e.freeOfCharge&&e.priceCentMin>0).map(e=>e.priceCentMin);return n.length>0?`${J(Math.min(...n))} €/min`:``}_address(e){let t=[];e.street&&t.push(e.street);let n=[e.postCode,e.city].filter(Boolean).join(` `);return n&&t.push(n),t.join(`, `)}_amenityItems(e){return[{flag:e.greenEnergy,icon:`mdi:leaf`,label:W(`amenities.green_energy`)},{flag:e.austrianEcoLabel,icon:`mdi:certificate-outline`,label:W(`amenities.austrian_ecolabel`)},{flag:e.freeParking,icon:`mdi:parking`,label:W(`amenities.free_parking`)},{flag:e.roofedParking,icon:`mdi:home-roof`,label:W(`amenities.roofed_parking`)},{flag:e.illuminatedParking,icon:`mdi:lightbulb-outline`,label:W(`amenities.illuminated_parking`)},{flag:(e.barrierFreeParkingPlaces??0)>0,icon:`mdi:wheelchair-accessibility`,label:W(`amenities.barrier_free`)},{flag:e.cateringService,icon:`mdi:silverware-fork-knife`,label:W(`amenities.catering`)},{flag:e.bathroomsAvailable,icon:`mdi:toilet`,label:W(`amenities.bathrooms`)},{flag:e.restingFacilities,icon:`mdi:sofa`,label:W(`amenities.resting`)}].filter(e=>e.flag)}_formatKm(e){let t=typeof e==`number`?e:parseFloat(String(e??``));if(!Number.isFinite(t))return`–`;try{return new Intl.NumberFormat(`de-AT`,{minimumFractionDigits:2,maximumFractionDigits:2}).format(t)}catch{return t.toFixed(2)}}static{this.styles=xt}};Y([V({attribute:!1})],$.prototype,`hass`,void 0),Y([V({reflect:!0})],$.prototype,`layout`,void 0),Y([H()],$.prototype,`config`,void 0),Y([H()],$.prototype,`_expanded`,void 0),Y([H()],$.prototype,`_versionMismatch`,void 0),$=Y([B(`ladestellen-austria-card`)],$);export{$ as LadestellenAustriaCard};

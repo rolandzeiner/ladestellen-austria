@@ -189,6 +189,34 @@ describe("Lit reactive properties survive decorator lowering", () => {
     expect(props.length).toBeGreaterThan(0);
     for (const name of expected) expect(props).toContain(name);
   });
+
+  // The grid-cell rules in styles.ts select on the layout attribute, which
+  // exists only if the property reflects (grid-cell.test.ts).
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s reflects layout",
+    (tag) => {
+      const ctor = customElements.get(tag) as unknown as typeof LitElement;
+      expect(ctor.getPropertyOptions("layout").reflect).toBe(true);
+    },
+  );
+
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s reflects a layout that arrives with an unchanged entity",
+    async (tag) => {
+      const el = await mount<
+        LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant; layout?: string }
+      >(tag, (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
+        e.hass = hass();
+      });
+      // A new hass whose entity state is the same object is the cycle that
+      // shouldUpdate would otherwise skip.
+      el.hass = { ...el.hass };
+      el.layout = "grid";
+      await el.updateComplete;
+      expect(el.getAttribute("layout")).toBe("grid");
+    },
+  );
 });
 
 describe("ladestellen-austria-card", () => {

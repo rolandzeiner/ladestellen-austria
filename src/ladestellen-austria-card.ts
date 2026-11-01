@@ -104,6 +104,10 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
+  // Set by HA: "grid" in a sections view, "panel" in a panel view, unset in
+  // the add-card picker and masonry. Reflected so the styles can fill the
+  // cell only when there is one -- see the grid-cell rules in styles.ts.
+  @property({ reflect: true }) public layout?: string;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
@@ -141,8 +145,12 @@ export class LadestellenAustriaCard extends LitElement {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
+    // Lit reflects attributes inside update(), so returning false here in
+    // the cycle that changes layout leaves the attribute stale and the
+    // grid-cell selectors in styles.ts never match.
     if (
       changedProps.has("config") ||
+      changedProps.has("layout") ||
       changedProps.has("_expanded") ||
       changedProps.has("_versionMismatch")
     ) {
