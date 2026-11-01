@@ -22,12 +22,19 @@ beforeAll(async () => {
 });
 
 function markup(root: ParentNode): string {
-  const html = root instanceof ShadowRoot ? root.innerHTML : (root as Element).outerHTML;
-  return html
-    .replace(/<!--[^]*?-->/g, "")
-    .replace(/>\s+</g, "><")
-    .replace(/\s+/g, " ")
-    .trim();
+  // Serialise a clone with its comment nodes removed, rather than
+  // regex-stripping `<!-- -->` from the HTML string.
+  const host = document.createElement("div");
+  if (root instanceof ShadowRoot) {
+    for (const child of root.childNodes) host.append(child.cloneNode(true));
+  } else {
+    host.append((root as Element).cloneNode(true));
+  }
+  const walker = document.createTreeWalker(host, NodeFilter.SHOW_COMMENT);
+  const comments: Node[] = [];
+  while (walker.nextNode()) comments.push(walker.currentNode);
+  for (const c of comments) c.parentNode?.removeChild(c);
+  return host.innerHTML.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
 }
 
 function station(over: Partial<Station> = {}): Station {
