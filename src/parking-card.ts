@@ -27,10 +27,16 @@ import type {
 } from "./types";
 import { carSvg } from "./car-svg";
 import { localize } from "./localize/localize";
-import { renderFooter, renderUnreachable, renderVersionBanner } from "./shared-render";
+import {
+  renderFooter,
+  renderMissingEntity,
+  renderUnreachable,
+  renderVersionBanner,
+} from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
+  isFixedHeight,
   runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
@@ -79,8 +85,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // cell only when there is one -- see the grid-cell rules in styles.ts.
   @property({ reflect: true }) public layout?: string;
   // Set by HA to true while the card is the live preview in the edit-card
-  // dialog. The version banner stays out of it: reloading from inside
-  // the editor would throw away the edit.
+  // dialog; renderVersionBanner keeps the reload banner out of it.
   @property({ type: Boolean }) public preview = false;
   @state() private config!: ParkingLotCardConfig;
   // Slots whose info-overlay is currently revealed by tap. Hover already
@@ -160,14 +165,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
-  // True in a sections cell with a set number of rows: stored grid_options
-  // win over getGridOptions(), so test the rows in force, not only the
-  // stored ones. Outside a sections cell (masonry, a stack, the picker)
-  // the card takes its natural height.
   private get _fixedHeight(): boolean {
-    if (this.layout !== "grid") return false;
-    const stored = (this.config?.grid_options as { rows?: unknown } | undefined)?.rows;
-    return typeof (stored ?? this.getGridOptions().rows) === "number";
+    return isFixedHeight(this.layout, this.config?.grid_options, this.getGridOptions().rows);
   }
 
   protected override willUpdate(changedProps: PropertyValues): void {
@@ -216,7 +215,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
           >
-            ${renderVersionBanner(this.preview ? null : this._versionMismatch)} ${body}
+            ${renderVersionBanner(this._versionMismatch, this.preview)} ${body}
           </div>
           ${opts.footer ?? nothing}
         </div>
@@ -307,18 +306,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     const stateObj = this.config.entity ? this.hass.states[this.config.entity] : undefined;
 
-    // A sensor that was picked but is gone gets HA's own missing-entity
-    // warning, naming the id the user has to look up; ha-alert brings
-    // role="alert". Nothing picked yet stays a neutral prompt.
     if (!stateObj) {
-      return this._renderShell(
-        this.config.entity
-          ? html`<ha-alert alert-type="warning"
-              >${localize("common.entity_unavailable", "{entity}", this.config.entity)}</ha-alert
-            >`
-          : html`<div class="empty-state" role="status">${localize("card.no_entity")}</div>`,
-        { footer: this._cardFooter() },
-      );
+      return this._renderShell(renderMissingEntity(this.config.entity), {
+        footer: this._cardFooter(),
+      });
     }
 
     const customTitle = this.config.name;

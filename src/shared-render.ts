@@ -70,10 +70,14 @@ function wasReloadAttemptedFor(version: string | null): boolean {
 /**
  * Render the version-mismatch banner. Returns the lit `nothing` sentinel
  * when there is no mismatch so call sites can splat it unconditionally
- * into their template.
+ * into their template. Never in the edit-dialog preview (`preview`):
+ * reloading from the editor would throw the unsaved edit away.
  */
-export function renderVersionBanner(mismatch: string | null): TemplateResult | typeof nothing {
-  if (!mismatch) return nothing;
+export function renderVersionBanner(
+  mismatch: string | null,
+  preview = false,
+): TemplateResult | typeof nothing {
+  if (!mismatch || preview) return nothing;
   // Stuck-reload anti-loop: if the user already clicked reload for this
   // exact mismatch in the current tab session and the mismatch is STILL
   // present, the cache invalidation didn't take effect (Service Worker,
@@ -157,4 +161,18 @@ export function renderFooter(
       <span class="attribution-text">${text}</span>
     </div>
   `;
+}
+
+/**
+ * What a card shows when its sensor isn't in hass.states. A sensor that was
+ * picked and has since gone gets HA's own missing-entity warning, naming
+ * the id the user has to look up (ha-alert brings role="alert"). Nothing
+ * picked yet stays a neutral prompt to open the editor.
+ */
+export function renderMissingEntity(entity: string | undefined): TemplateResult {
+  return entity
+    ? html`<ha-alert alert-type="warning"
+        >${localize("common.entity_unavailable", "{entity}", entity)}</ha-alert
+      >`
+    : html`<div class="empty-state" role="status">${localize("card.no_entity")}</div>`;
 }
