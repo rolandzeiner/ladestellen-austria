@@ -178,6 +178,16 @@ export class LadestellenAustriaCard extends LitElement {
     };
   }
 
+  // True in a sections cell with a set number of rows: stored grid_options
+  // win over getGridOptions(), so test the rows in force, not only the
+  // stored ones. Outside a sections cell (masonry, a stack, the picker)
+  // the card takes its natural height.
+  private get _fixedHeight(): boolean {
+    if (this.layout !== "grid") return false;
+    const stored = (this.config?.grid_options as { rows?: unknown } | undefined)?.rows;
+    return typeof (stored ?? this.getGridOptions().rows) === "number";
+  }
+
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     syncCardLanguage(changedProps, this.hass);
@@ -316,7 +326,7 @@ export class LadestellenAustriaCard extends LitElement {
     // Block on missing hass separately so the empty-state stays reactive:
     // when hass arrives, Lit re-renders and we proceed past this guard.
     if (!this.config || !this.hass) {
-      return html`<ha-card>
+      return html`<ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div class="wrap">
             <div class="empty-state">${localize("common.loading")}</div>
@@ -329,7 +339,7 @@ export class LadestellenAustriaCard extends LitElement {
 
     if (!stateObj) {
       return html`
-        <ha-card>
+        <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
           <div class="card-content">
             <div class="wrap">
               <div class="empty-state">${localize("card.no_entity")}</div>
@@ -346,7 +356,7 @@ export class LadestellenAustriaCard extends LitElement {
     // invites unpinning mid-outage. Show the notice in place of both.
     if (stateObj.state === "unavailable") {
       return html`
-        <ha-card>
+        <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
           <div class="card-content">
             <div class="wrap">
               ${renderVersionBanner(this._versionMismatch)}
@@ -361,7 +371,7 @@ export class LadestellenAustriaCard extends LitElement {
     const view = this._buildListView(stateObj);
 
     return html`
-      <ha-card>
+      <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div class="wrap">
             ${renderVersionBanner(this._versionMismatch)}

@@ -217,6 +217,35 @@ describe("Lit reactive properties survive decorator lowering", () => {
       expect(el.getAttribute("layout")).toBe("grid");
     },
   );
+
+  // ha-card.fixed-height turns .wrap into the scroller (styles.ts). It is
+  // set only for a sections cell whose rows in force are a number.
+  it.each([
+    ["ladestellen-austria-card", "grid", { rows: 4 }, true],
+    ["ladestellen-austria-card", "grid", { rows: "auto" }, false],
+    ["ladestellen-austria-card", "grid", undefined, false],
+    ["ladestellen-austria-card", undefined, { rows: 4 }, false],
+    ["ladestellen-austria-parking-card", "grid", { rows: 4 }, true],
+    ["ladestellen-austria-parking-card", "grid", undefined, false],
+  ])(
+    "%s with layout %s and grid_options %j is fixed-height: %s",
+    async (tag, layout, grid, fixed) => {
+      const el = await mount<
+        LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant; layout?: string }
+      >(tag, (e) => {
+        e.setConfig({
+          entity: "sensor.ladestellen_austria",
+          station_id: "at-1",
+          ...(grid ? { grid_options: grid } : {}),
+        });
+        e.hass = hass();
+        if (layout) e.layout = layout;
+      });
+      expect(el.shadowRoot!.querySelector("ha-card")!.classList.contains("fixed-height")).toBe(
+        fixed,
+      );
+    },
+  );
 });
 
 describe("ladestellen-austria-card", () => {

@@ -149,6 +149,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
+  // True in a sections cell with a set number of rows: stored grid_options
+  // win over getGridOptions(), so test the rows in force, not only the
+  // stored ones. Outside a sections cell (masonry, a stack, the picker)
+  // the card takes its natural height.
+  private get _fixedHeight(): boolean {
+    if (this.layout !== "grid") return false;
+    const stored = (this.config?.grid_options as { rows?: unknown } | undefined)?.rows;
+    return typeof (stored ?? this.getGridOptions().rows) === "number";
+  }
+
   protected override willUpdate(changedProps: PropertyValues): void {
     super.willUpdate(changedProps);
     syncCardLanguage(changedProps, this.hass);
@@ -186,7 +196,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     opts: { footer?: TemplateResult; accent?: boolean } = {},
   ): TemplateResult {
     return html`
-      <ha-card>
+      <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div
             class="wrap"

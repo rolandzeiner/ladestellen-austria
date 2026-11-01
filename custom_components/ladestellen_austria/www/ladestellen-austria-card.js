@@ -277,6 +277,29 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   :host([layout="panel"]) ha-card {
     block-size: 100%;
   }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
+  }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
      vocabulary. */
@@ -1089,6 +1112,15 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container lscard (inline-size < 360px) {
+    /* .station-loc never shrinks, so beside it the name is squeezed to a
+       character per line. Give the name the full row and put the
+       location under it. */
+    .row-secondary {
+      flex-wrap: wrap;
+    }
+    .station-name {
+      flex-basis: 100%;
+    }
     :host {
       --lade-pad-x: 14px;
       --lade-pad-y: 12px;
@@ -1507,6 +1539,29 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   :host([layout="grid"]) ha-card,
   :host([layout="panel"]) ha-card {
     block-size: 100%;
+  }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
   }
   .card-content {
     padding: 0;
@@ -2041,6 +2096,12 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     outline-offset: 2px;
     border-radius: 6px;
   }
+  /* The slots tile the lot edge to edge and .parking-lot clips to its
+     rounded corners, so a ring outside the slot is cut off. Draw it
+     inside instead. */
+  .parking-slot:focus-visible {
+    outline-offset: -4px;
+  }
   @media (forced-colors: active) {
     .parking-slot:focus-visible,
     a:focus-visible,
@@ -2333,8 +2394,8 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
           />
         </label>
       </div>
-    </div>`}static{this.styles=yt}};Y([V({attribute:!1})],Z.prototype,`hass`,void 0),Y([H()],Z.prototype,`_config`,void 0),Z=Y([B(`ladestellen-austria-parking-card-editor`)],Z),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-parking-card`,name:`Ladestellen Austria — Parking`,description:`Single station, points rendered as parking slots viewed from above.`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-parking-card`)});var Q=class extends z{constructor(...e){super(...e),this._revealedSlots=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-parking-card-editor`)}static getStubConfig(e,t){return{entity:ut(t),station_id:``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));if(e.station_id!==void 0&&typeof e.station_id!=`string`)throw Error(W(`common.invalid_station_id`));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`,...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_revealedSlots`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:`auto`,min_columns:4,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_renderShell(e,t={}){return M`
-      <ha-card>
+    </div>`}static{this.styles=yt}};Y([V({attribute:!1})],Z.prototype,`hass`,void 0),Y([H()],Z.prototype,`_config`,void 0),Z=Y([B(`ladestellen-austria-parking-card-editor`)],Z),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-parking-card`,name:`Ladestellen Austria — Parking`,description:`Single station, points rendered as parking slots viewed from above.`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-parking-card`)});var Q=class extends z{constructor(...e){super(...e),this._revealedSlots=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-parking-card-editor`)}static getStubConfig(e,t){return{entity:ut(t),station_id:``}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));if(e.station_id!==void 0&&typeof e.station_id!=`string`)throw Error(W(`common.invalid_station_id`));this.config={hide_header:!1,show_free_count:!0,logo_adapt_to_theme:!1,car_color_mode:`random`,asphalt_style:`default`,paint_width:`medium`,icon_paint_mode:`default`,...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_revealedSlots`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){return 3}getGridOptions(){return{columns:6,rows:`auto`,min_columns:4,min_rows:3}}get _fixedHeight(){return this.layout===`grid`&&typeof(this.config?.grid_options?.rows??this.getGridOptions().rows)==`number`}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_renderShell(e,t={}){return M`
+      <ha-card class=${this._fixedHeight?`fixed-height`:``}>
         <div class="card-content">
           <div
             class="wrap"
@@ -2427,7 +2488,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
         ${this._renderSlotOverlays(r,i?this._carColor(e.evseId):null)}
         ${this._renderSlotInner(e,c,u,l,d)}
       </button>
-    `}_toggleSlot(e){if(!e)return;let t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){let t=this.config?.car_color_mode??`random`;if(t===`theme`)return`var(--primary-color)`;if(t===`fixed`)return this.config?.car_color_fixed||`var(--primary-color)`;let n=[`#e63946`,`#1d4ed8`,`#15803d`,`#facc15`,`#fb923c`,`#ec4899`,`#0e7490`,`#6b21a8`,`#1f2937`,`#e5e7eb`],r=e??``,i=0;for(let e=0;e<r.length;e++)i=i*31+r.charCodeAt(e)>>>0;return n[i%n.length]??`#1f2937`}static{this.styles=St}};Y([V({attribute:!1})],Q.prototype,`hass`,void 0),Y([V({reflect:!0})],Q.prototype,`layout`,void 0),Y([H()],Q.prototype,`config`,void 0),Y([H()],Q.prototype,`_revealedSlots`,void 0),Y([H()],Q.prototype,`_versionMismatch`,void 0),Q=Y([B(`ladestellen-austria-parking-card`)],Q),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-card`,name:`Ladestellen Austria`,description:`Nearby EV charging stations, powered by E-Control Austria`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-card`)});var cn=10,$=class extends z{constructor(...e){super(...e),this._expanded=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-card-editor`)}static getStubConfig(e,t){return{entity:ut(t)}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));this.config={name:`Ladestellen Austria`,max_stations:cn,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_expanded`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){let e=this.config?.max_stations??cn;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:`auto`,min_columns:6,min_rows:3}}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_buildListView(e){let t=e.attributes.stations??[],n=e.attributes.live_status_available===!0,r=e.attributes.dynamic_mode===!0,i=e.attributes.dynamic_entity??null,a=r?[]:this.config.pinned_station_ids??[],o=this._collectPinnedItems(a,t),s=new Set(o.filter(e=>e.kind===`live`).map(e=>e.stationId)),c=t.filter(e=>!s.has(e.stationId)),l=this._filterStations(c),u=this._sortStations(l),d=Math.max(1,this.config.max_stations??cn),f=[...o,...u.map(e=>({kind:`live`,station:e}))].slice(0,d),p=f.filter(e=>e.kind===`live`).map(e=>e.station);return{visible:f,liveAvailable:n,pinnedLiveStationIds:s,dynamicMode:r,dynamicEntity:i,filteredCount:l.length,totalCount:t.length,nearestByDistance:t[0],farthestShown:p[p.length-1]}}_renderCardHeader(e){if(this.config.hide_header)return P;let t=this.config.name,n=t&&t.trim()?t:`Ladestellen Austria`,r=e?this._heroCity(e):``;return M`<header class="header">
+    `}_toggleSlot(e){if(!e)return;let t=new Set(this._revealedSlots);t.has(e)?t.delete(e):t.add(e),this._revealedSlots=t}_carColor(e){let t=this.config?.car_color_mode??`random`;if(t===`theme`)return`var(--primary-color)`;if(t===`fixed`)return this.config?.car_color_fixed||`var(--primary-color)`;let n=[`#e63946`,`#1d4ed8`,`#15803d`,`#facc15`,`#fb923c`,`#ec4899`,`#0e7490`,`#6b21a8`,`#1f2937`,`#e5e7eb`],r=e??``,i=0;for(let e=0;e<r.length;e++)i=i*31+r.charCodeAt(e)>>>0;return n[i%n.length]??`#1f2937`}static{this.styles=St}};Y([V({attribute:!1})],Q.prototype,`hass`,void 0),Y([V({reflect:!0})],Q.prototype,`layout`,void 0),Y([H()],Q.prototype,`config`,void 0),Y([H()],Q.prototype,`_revealedSlots`,void 0),Y([H()],Q.prototype,`_versionMismatch`,void 0),Q=Y([B(`ladestellen-austria-parking-card`)],Q),window.customCards=window.customCards??[],window.customCards.push({type:`ladestellen-austria-card`,name:`Ladestellen Austria`,description:`Nearby EV charging stations, powered by E-Control Austria`,preview:!0,documentationURL:`https://github.com/rolandzeiner/ladestellen-austria`,getEntitySuggestion:pt(`custom:ladestellen-austria-card`)});var cn=10,$=class extends z{constructor(...e){super(...e),this._expanded=/* @__PURE__ */ new Set,this._versionMismatch=null}static getConfigElement(){return document.createElement(`ladestellen-austria-card-editor`)}static getStubConfig(e,t){return{entity:ut(t)}}setConfig(e){if(!e||typeof e!=`object`)throw Error(W(`common.invalid_configuration`));if(e.entity!==void 0&&typeof e.entity!=`string`)throw Error(W(`common.invalid_entity`));this.config={name:`Ladestellen Austria`,max_stations:cn,show_hero:!0,show_amenities:!0,show_pricing:!0,sort_by_power:!1,logo_adapt_to_theme:!1,only_available:!1,only_free:!1,only_open:!1,connector_types:[],amenities:[],payment_methods:[],pinned_station_ids:[],...e}}shouldUpdate(e){return e.has(`config`)||e.has(`layout`)||e.has(`_expanded`)||e.has(`_versionMismatch`)?!0:lt(e,this.hass,this.config.entity)}getCardSize(){let e=this.config?.max_stations??cn;return Math.min(3+Math.ceil(e/3),10)}getGridOptions(){return{columns:12,rows:`auto`,min_columns:6,min_rows:3}}get _fixedHeight(){return this.layout===`grid`&&typeof(this.config?.grid_options?.rows??this.getGridOptions().rows)==`number`}willUpdate(e){super.willUpdate(e),K(e,this.hass)}firstUpdated(e){this._runVersionCheck()}updated(e){super.updated(e),e.has(`hass`)&&this._runVersionCheck()}_runVersionCheck(){ft(this,e=>{this._versionMismatch=e})}_buildListView(e){let t=e.attributes.stations??[],n=e.attributes.live_status_available===!0,r=e.attributes.dynamic_mode===!0,i=e.attributes.dynamic_entity??null,a=r?[]:this.config.pinned_station_ids??[],o=this._collectPinnedItems(a,t),s=new Set(o.filter(e=>e.kind===`live`).map(e=>e.stationId)),c=t.filter(e=>!s.has(e.stationId)),l=this._filterStations(c),u=this._sortStations(l),d=Math.max(1,this.config.max_stations??cn),f=[...o,...u.map(e=>({kind:`live`,station:e}))].slice(0,d),p=f.filter(e=>e.kind===`live`).map(e=>e.station);return{visible:f,liveAvailable:n,pinnedLiveStationIds:s,dynamicMode:r,dynamicEntity:i,filteredCount:l.length,totalCount:t.length,nearestByDistance:t[0],farthestShown:p[p.length-1]}}_renderCardHeader(e){if(this.config.hide_header)return P;let t=this.config.name,n=t&&t.trim()?t:`Ladestellen Austria`,r=e?this._heroCity(e):``;return M`<header class="header">
       <div class="icon-tile" aria-hidden="true">
         <ha-icon icon="mdi:ev-station"></ha-icon>
       </div>
@@ -2446,14 +2507,14 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
         ${W(`card.no_stations`)}
       </div>`:M`<ul class="stations" role="list">
       ${e.visible.map(t=>t.kind===`live`?this._renderStation(t.station,e.liveAvailable,e.pinnedLiveStationIds.has(t.station.stationId)):this._renderOrphanPin(t.id))}
-    </ul>`}render(){if(!this.config||!this.hass)return M`<ha-card>
+    </ul>`}render(){if(!this.config||!this.hass)return M`<ha-card class=${this._fixedHeight?`fixed-height`:``}>
         <div class="card-content">
           <div class="wrap">
             <div class="empty-state">${W(`common.loading`)}</div>
           </div>
         </div>
       </ha-card>`;let e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return M`
-        <ha-card>
+        <ha-card class=${this._fixedHeight?`fixed-height`:``}>
           <div class="card-content">
             <div class="wrap">
               <div class="empty-state">${W(`card.no_entity`)}</div>
@@ -2462,7 +2523,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
           </div>
         </ha-card>
       `;if(e.state===`unavailable`)return M`
-        <ha-card>
+        <ha-card class=${this._fixedHeight?`fixed-height`:``}>
           <div class="card-content">
             <div class="wrap">
               ${at(this._versionMismatch)}
@@ -2472,7 +2533,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
           </div>
         </ha-card>
       `;let t=this._buildListView(e);return M`
-      <ha-card>
+      <ha-card class=${this._fixedHeight?`fixed-height`:``}>
         <div class="card-content">
           <div class="wrap">
             ${at(this._versionMismatch)}

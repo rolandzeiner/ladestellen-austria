@@ -238,6 +238,29 @@ const cardOwnStyles = css`
   :host([layout="panel"]) ha-card {
     block-size: 100%;
   }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
+  }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
      vocabulary. */
@@ -1050,6 +1073,15 @@ const cardOwnStyles = css`
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container lscard (inline-size < 360px) {
+    /* .station-loc never shrinks, so beside it the name is squeezed to a
+       character per line. Give the name the full row and put the
+       location under it. */
+    .row-secondary {
+      flex-wrap: wrap;
+    }
+    .station-name {
+      flex-basis: 100%;
+    }
     :host {
       --lade-pad-x: 14px;
       --lade-pad-y: 12px;
@@ -1489,6 +1521,29 @@ const parkingOwnStyles = css`
   :host([layout="grid"]) ha-card,
   :host([layout="panel"]) ha-card {
     block-size: 100%;
+  }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
   }
   .card-content {
     padding: 0;
@@ -2022,6 +2077,12 @@ const parkingOwnStyles = css`
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
     border-radius: 6px;
+  }
+  /* The slots tile the lot edge to edge and .parking-lot clips to its
+     rounded corners, so a ring outside the slot is cut off. Draw it
+     inside instead. */
+  .parking-slot:focus-visible {
+    outline-offset: -4px;
   }
   @media (forced-colors: active) {
     .parking-slot:focus-visible,
