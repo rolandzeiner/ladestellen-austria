@@ -1205,6 +1205,32 @@ const editorOwnStyles = css`
     flex-direction: column;
     gap: var(--ha-space-2, 8px);
   }
+  /* One group per part of the card (ha-expansion-panel). Its body is a
+     column of forms and hand-written fields, split by the hr rules. */
+  .panel-body {
+    padding: 4px 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-3, 12px);
+  }
+  hr {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--divider-color);
+    inline-size: 100%;
+  }
+  /* A hand-written field: label, control, then the helper below it, the
+     way ha-form lays out its own. */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-2, 8px);
+  }
+  .field-label {
+    font-size: var(--ha-font-size-m, 14px);
+    font-weight: 500;
+    color: var(--primary-text-color);
+  }
   .section-header {
     font-size: var(--ha-font-size-xs, 10px);
     font-weight: 600;
@@ -1338,19 +1364,12 @@ const editorOwnStyles = css`
     overflow-wrap: anywhere;
   }
 
-  /* Each filter dimension (connector / amenity / payment) is its own
-     labelled group. The rule is the only thing telling a reader where
-     one dimension ends and the next begins — the three chip rows are
-     otherwise a single undifferentiated field of pills. */
+  /* Each filter dimension (connector / payment / amenity) is its own
+     labelled group: label, chips, then the helper saying how it combines. */
   .chip-group {
     display: flex;
     flex-direction: column;
     gap: var(--ha-space-2, 8px);
-  }
-  .chip-group + .chip-group {
-    margin-top: var(--ha-space-2, 8px);
-    padding-top: var(--ha-space-3, 12px);
-    border-top: 1px solid var(--divider-color);
   }
 
   /* Palette-swatch chip — used by the parking card's "Eigene Farbe"

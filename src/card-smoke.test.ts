@@ -908,7 +908,7 @@ describe("editors", () => {
   it("exposes the station picker as a radio group", async () => {
     const el = await mountEditor("ladestellen-austria-parking-card-editor");
     const root = el.shadowRoot!;
-    expect(root.getElementById("station-picker-heading")?.getAttribute("role")).toBe("heading");
+    expect(root.getElementById("station-picker-heading")?.textContent?.trim()).toBeTruthy();
     // The group renders only once stations are present; the labelling
     // target must exist either way so the wiring cannot rot silently.
     const group = root.querySelector('[role="radiogroup"]');
@@ -935,10 +935,14 @@ describe("editors", () => {
 
 describe("parking editor forms", () => {
   type ParkingEditor = LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant };
-  type FormEl = HTMLElement & { schema: unknown };
+  type FormEl = HTMLElement & { schema: ReadonlyArray<{ name?: string }> };
 
   const withLanguage = (language: string) => ({ ...hass(), language }) as HomeAssistant;
-  const forms = (el: LitElement) => [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")];
+  /** The ha-form that holds the field `name`. */
+  const formWith = (el: LitElement, name: string) =>
+    [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")].find((f) =>
+      f.schema.some((field) => field.name === name),
+    )!;
 
   const mountEditor = () =>
     mount<ParkingEditor>("ladestellen-austria-parking-card-editor", (e) => {
@@ -946,20 +950,21 @@ describe("parking editor forms", () => {
       e.hass = withLanguage("en");
     });
 
-  it("keeps the appearance schema identity until the language changes", async () => {
+  it("keeps the lot schemas' identity until the language changes", async () => {
     const el = await mountEditor();
-    expect(forms(el)).toHaveLength(2);
-    const english = forms(el)[1]!.schema;
+    const english = formWith(el, "paint_width").schema;
+    const englishCars = formWith(el, "car_color_mode").schema;
 
-    // A new hass object in the same language must not rebuild the schema:
+    // A new hass object in the same language must not rebuild a schema:
     // ha-form skips work on an identical array.
     el.hass = withLanguage("en");
     await el.updateComplete;
-    expect(forms(el)[1]!.schema).toBe(english);
+    expect(formWith(el, "paint_width").schema).toBe(english);
+    expect(formWith(el, "car_color_mode").schema).toBe(englishCars);
 
     el.hass = withLanguage("de");
     await el.updateComplete;
-    const german = forms(el)[1]!.schema;
+    const german = formWith(el, "paint_width").schema;
     expect(german).not.toBe(english);
     expect(JSON.stringify(german)).not.toBe(JSON.stringify(english));
   });
@@ -970,7 +975,9 @@ describe("parking editor forms", () => {
     el.addEventListener("config-changed", (ev) => seen.push((ev as CustomEvent).detail.config));
     const next = { entity: "sensor.ladestellen_austria", car_color_mode: "fixed" };
 
-    forms(el)[1]!.dispatchEvent(new CustomEvent("value-changed", { detail: { value: next } }));
+    formWith(el, "car_color_mode").dispatchEvent(
+      new CustomEvent("value-changed", { detail: { value: next } }),
+    );
     await el.updateComplete;
 
     expect(seen).toEqual([next]);
@@ -978,5 +985,21 @@ describe("parking editor forms", () => {
     // config; the dashboard does not push a config-changed it received from
     // the editor back via setConfig.
     expect(el.shadowRoot!.querySelector('input[type="color"]')).not.toBeNull();
+  });
+
+  it("redraws the single-colour tile in the picked colour", async () => {
+    const el = await mountEditor();
+    el.setConfig({ entity: "sensor.ladestellen_austria", car_color_mode: "fixed" });
+    await el.updateComplete;
+    const before = formWith(el, "car_color_mode").schema;
+
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>('input[type="color"]')!;
+    input.value = "#ff8800";
+    input.dispatchEvent(new Event("input"));
+    await el.updateComplete;
+
+    const after = formWith(el, "car_color_mode").schema;
+    expect(after).not.toBe(before);
+    expect(JSON.stringify(after)).toContain(encodeURIComponent("#ff8800"));
   });
 });
