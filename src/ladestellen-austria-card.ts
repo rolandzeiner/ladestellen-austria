@@ -720,8 +720,8 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   // Expanded-panel layout (top → bottom):
-  //   Operator · Ladepunkte (rack [+ fees line]) · Öffnungszeiten (+ live chip)
-  //   · Bezahlung · Ausstattung · Adresse · Actions.
+  //   Operator · Hinweis · Ladepunkte (rack [+ fees line]) · Öffnungszeiten
+  //   (+ live chip) · Bezahlung · Ausstattung · Adresse · Actions.
   private _renderStationDetail(
     station: Station,
     openNow: boolean | null,
@@ -819,7 +819,6 @@ export class LadestellenAustriaCard extends LitElement {
     </div>`;
   }
 
-  // Every link stops propagation so a tap doesn't also toggle the row.
   private _renderActions(station: Station, mapsUrl: string): TemplateResult {
     return html`<div class="actions">
       ${
@@ -864,8 +863,6 @@ export class LadestellenAustriaCard extends LitElement {
   ): TemplateResult | typeof nothing {
     const url = safeHttpsUri(raw);
     if (!url) return nothing;
-    // aria-hidden is bound only to keep it after `icon` in the markup:
-    // Lit writes bound attributes after the static ones.
     return html`<a
       class="btn-secondary"
       href=${url}
@@ -873,7 +870,7 @@ export class LadestellenAustriaCard extends LitElement {
       rel="noopener noreferrer"
       @click=${(ev: Event) => ev.stopPropagation()}
     >
-      <ha-icon icon=${icon} aria-hidden=${"true"}></ha-icon>
+      <ha-icon icon=${icon} aria-hidden="true"></ha-icon>
       <span>${label}</span>
     </a>`;
   }

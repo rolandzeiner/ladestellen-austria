@@ -2686,7 +2686,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
       rel="noopener noreferrer"
       @click=${e=>e.stopPropagation()}
     >
-      <ha-icon icon=${t} aria-hidden=${`true`}></ha-icon>
+      <ha-icon icon=${t} aria-hidden="true"></ha-icon>
       <span>${n}</span>
     </a>`:P}_renderRack(e){return M`
       <div class="rack">

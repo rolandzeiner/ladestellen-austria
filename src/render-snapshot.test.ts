@@ -5,10 +5,11 @@
  *
  * Both are long hand-written templates with many optional branches, so a
  * restructuring can drop an attribute or reorder a section without any
- * behavioural test noticing. These snapshots pin the rendered markup for
- * each branch. Lit's marker comments are stripped (their ids are random
- * per run) and whitespace between tags is removed, so re-indenting a
- * template does not change a snapshot.
+ * behavioural test noticing. These snapshots pin the rendered markup of
+ * the main branches. All HTML comments are stripped (Lit's part markers
+ * carry a random id per load), whitespace between tags is dropped and any
+ * other run collapses to one space, so re-indenting a template does not
+ * change a snapshot; joining a text node onto its tag's line does.
  */
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
