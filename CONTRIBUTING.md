@@ -59,6 +59,12 @@ pytest tests/test_diagnostics.py --snapshot-update
 
 Commit the updated `.ambr` file alongside the code change so the diff is reviewable.
 
+On the card side, `src/render-snapshot.test.ts` pins the markup of the station detail panel and the parking editor, one snapshot per optional branch, under `src/__snapshots__/`. Lit's marker comments and the whitespace between tags are stripped, so re-indenting a template changes nothing. After an intentional markup change, regenerate and review the diff:
+
+```bash
+npx vp test run -u src/render-snapshot.test.ts
+```
+
 ## Verification gate (must pass before pushing)
 
 ```bash
@@ -82,7 +88,7 @@ treats the repo root as a project, finds no `requires-python`, and rebuilds
 
 Python coverage **is** gated: `pytest.ini` carries `--cov-fail-under=90` in
 `addopts`, so any `pytest` run that drops the package below 90 % fails
-(it currently sits at ~94 %).
+(it currently sits at ~95 %).
 
 The card side is not gated, so the v8 coverage provider is not a dependency.
 To see which branches a change left unexercised, install it for one run at the
