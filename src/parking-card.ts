@@ -302,10 +302,18 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     const stateObj = this.config.entity ? this.hass.states[this.config.entity] : undefined;
 
+    // A sensor that was picked but is gone gets HA's own missing-entity
+    // warning, naming the id the user has to look up; ha-alert brings
+    // role="alert". Nothing picked yet stays a neutral prompt.
     if (!stateObj) {
-      return this._renderShell(html`<div class="empty-state">${localize("card.no_entity")}</div>`, {
-        footer: this._cardFooter(),
-      });
+      return this._renderShell(
+        this.config.entity
+          ? html`<ha-alert alert-type="warning"
+              >${localize("common.entity_unavailable", "{entity}", this.config.entity)}</ha-alert
+            >`
+          : html`<div class="empty-state" role="status">${localize("card.no_entity")}</div>`,
+        { footer: this._cardFooter() },
+      );
     }
 
     const customTitle = this.config.name;

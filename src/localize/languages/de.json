@@ -4,6 +4,7 @@
     "invalid_entity": "Kartenkonfiguration: „entity“ muss ein String mit einer Sensor-entity_id sein.",
     "invalid_station_id": "Kartenkonfiguration: „station_id“ muss ein String sein.",
     "loading": "Lade…",
+    "entity_unavailable": "Entität nicht verfügbar: {entity}",
     "version_update": "Eine neuere Kartenversion ({v}) ist verfügbar. Bitte neu laden.",
     "version_reload": "Neu laden",
     "version_reload_stuck": "Neu laden hat die neue Version nicht übernommen. Schließe diesen Browser-Tab und öffne das Dashboard erneut, oder lösche die Website-Daten für Home Assistant in den Browser-Einstellungen."

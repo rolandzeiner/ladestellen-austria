@@ -319,16 +319,28 @@ describe("ladestellen-austria-card", () => {
     );
     expect(el.shadowRoot?.textContent ?? "").toContain("Bare");
   });
+});
 
-  it("renders an empty-state for an unknown entity", async () => {
-    const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
-      "ladestellen-austria-card",
-      (e) => {
-        e.setConfig({ entity: "sensor.does_not_exist" });
-        e.hass = hass();
-      },
-    );
-    expect(el.shadowRoot?.querySelector(".empty-state")).not.toBeNull();
+describe("missing sensor", () => {
+  const cards = ["ladestellen-austria-card", "ladestellen-austria-parking-card"];
+  const mountWith = (tag: string, entity?: string) =>
+    mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(tag, (e) => {
+      e.setConfig(entity ? { entity, station_id: "at-1" } : { station_id: "at-1" });
+      e.hass = hass();
+    });
+
+  it.each(cards)("%s names a configured sensor that is gone in a warning", async (tag) => {
+    const el = await mountWith(tag, "sensor.does_not_exist");
+    const alert = el.shadowRoot!.querySelector("ha-alert");
+    expect(alert?.getAttribute("alert-type")).toBe("warning");
+    expect(alert?.textContent?.trim()).toBe("Entity not available: sensor.does_not_exist");
+    expect(el.shadowRoot!.querySelector(".empty-state")).toBeNull();
+  });
+
+  it.each(cards)("%s keeps a neutral prompt when nothing is picked yet", async (tag) => {
+    const el = await mountWith(tag);
+    expect(el.shadowRoot!.querySelector("ha-alert")).toBeNull();
+    expect(el.shadowRoot!.querySelector('.empty-state[role="status"]')).not.toBeNull();
   });
 });
 
