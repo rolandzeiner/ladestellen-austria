@@ -129,10 +129,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   public getCardSize(): number {
-    // Fixed estimate: header + a small slot grid. Most stations have only
-    // a handful of points, so 3 is a reasonable constant — getCardSize is
-    // a layout hint, not a measured value.
-    return 3;
+    // In units of 50 px. Measured in a 400 px column, about masonry's
+    // width, which fits three slots per row: 57 px of padding and footer,
+    // 52 px of header, 120 px per row of slots. Before the station
+    // resolves there are no slots, which gives 3.
+    const entity = this.config.entity ? this.hass?.states[this.config.entity] : undefined;
+    const stations = (entity?.attributes["stations"] ?? []) as Station[];
+    const station = stations.find((s) => s.stationId === this.config.station_id);
+    const slotRows = Math.ceil((station?.points?.length ?? 0) / 3);
+    const px = 57 + (this.config.hide_header ? 0 : 52) + 120 * slotRows;
+    return Math.ceil(px / 50);
   }
 
   public getGridOptions(): {

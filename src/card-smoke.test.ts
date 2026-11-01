@@ -791,6 +791,42 @@ describe("ladestellen-austria-parking-card", () => {
   });
 });
 
+describe("parking card size", () => {
+  type Parking = LitElement & {
+    setConfig: (c: unknown) => void;
+    hass: HomeAssistant;
+    getCardSize: () => number;
+  };
+  const withPoints = (n: number) =>
+    station({
+      points: Array.from({ length: n }, (_, i) => ({ ...basePoint(), evseId: `AT*TST*E${i}` })),
+    } as Partial<Station>);
+  const size = async (n: number, config: Record<string, unknown> = {}) =>
+    (
+      await mount<Parking>("ladestellen-austria-parking-card", (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1", ...config });
+        e.hass = hass([withPoints(n)]);
+      })
+    ).getCardSize();
+
+  // Rendered heights in a 400 px column: 229, 349 and 589 px with the
+  // header, 537 px without it.
+  it.each([
+    [1, {}, 5],
+    [5, {}, 7],
+    [11, {}, 12],
+    [11, { hide_header: true }, 11],
+  ])("is %i slots with %j → %i", async (n, config, expected) => {
+    expect(await size(n, config)).toBe(expected);
+  });
+
+  it("falls back to 3 before the station resolves", () => {
+    const el = document.createElement("ladestellen-austria-parking-card") as Parking;
+    el.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
+    expect(el.getCardSize()).toBe(3);
+  });
+});
+
 describe("editors", () => {
   it.each(["ladestellen-austria-card-editor", "ladestellen-austria-parking-card-editor"])(
     "%s renders without hass",
