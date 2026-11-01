@@ -8,5 +8,5 @@ pytest-homeassistant-custom-component>=0.13.375,<0.14
 # does nothing, or contradicts it and makes the install unresolvable.
 # pytest.ini's `timeout` setting and `--cov` still work: both plugins
 # arrive transitively via PHACC.
-mypy==2.4.0
-ruff==0.17.2
+mypy==2.4.1
+ruff==0.17.3
