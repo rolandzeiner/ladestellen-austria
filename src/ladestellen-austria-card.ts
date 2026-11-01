@@ -108,6 +108,10 @@ export class LadestellenAustriaCard extends LitElement {
   // the add-card picker and masonry. Reflected so the styles can fill the
   // cell only when there is one -- see the grid-cell rules in styles.ts.
   @property({ reflect: true }) public layout?: string;
+  // Set by HA to true while the card is the live preview in the edit-card
+  // dialog. The version banner stays out of it: reloading from inside
+  // the editor would throw away the edit.
+  @property({ type: Boolean }) public preview = false;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
@@ -151,6 +155,7 @@ export class LadestellenAustriaCard extends LitElement {
     if (
       changedProps.has("config") ||
       changedProps.has("layout") ||
+      changedProps.has("preview") ||
       changedProps.has("_expanded") ||
       changedProps.has("_versionMismatch")
     ) {
@@ -368,7 +373,7 @@ export class LadestellenAustriaCard extends LitElement {
         <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
           <div class="card-content">
             <div class="wrap">
-              ${renderVersionBanner(this._versionMismatch)}
+              ${renderVersionBanner(this.preview ? null : this._versionMismatch)}
               ${this._renderCardHeader(undefined)} ${renderUnreachable()}
             </div>
             ${renderFooter(this.hass, undefined, this.config.logo_adapt_to_theme === true)}
@@ -383,7 +388,7 @@ export class LadestellenAustriaCard extends LitElement {
       <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div class="wrap">
-            ${renderVersionBanner(this._versionMismatch)}
+            ${renderVersionBanner(this.preview ? null : this._versionMismatch)}
             ${this._renderCardHeader(view.nearestByDistance)}
             ${
               this.config.show_hero !== false

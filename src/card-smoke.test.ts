@@ -321,6 +321,30 @@ describe("ladestellen-austria-card", () => {
   });
 });
 
+describe("edit-dialog preview", () => {
+  type Card = LitElement & {
+    setConfig: (c: unknown) => void;
+    hass: HomeAssistant;
+    preview: boolean;
+  };
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s keeps the version banner out of the preview",
+    async (tag) => {
+      const el = await mount<Card>(tag, (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
+        e.hass = hass();
+      });
+      (el as unknown as { _versionMismatch: string | null })._versionMismatch = "9.9.9";
+      await el.updateComplete;
+      expect(el.shadowRoot!.querySelector(".version-notice")).not.toBeNull();
+
+      el.preview = true;
+      await el.updateComplete;
+      expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+    },
+  );
+});
+
 describe("missing sensor", () => {
   const cards = ["ladestellen-austria-card", "ladestellen-austria-parking-card"];
   const mountWith = (tag: string, entity?: string) =>

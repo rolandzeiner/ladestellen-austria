@@ -78,6 +78,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // the add-card picker and masonry. Reflected so the styles can fill the
   // cell only when there is one -- see the grid-cell rules in styles.ts.
   @property({ reflect: true }) public layout?: string;
+  // Set by HA to true while the card is the live preview in the edit-card
+  // dialog. The version banner stays out of it: reloading from inside
+  // the editor would throw away the edit.
+  @property({ type: Boolean }) public preview = false;
   @state() private config!: ParkingLotCardConfig;
   // Slots whose info-overlay is currently revealed by tap. Hover already
   // reveals on desktop via CSS :hover; this set covers touch devices
@@ -120,6 +124,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     if (
       changedProps.has("config") ||
       changedProps.has("layout") ||
+      changedProps.has("preview") ||
       changedProps.has("_revealedSlots") ||
       changedProps.has("_versionMismatch")
     ) {
@@ -211,7 +216,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
           >
-            ${renderVersionBanner(this._versionMismatch)} ${body}
+            ${renderVersionBanner(this.preview ? null : this._versionMismatch)} ${body}
           </div>
           ${opts.footer ?? nothing}
         </div>
