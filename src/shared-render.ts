@@ -1,5 +1,5 @@
-// Shared render helpers used by both cards: the version banner and the
-// attribution footer live here so neither card carries its own copy.
+// Shared render helpers used by both cards: the version banner, the
+// "can't reach E-Control" notice and the attribution footer live here so neither card carries its own copy.
 // Pure functions — the cards keep their own @state and call these from
 // render() / event handlers. Lifecycle helpers (language sync, the
 // version probe, the shouldUpdate tail) live in card-lifecycle.ts.
@@ -70,10 +70,14 @@ function wasReloadAttemptedFor(version: string | null): boolean {
 /**
  * Render the version-mismatch banner. Returns the lit `nothing` sentinel
  * when there is no mismatch so call sites can splat it unconditionally
- * into their template.
+ * into their template. Never in the edit-dialog preview (`preview`):
+ * reloading from the editor would throw the unsaved edit away.
  */
-export function renderVersionBanner(mismatch: string | null): TemplateResult | typeof nothing {
-  if (!mismatch) return nothing;
+export function renderVersionBanner(
+  mismatch: string | null,
+  preview = false,
+): TemplateResult | typeof nothing {
+  if (!mismatch || preview) return nothing;
   // Stuck-reload anti-loop: if the user already clicked reload for this
   // exact mismatch in the current tab session and the mismatch is STILL
   // present, the cache invalidation didn't take effect (Service Worker,
@@ -99,6 +103,23 @@ export function renderVersionBanner(mismatch: string | null): TemplateResult | t
       >
         ${localize("common.version_reload")}
       </button>
+    </div>
+  `;
+}
+
+/**
+ * The notice both cards show while their sensor is unavailable. Without it
+ * an outage reads like a real answer ("No stations match the current
+ * filters", "not in the sensor's current results"), which looks like a
+ * broken setup. It doesn't say whose fault it is: the integration's Repairs
+ * issue does that, once it can tell E-Control's side from the user's own
+ * network.
+ */
+export function renderUnreachable(): TemplateResult {
+  return html`
+    <div class="empty-state unreachable" role="status" aria-live="polite">
+      <div class="unreachable-title">${localize("card.unreachable")}</div>
+      <div class="unreachable-detail">${localize("card.unreachable_detail")}</div>
     </div>
   `;
 }
@@ -140,4 +161,18 @@ export function renderFooter(
       <span class="attribution-text">${text}</span>
     </div>
   `;
+}
+
+/**
+ * What a card shows when its sensor isn't in hass.states. A sensor that was
+ * picked and has since gone gets HA's own missing-entity warning, naming
+ * the id the user has to look up (ha-alert brings role="alert"). Nothing
+ * picked yet stays a neutral prompt to open the editor.
+ */
+export function renderMissingEntity(entity: string | undefined): TemplateResult {
+  return entity
+    ? html`<ha-alert alert-type="warning"
+        >${localize("common.entity_unavailable", "{entity}", entity)}</ha-alert
+      >`
+    : html`<div class="empty-state" role="status">${localize("card.no_entity")}</div>`;
 }

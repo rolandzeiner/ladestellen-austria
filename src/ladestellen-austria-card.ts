@@ -28,10 +28,16 @@ import {
   type Station,
 } from "./types";
 import { localize } from "./localize/localize";
-import { renderFooter, renderVersionBanner } from "./shared-render";
+import {
+  renderFooter,
+  renderMissingEntity,
+  renderUnreachable,
+  renderVersionBanner,
+} from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
+  isFixedHeight,
   runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
@@ -104,6 +110,13 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
+  // Set by HA: "grid" in a sections view, "panel" in a panel view, unset in
+  // the add-card picker and masonry. Reflected so the styles can fill the
+  // cell only when there is one -- see the grid-cell rules in styles.ts.
+  @property({ reflect: true }) public layout?: string;
+  // Set by HA to true while the card is the live preview in the edit-card
+  // dialog; renderVersionBanner keeps the reload banner out of it.
+  @property({ type: Boolean }) public preview = false;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
   @state() private _versionMismatch: string | null = null;
@@ -141,8 +154,13 @@ export class LadestellenAustriaCard extends LitElement {
     // Lit calls shouldUpdate before the first render only after a
     // property change; HA's Lovelace pipeline always invokes setConfig
     // synchronously before mounting, so this.config is non-null here.
+    // Lit reflects attributes inside update(), so returning false here in
+    // the cycle that changes layout leaves the attribute stale and the
+    // grid-cell selectors in styles.ts never match.
     if (
       changedProps.has("config") ||
+      changedProps.has("layout") ||
+      changedProps.has("preview") ||
       changedProps.has("_expanded") ||
       changedProps.has("_versionMismatch")
     ) {
@@ -168,6 +186,10 @@ export class LadestellenAustriaCard extends LitElement {
       min_columns: 6,
       min_rows: 3,
     };
+  }
+
+  private get _fixedHeight(): boolean {
+    return isFixedHeight(this.layout, this.config?.grid_options, this.getGridOptions().rows);
   }
 
   protected override willUpdate(changedProps: PropertyValues): void {
@@ -308,7 +330,7 @@ export class LadestellenAustriaCard extends LitElement {
     // Block on missing hass separately so the empty-state stays reactive:
     // when hass arrives, Lit re-renders and we proceed past this guard.
     if (!this.config || !this.hass) {
-      return html`<ha-card>
+      return html`<ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div class="wrap">
             <div class="empty-state">${localize("common.loading")}</div>
@@ -321,12 +343,30 @@ export class LadestellenAustriaCard extends LitElement {
 
     if (!stateObj) {
       return html`
-        <ha-card>
+        <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
           <div class="card-content">
             <div class="wrap">
-              <div class="empty-state">${localize("card.no_entity")}</div>
+              ${renderMissingEntity(this.config.entity)}
             </div>
             ${renderFooter(this.hass, undefined, this.config?.logo_adapt_to_theme === true)}
+          </div>
+        </ha-card>
+      `;
+    }
+
+    // An unavailable sensor carries no stations, so the hero and the list
+    // would both claim "No stations match the current filters" and every
+    // pin would turn into a "not in range" row with an unpin button, which
+    // invites unpinning mid-outage. Show the notice in place of both.
+    if (stateObj.state === "unavailable") {
+      return html`
+        <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
+          <div class="card-content">
+            <div class="wrap">
+              ${renderVersionBanner(this._versionMismatch, this.preview)}
+              ${this._renderCardHeader(undefined)} ${renderUnreachable()}
+            </div>
+            ${renderFooter(this.hass, undefined, this.config.logo_adapt_to_theme === true)}
           </div>
         </ha-card>
       `;
@@ -335,10 +375,10 @@ export class LadestellenAustriaCard extends LitElement {
     const view = this._buildListView(stateObj);
 
     return html`
-      <ha-card>
+      <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div class="wrap">
-            ${renderVersionBanner(this._versionMismatch)}
+            ${renderVersionBanner(this._versionMismatch, this.preview)}
             ${this._renderCardHeader(view.nearestByDistance)}
             ${
               this.config.show_hero !== false
@@ -702,8 +742,8 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   // Expanded-panel layout (top → bottom):
-  //   Operator · Ladepunkte (rack [+ fees line]) · Öffnungszeiten (+ live chip)
-  //   · Bezahlung · Ausstattung · Adresse · Actions.
+  //   Operator · Hinweis · Ladepunkte (rack [+ fees line]) · Öffnungszeiten
+  //   (+ live chip) · Bezahlung · Ausstattung · Adresse · Actions.
   private _renderStationDetail(
     station: Station,
     openNow: boolean | null,
@@ -760,44 +800,8 @@ export class LadestellenAustriaCard extends LitElement {
             : nothing
         }
         ${this._renderOpeningHoursSection(station.openingHours, openNow)}
-        ${
-          paymentChips.length > 0
-            ? html`<div class="detail-section">
-              <div class="detail-label">
-                ${localize("card.payment_heading")}
-              </div>
-              <div class="chip-row">
-                ${paymentChips.map(
-                  (a) => html`
-                    <span class="chip muted" title=${a.label}>
-                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
-                      <span>${a.label}</span>
-                    </span>
-                  `,
-                )}
-              </div>
-            </div>`
-            : nothing
-        }
-        ${
-          showAmenities && amenities.length > 0
-            ? html`<div class="detail-section">
-              <div class="detail-label">
-                ${localize("card.amenities_heading")}
-              </div>
-              <div class="chip-row">
-                ${amenities.map(
-                  (a) => html`
-                    <span class="chip muted" title=${a.label}>
-                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
-                      <span>${a.label}</span>
-                    </span>
-                  `,
-                )}
-              </div>
-            </div>`
-            : nothing
-        }
+        ${this._renderChipSection(localize("card.payment_heading"), paymentChips)}
+        ${showAmenities ? this._renderChipSection(localize("card.amenities_heading"), amenities) : nothing}
         ${
           address
             ? html`<div class="detail-section">
@@ -808,73 +812,89 @@ export class LadestellenAustriaCard extends LitElement {
             </div>`
             : nothing
         }
-        <div class="actions">
-          ${
-            mapsUrl
-              ? html`<a
-                class="btn-primary"
-                href=${mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon
-                  icon="mdi:map-marker-radius-outline"
-                  aria-hidden="true"
-                ></ha-icon>
-                <span>${localize("card.open_in_maps")}</span>
-              </a>`
-              : nothing
-          }
-          ${(() => {
-            const websiteUrl = safeHttpsUri(station.website);
-            return websiteUrl
-              ? html`<a
-                  class="btn-secondary"
-                  href=${websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  @click=${(ev: Event) => ev.stopPropagation()}
-                >
-                  <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
-                  <span>${localize("card.website")}</span>
-                </a>`
-              : nothing;
-          })()}
-          ${
-            station.phoneNumber
-              ? html`<a
-                class="btn-secondary"
-                href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
-                <span>${localize("card.call")}</span>
-              </a>`
-              : nothing
-          }
-          ${(() => {
-            const priceUrl = safeHttpsUri(station.priceUrl);
-            return priceUrl
-              ? html`<a
-                  class="btn-secondary"
-                  href=${priceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  @click=${(ev: Event) => ev.stopPropagation()}
-                >
-                  <ha-icon
-                    icon="mdi:cash-multiple"
-                    aria-hidden="true"
-                  ></ha-icon>
-                  <span>${localize("card.tariff")}</span>
-                </a>`
-              : nothing;
-          })()}
-        </div>
+        ${this._renderActions(station, mapsUrl)}
         </div>
       </div>
     `;
+  }
+
+  /** A labelled row of muted chips; nothing when there are no chips. */
+  private _renderChipSection(
+    heading: string,
+    chips: Array<{ icon: string; label: string }>,
+  ): TemplateResult | typeof nothing {
+    if (chips.length === 0) return nothing;
+    return html`<div class="detail-section">
+      <div class="detail-label">
+        ${heading}
+      </div>
+      <div class="chip-row">
+        ${chips.map(
+          (a) => html`
+            <span class="chip muted" title=${a.label}>
+              <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
+              <span>${a.label}</span>
+            </span>
+          `,
+        )}
+      </div>
+    </div>`;
+  }
+
+  private _renderActions(station: Station, mapsUrl: string): TemplateResult {
+    return html`<div class="actions">
+      ${
+        mapsUrl
+          ? html`<a
+            class="btn-primary"
+            href=${mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            @click=${(ev: Event) => ev.stopPropagation()}
+          >
+            <ha-icon
+              icon="mdi:map-marker-radius-outline"
+              aria-hidden="true"
+            ></ha-icon>
+            <span>${localize("card.open_in_maps")}</span>
+          </a>`
+          : nothing
+      }
+      ${this._renderExternalLink(station.website, "mdi:web", localize("card.website"))}
+      ${
+        station.phoneNumber
+          ? html`<a
+            class="btn-secondary"
+            href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
+            @click=${(ev: Event) => ev.stopPropagation()}
+          >
+            <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
+            <span>${localize("card.call")}</span>
+          </a>`
+          : nothing
+      }
+      ${this._renderExternalLink(station.priceUrl, "mdi:cash-multiple", localize("card.tariff"))}
+    </div>`;
+  }
+
+  /** A secondary action opening `raw` in a new tab; nothing unless it is an http(s) URL. */
+  private _renderExternalLink(
+    raw: string | null,
+    icon: string,
+    label: string,
+  ): TemplateResult | typeof nothing {
+    const url = safeHttpsUri(raw);
+    if (!url) return nothing;
+    return html`<a
+      class="btn-secondary"
+      href=${url}
+      target="_blank"
+      rel="noopener noreferrer"
+      @click=${(ev: Event) => ev.stopPropagation()}
+    >
+      <ha-icon icon=${icon} aria-hidden="true"></ha-icon>
+      <span>${label}</span>
+    </a>`;
   }
 
   private _renderRack(points: Point[]): TemplateResult {

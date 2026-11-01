@@ -129,7 +129,7 @@ rules:
     comment: async_step_reconfigure lets users update credentials, domain, and location without losing entity history.
   repair-issues:
     status: done
-    comment: Coordinator has raise/clear helpers keyed by entry_id; reserved for future recoverable degraded conditions.
+    comment: tracker_missing_{entry_id} when a dynamic entry's device tracker has no coordinates, and the domain-wide upstream_unavailable from outage.py during a sustained outage. Both clear themselves on recovery; removing an entry deletes its own issue.
   stale-devices:
     status: exempt
     comment: See dynamic-devices.

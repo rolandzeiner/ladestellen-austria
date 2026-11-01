@@ -93,6 +93,19 @@ const sharedFooter = css`
  * have requested reduced motion. Identical in both cards; the per-card
  * forced-colors fallback differs (different selectors) and stays local.
  */
+// "Can't reach E-Control": a headline the eye can find on top of the
+// muted .empty-state, so it doesn't read as one more quiet empty-list remark.
+const sharedUnreachable = css`
+  .unreachable-title {
+    color: var(--primary-text-color);
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .unreachable-detail {
+    margin-block-start: 4px;
+  }
+`;
+
 const sharedReducedMotion = css`
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -120,20 +133,6 @@ const cardOwnStyles = css`
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
-    /* Fill the grid cell the dashboard gave us.
-       A sections view puts a fixed pixel height on the cell WRAPPER whenever
-       the card's rows are numeric -- which a user also causes by dragging the
-       row handle, since a stored grid_options overrides what getGridOptions()
-       returns -- and styles nothing inside that wrapper.
-       This host is display: block, so IT is the containing block for the
-       ha-card below, and a percentage height against a containing block whose
-       own height is auto computes to auto. Without this line ha-card therefore
-       sizes to its content, overflows a cell too short for it, and is painted
-       over the card underneath. Taking the cell's height here is what gives
-       ha-card's 100% something to resolve against.
-       In an auto-height cell it resolves to auto -- the height it already had
-       -- so it costs nothing there. */
-    block-size: 100%;
     container-type: inline-size;
     container-name: lscard;
 
@@ -216,15 +215,51 @@ const cardOwnStyles = css`
        to keep the noise visible.) */
   }
   ha-card {
-    /* Resolves against the height :host just took from the cell, so
-       overflow: hidden clips inside the card rather than the card spilling
-       past its own cell. The two declarations only work as a pair: core cards
-       that set this one alone leave :host at its default inline display, where
-       the cell wrapper is ha-card's containing block instead. */
-    block-size: 100%;
-
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
+  }
+  /* Fill the grid cell the dashboard hands us. A sections view puts a fixed
+     pixel height on the cell WRAPPER when rows is numeric -- which the user
+     also causes by dragging the row handle -- and styles nothing inside it.
+     Because :host is display: block, it is ha-card's containing block, so
+     the two declarations only work as a pair: without the host's, ha-card's
+     100% computes to auto and the card renders at content height on top of
+     the card beneath it.
+     Gated on the layout HA sets on the card ("grid" in a sections view and
+     its edit dialog, "panel" in a panel view), the way Mushroom and HA's tile
+     card gate it. The add-card picker sets none and centres each preview in
+     a tile as tall as the tallest preview in its row; an ungated 100%
+     resolves against that tile and stretches the card down to it. */
+  :host([layout="grid"]),
+  :host([layout="panel"]) {
+    block-size: 100%;
+  }
+  :host([layout="grid"]) ha-card,
+  :host([layout="panel"]) ha-card {
+    block-size: 100%;
+  }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
   }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
@@ -1038,6 +1073,15 @@ const cardOwnStyles = css`
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
   @container lscard (inline-size < 360px) {
+    /* .station-loc never shrinks, so beside it the name is squeezed to a
+       character per line. Give the name the full row and put the
+       location under it. */
+    .row-secondary {
+      flex-wrap: wrap;
+    }
+    .station-name {
+      flex-basis: 100%;
+    }
     :host {
       --lade-pad-x: 14px;
       --lade-pad-y: 12px;
@@ -1160,6 +1204,32 @@ const editorOwnStyles = css`
     display: flex;
     flex-direction: column;
     gap: var(--ha-space-2, 8px);
+  }
+  /* One group per part of the card (ha-expansion-panel). Its body is a
+     column of forms and hand-written fields, split by the hr rules. */
+  .panel-body {
+    padding: 4px 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-3, 12px);
+  }
+  hr {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--divider-color);
+    inline-size: 100%;
+  }
+  /* A hand-written field: label, control, then the helper below it, the
+     way ha-form lays out its own. */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ha-space-2, 8px);
+  }
+  .field-label {
+    font-size: var(--ha-font-size-m, 14px);
+    font-weight: 500;
+    color: var(--primary-text-color);
   }
   .section-header {
     font-size: var(--ha-font-size-xs, 10px);
@@ -1294,19 +1364,12 @@ const editorOwnStyles = css`
     overflow-wrap: anywhere;
   }
 
-  /* Each filter dimension (connector / amenity / payment) is its own
-     labelled group. The rule is the only thing telling a reader where
-     one dimension ends and the next begins — the three chip rows are
-     otherwise a single undifferentiated field of pills. */
+  /* Each filter dimension (connector / payment / amenity) is its own
+     labelled group: label, chips, then the helper saying how it combines. */
   .chip-group {
     display: flex;
     flex-direction: column;
     gap: var(--ha-space-2, 8px);
-  }
-  .chip-group + .chip-group {
-    margin-top: var(--ha-space-2, 8px);
-    padding-top: var(--ha-space-3, 12px);
-    border-top: 1px solid var(--divider-color);
   }
 
   /* Palette-swatch chip — used by the parking card's "Eigene Farbe"
@@ -1420,20 +1483,6 @@ const parkingOwnStyles = css`
        selection (WCAG 1.4.11). HA's active theme drives the resolution. */
     color-scheme: light dark;
     display: block;
-    /* Fill the grid cell the dashboard gave us.
-       A sections view puts a fixed pixel height on the cell WRAPPER whenever
-       the card's rows are numeric -- which a user also causes by dragging the
-       row handle, since a stored grid_options overrides what getGridOptions()
-       returns -- and styles nothing inside that wrapper.
-       This host is display: block, so IT is the containing block for the
-       ha-card below, and a percentage height against a containing block whose
-       own height is auto computes to auto. Without this line ha-card therefore
-       sizes to its content, overflows a cell too short for it, and is painted
-       over the card underneath. Taking the cell's height here is what gives
-       ha-card's 100% something to resolve against.
-       In an auto-height cell it resolves to auto -- the height it already had
-       -- so it costs nothing there. */
-    block-size: 100%;
     container-type: inline-size;
     container-name: plcard;
 
@@ -1469,15 +1518,51 @@ const parkingOwnStyles = css`
     --lade-slot-gap: 8px;
   }
   ha-card {
-    /* Resolves against the height :host just took from the cell, so
-       overflow: hidden clips inside the card rather than the card spilling
-       past its own cell. The two declarations only work as a pair: core cards
-       that set this one alone leave :host at its default inline display, where
-       the cell wrapper is ha-card's containing block instead. */
-    block-size: 100%;
-
     overflow: hidden;
     border-radius: var(--lade-radius-lg);
+  }
+  /* Fill the grid cell the dashboard hands us. A sections view puts a fixed
+     pixel height on the cell WRAPPER when rows is numeric -- which the user
+     also causes by dragging the row handle -- and styles nothing inside it.
+     Because :host is display: block, it is ha-card's containing block, so
+     the two declarations only work as a pair: without the host's, ha-card's
+     100% computes to auto and the card renders at content height on top of
+     the card beneath it.
+     Gated on the layout HA sets on the card ("grid" in a sections view and
+     its edit dialog, "panel" in a panel view), the way Mushroom and HA's tile
+     card gate it. The add-card picker sets none and centres each preview in
+     a tile as tall as the tallest preview in its row; an ungated 100%
+     resolves against that tile and stretches the card down to it. */
+  :host([layout="grid"]),
+  :host([layout="panel"]) {
+    block-size: 100%;
+  }
+  :host([layout="grid"]) ha-card,
+  :host([layout="panel"]) ha-card {
+    block-size: 100%;
+  }
+  /* A sections cell with a set number of rows has a fixed height
+     (ha-card.fixed-height, from _fixedHeight in the card). There the
+     stations, or the lot, scroll inside .wrap while the footer stays put,
+     instead of being cut off at the bottom of the cell. Only there: a
+     scroll container clips focus rings at its edges, so .wrap stays a
+     plain block at natural height. */
+  ha-card.fixed-height {
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .card-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  ha-card.fixed-height .wrap {
+    flex: 1 1 auto;
+    /* min-block-size: 0 is what lets a flex child shrink below its
+       content; without it overflow-y never engages. */
+    min-block-size: 0;
+    overflow-y: auto;
   }
   .card-content {
     padding: 0;
@@ -2012,6 +2097,12 @@ const parkingOwnStyles = css`
     outline-offset: 2px;
     border-radius: 6px;
   }
+  /* The slots tile the lot edge to edge and .parking-lot clips to its
+     rounded corners, so a ring outside the slot is cut off. Draw it
+     inside instead. */
+  .parking-slot:focus-visible {
+    outline-offset: -4px;
+  }
   @media (forced-colors: active) {
     .parking-slot:focus-visible,
     a:focus-visible,
@@ -2033,10 +2124,17 @@ const parkingOwnStyles = css`
 // shared baseline.
 // ---------------------------------------------------------------------------
 
-export const cardStyles = [sharedVersionBanner, sharedFooter, sharedReducedMotion, cardOwnStyles];
+export const cardStyles = [
+  sharedVersionBanner,
+  sharedUnreachable,
+  sharedFooter,
+  sharedReducedMotion,
+  cardOwnStyles,
+];
 
 export const parkingLotStyles = [
   sharedVersionBanner,
+  sharedUnreachable,
   sharedFooter,
   sharedReducedMotion,
   parkingOwnStyles,

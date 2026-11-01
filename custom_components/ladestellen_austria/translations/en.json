@@ -41,7 +41,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Could not reach the upstream API. Check your network and try again.",
+      "cannot_connect": "Could not reach the E-Control API. Check your network and try again.",
       "invalid_auth": "The API key was rejected (HTTP 401).",
       "invalid_api_key": "Please provide a valid API key.",
       "invalid_domain": "Enter a valid hostname without protocol, port or path.",
@@ -80,25 +80,29 @@
   },
   "exceptions": {
     "api_timeout": {
-      "message": "Ladestellen Austria API timed out after {seconds}s"
+      "message": "E-Control API: timed out after {seconds} s"
     },
     "api_auth_error": {
-      "message": "Ladestellen Austria API rejected the credentials (HTTP {status}). Home Assistant will ask you to re-enter them."
+      "message": "E-Control API rejected the credentials (HTTP {status}). Home Assistant will ask you to re-enter them."
     },
     "api_http_error": {
-      "message": "Ladestellen Austria API returned HTTP {status}: {reason}"
+      "message": "E-Control API returned HTTP {status}: {reason}"
     },
     "api_connection_error": {
-      "message": "Ladestellen Austria API connection error: {error_type}: {error}"
+      "message": "E-Control API: connection error: {error_type}: {error}"
     },
     "api_invalid_response": {
-      "message": "Ladestellen Austria API returned an unexpected response (status {status}): {error}"
+      "message": "E-Control API returned an unexpected response (status {status}): {error}"
     }
   },
   "issues": {
     "tracker_missing": {
       "title": "Location tracker unavailable",
       "description": "The device_tracker entity **{entity_id}** configured for dynamic mode on **{entry_title}** is unavailable or reports no coordinates. Updates are falling back to the entry's configured location. Either restore the tracker, or reconfigure this entry to switch to fixed-location mode."
+    },
+    "upstream_unavailable": {
+      "title": "E-Control isn't sending charging stations",
+      "description": "The E-Control charging station directory has been answering with errors for more than 10 minutes. The fault is on E-Control's side: your Home Assistant setup and your API key are fine, and there's nothing you need to change. Stations come back on their own as soon as the service works again, and this message goes away with them."
     }
   }
 }

@@ -12,13 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.ladestellen_austria.api import API_KEY_HEADER, REFERER_HEADER
 from custom_components.ladestellen_austria.config_flow import _test_api_connection
-from custom_components.ladestellen_austria.const import (
-    API_KEY_HEADER,
-    DOMAIN,
-    REFERER_HEADER,
-    USER_AGENT,
-)
+from custom_components.ladestellen_austria.const import DOMAIN, USER_AGENT
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
 )
@@ -50,6 +46,8 @@ async def test_coordinator_sends_canonical_user_agent(hass: HomeAssistant) -> No
     assert sent["User-Agent"] == USER_AGENT
     assert sent[API_KEY_HEADER] == "REDACTED_API_KEY"
     assert sent[REFERER_HEADER] == "https://www.meineseite.at"
+    # Passing Accept-Encoding would replace aiohttp's own, wider offer.
+    assert "Accept-Encoding" not in sent
 
 
 async def test_config_flow_probe_sends_canonical_user_agent(
@@ -70,3 +68,4 @@ async def test_config_flow_probe_sends_canonical_user_agent(
     assert sent["User-Agent"] == USER_AGENT
     assert sent[API_KEY_HEADER] == "REDACTED_API_KEY"
     assert sent[REFERER_HEADER] == "https://www.meineseite.at"
+    assert "Accept-Encoding" not in sent

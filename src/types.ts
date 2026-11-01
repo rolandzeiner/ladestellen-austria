@@ -56,11 +56,6 @@ export interface LovelaceCardEditor extends HTMLElement {
   setConfig(config: LovelaceCardConfig): void;
 }
 
-/** `LovelaceCard` is only referenced as the `hui-error-card` tag-map
- *  entry below, so an HTMLElement alias suffices — we never instantiate
- *  it directly from card code. */
-type LovelaceCard = HTMLElement;
-
 /** `bubbles: true` + `composed: true` are required so the event
  *  crosses the editor's shadow boundary and reaches the dashboard's
  *  card-editor listener. */
@@ -76,7 +71,6 @@ declare global {
   interface HTMLElementTagNameMap {
     "ladestellen-austria-card-editor": LovelaceCardEditor;
     "ladestellen-austria-parking-card-editor": LovelaceCardEditor;
-    "hui-error-card": LovelaceCard;
   }
 
   interface Window {

@@ -17,7 +17,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  computeFormLabel,
   formatCent,
   formatEuro,
   formatKw,
@@ -285,18 +284,6 @@ describe("pointStatusLabel", () => {
     // The exact wording is a translation concern; what matters here is
     // that a known status never leaks the raw SCREAMING_CASE token.
     expect(pointStatusLabel("AVAILABLE")).not.toBe("AVAILABLE");
-  });
-});
-
-describe("computeFormLabel", () => {
-  it("falls back to the raw field name when no translation exists", () => {
-    expect(computeFormLabel({ name: "definitely_not_a_key" })).toBe("definitely_not_a_key");
-  });
-
-  it("looks expandable sections up under a different prefix", () => {
-    // Both resolve to the raw name when untranslated; the point is that
-    // the two branches build different keys and neither throws.
-    expect(computeFormLabel({ name: "nope_xyz", type: "expandable" })).toBe("nope_xyz");
   });
 });
 

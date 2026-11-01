@@ -120,6 +120,23 @@ function hass(stations: Station[] = [station()]): HomeAssistant {
   } as unknown as HomeAssistant;
 }
 
+/**
+ * The sensor as Home Assistant shows it while E-Control can't be reached:
+ * `unavailable`, with none of the integration's attributes left on it.
+ */
+function unavailableHass(): HomeAssistant {
+  return {
+    ...hass(),
+    states: {
+      "sensor.ladestellen_austria": {
+        entity_id: "sensor.ladestellen_austria",
+        state: "unavailable",
+        attributes: { friendly_name: "Ladestellen Austria" },
+      },
+    },
+  };
+}
+
 /** Mount an element, let Lit settle, and hand it back. */
 async function mount<T extends LitElement>(tag: string, setup: (el: T) => void): Promise<T> {
   const el = document.createElement(tag) as T;
@@ -172,6 +189,63 @@ describe("Lit reactive properties survive decorator lowering", () => {
     expect(props.length).toBeGreaterThan(0);
     for (const name of expected) expect(props).toContain(name);
   });
+
+  // The grid-cell rules in styles.ts select on the layout attribute, which
+  // exists only if the property reflects (grid-cell.test.ts).
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s reflects layout",
+    (tag) => {
+      const ctor = customElements.get(tag) as unknown as typeof LitElement;
+      expect(ctor.getPropertyOptions("layout").reflect).toBe(true);
+    },
+  );
+
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s reflects a layout that arrives with an unchanged entity",
+    async (tag) => {
+      const el = await mount<
+        LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant; layout?: string }
+      >(tag, (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
+        e.hass = hass();
+      });
+      // A new hass whose entity state is the same object is the cycle that
+      // shouldUpdate would otherwise skip.
+      el.hass = { ...el.hass };
+      el.layout = "grid";
+      await el.updateComplete;
+      expect(el.getAttribute("layout")).toBe("grid");
+    },
+  );
+
+  // ha-card.fixed-height turns .wrap into the scroller (styles.ts). It is
+  // set only for a sections cell whose rows in force are a number.
+  it.each([
+    ["ladestellen-austria-card", "grid", { rows: 4 }, true],
+    ["ladestellen-austria-card", "grid", { rows: "auto" }, false],
+    ["ladestellen-austria-card", "grid", undefined, false],
+    ["ladestellen-austria-card", undefined, { rows: 4 }, false],
+    ["ladestellen-austria-parking-card", "grid", { rows: 4 }, true],
+    ["ladestellen-austria-parking-card", "grid", undefined, false],
+  ])(
+    "%s with layout %s and grid_options %j is fixed-height: %s",
+    async (tag, layout, grid, fixed) => {
+      const el = await mount<
+        LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant; layout?: string }
+      >(tag, (e) => {
+        e.setConfig({
+          entity: "sensor.ladestellen_austria",
+          station_id: "at-1",
+          ...(grid ? { grid_options: grid } : {}),
+        });
+        e.hass = hass();
+        if (layout) e.layout = layout;
+      });
+      expect(el.shadowRoot!.querySelector("ha-card")!.classList.contains("fixed-height")).toBe(
+        fixed,
+      );
+    },
+  );
 });
 
 describe("ladestellen-austria-card", () => {
@@ -245,16 +319,123 @@ describe("ladestellen-austria-card", () => {
     );
     expect(el.shadowRoot?.textContent ?? "").toContain("Bare");
   });
+});
 
-  it("renders an empty-state for an unknown entity", async () => {
-    const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
-      "ladestellen-austria-card",
-      (e) => {
-        e.setConfig({ entity: "sensor.does_not_exist" });
+describe("edit-dialog preview", () => {
+  type Card = LitElement & {
+    setConfig: (c: unknown) => void;
+    hass: HomeAssistant;
+    preview: boolean;
+  };
+  it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
+    "%s keeps the version banner out of the preview",
+    async (tag) => {
+      const el = await mount<Card>(tag, (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
         e.hass = hass();
-      },
+      });
+      (el as unknown as { _versionMismatch: string | null })._versionMismatch = "9.9.9";
+      await el.updateComplete;
+      expect(el.shadowRoot!.querySelector(".version-notice")).not.toBeNull();
+
+      el.preview = true;
+      await el.updateComplete;
+      expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+    },
+  );
+});
+
+describe("missing sensor", () => {
+  const cards = ["ladestellen-austria-card", "ladestellen-austria-parking-card"];
+  const mountWith = (tag: string, entity?: string) =>
+    mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(tag, (e) => {
+      e.setConfig(entity ? { entity, station_id: "at-1" } : { station_id: "at-1" });
+      e.hass = hass();
+    });
+
+  it.each(cards)("%s names a configured sensor that is gone in a warning", async (tag) => {
+    const el = await mountWith(tag, "sensor.does_not_exist");
+    const alert = el.shadowRoot!.querySelector("ha-alert");
+    expect(alert?.getAttribute("alert-type")).toBe("warning");
+    expect(alert?.textContent?.trim()).toBe("Entity not available: sensor.does_not_exist");
+    expect(el.shadowRoot!.querySelector(".empty-state")).toBeNull();
+  });
+
+  it.each(cards)("%s keeps a neutral prompt when nothing is picked yet", async (tag) => {
+    const el = await mountWith(tag);
+    expect(el.shadowRoot!.querySelector("ha-alert")).toBeNull();
+    expect(el.shadowRoot!.querySelector('.empty-state[role="status"]')).not.toBeNull();
+  });
+});
+
+// An outage used to read as "No stations match the current filters", and
+// every pin turned into a "not in range" row offering to unpin it, so a dead
+// API looked like a broken setup and invited the user to undo their config.
+describe("unreachable notice", () => {
+  type Card = LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant };
+
+  const mountList = (h: HomeAssistant, config: Record<string, unknown> = {}) =>
+    mount<Card>("ladestellen-austria-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", ...config });
+      e.hass = h;
+    });
+
+  it("says it can't reach E-Control when the sensor is unavailable", async () => {
+    const el = await mountList(unavailableHass());
+    const notice = el.shadowRoot?.querySelector(".unreachable");
+    expect(notice?.querySelector(".unreachable-title")?.textContent?.trim()).toBe(
+      "Can't reach E-Control",
     );
-    expect(el.shadowRoot?.querySelector(".empty-state")).not.toBeNull();
+    expect(notice?.getAttribute("role")).toBe("status");
+    expect(el.shadowRoot?.textContent ?? "").not.toContain("No stations match");
+  });
+
+  it("hides pinned stations instead of offering to unpin them", async () => {
+    const el = await mountList(unavailableHass(), { pinned_station_ids: ["at-1", "at-2"] });
+    expect(el.shadowRoot?.querySelector(".is-orphan")).toBeNull();
+    expect(el.shadowRoot?.querySelector("ha-icon-button")).toBeNull();
+    expect(el.shadowRoot?.textContent ?? "").not.toContain("Pinned station not in range");
+  });
+
+  it("keeps the E-Control attribution while unavailable (ToU §3d)", async () => {
+    const el = await mountList(unavailableHass());
+    expect(el.shadowRoot?.querySelector(".attribution-text")?.textContent).toContain(
+      "Datenquelle: E-Control",
+    );
+  });
+
+  it("still says no stations match for an available, empty result", async () => {
+    const el = await mountList(hass([]));
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(text).toContain("No stations match the current filters.");
+    expect(text).not.toContain("Can't reach");
+  });
+
+  it("follows Home Assistant's language", async () => {
+    const el = await mountList({ ...unavailableHass(), language: "de" });
+    expect(el.shadowRoot?.textContent ?? "").toContain("Keine Verbindung zur E-Control");
+  });
+
+  it("replaces the parking card's station-not-found message", async () => {
+    const el = await mount<Card>("ladestellen-austria-parking-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1", name: "Garage" });
+      e.hass = unavailableHass();
+    });
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(el.shadowRoot?.querySelector(".unreachable")).not.toBeNull();
+    expect(text).toContain("Can't reach E-Control");
+    expect(text).toContain("Garage");
+    expect(text).not.toContain("not in the sensor's current results");
+  });
+
+  it("still tells the parking card a missing station isn't in the results", async () => {
+    const el = await mount<Card>("ladestellen-austria-parking-card", (e) => {
+      e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "not-here" });
+      e.hass = hass();
+    });
+    const text = el.shadowRoot?.textContent ?? "";
+    expect(text).toContain("not in the sensor's current results");
+    expect(text).not.toContain("Can't reach");
   });
 });
 
@@ -646,6 +827,42 @@ describe("ladestellen-austria-parking-card", () => {
   });
 });
 
+describe("parking card size", () => {
+  type Parking = LitElement & {
+    setConfig: (c: unknown) => void;
+    hass: HomeAssistant;
+    getCardSize: () => number;
+  };
+  const withPoints = (n: number) =>
+    station({
+      points: Array.from({ length: n }, (_, i) => ({ ...basePoint(), evseId: `AT*TST*E${i}` })),
+    } as Partial<Station>);
+  const size = async (n: number, config: Record<string, unknown> = {}) =>
+    (
+      await mount<Parking>("ladestellen-austria-parking-card", (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1", ...config });
+        e.hass = hass([withPoints(n)]);
+      })
+    ).getCardSize();
+
+  // Rendered heights in a 400 px column: 229, 349 and 589 px with the
+  // header, 537 px without it.
+  it.each([
+    [1, {}, 5],
+    [5, {}, 7],
+    [11, {}, 12],
+    [11, { hide_header: true }, 11],
+  ])("is %i slots with %j → %i", async (n, config, expected) => {
+    expect(await size(n, config)).toBe(expected);
+  });
+
+  it("falls back to 3 before the station resolves", () => {
+    const el = document.createElement("ladestellen-austria-parking-card") as Parking;
+    el.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
+    expect(el.getCardSize()).toBe(3);
+  });
+});
+
 describe("editors", () => {
   it.each(["ladestellen-austria-card-editor", "ladestellen-austria-parking-card-editor"])(
     "%s renders without hass",
@@ -691,7 +908,7 @@ describe("editors", () => {
   it("exposes the station picker as a radio group", async () => {
     const el = await mountEditor("ladestellen-austria-parking-card-editor");
     const root = el.shadowRoot!;
-    expect(root.getElementById("station-picker-heading")?.getAttribute("role")).toBe("heading");
+    expect(root.getElementById("station-picker-heading")?.textContent?.trim()).toBeTruthy();
     // The group renders only once stations are present; the labelling
     // target must exist either way so the wiring cannot rot silently.
     const group = root.querySelector('[role="radiogroup"]');
@@ -718,10 +935,14 @@ describe("editors", () => {
 
 describe("parking editor forms", () => {
   type ParkingEditor = LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant };
-  type FormEl = HTMLElement & { schema: unknown };
+  type FormEl = HTMLElement & { schema: ReadonlyArray<{ name?: string }> };
 
   const withLanguage = (language: string) => ({ ...hass(), language }) as HomeAssistant;
-  const forms = (el: LitElement) => [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")];
+  /** The ha-form that holds the field `name`. */
+  const formWith = (el: LitElement, name: string) =>
+    [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")].find((f) =>
+      f.schema.some((field) => field.name === name),
+    )!;
 
   const mountEditor = () =>
     mount<ParkingEditor>("ladestellen-austria-parking-card-editor", (e) => {
@@ -729,20 +950,21 @@ describe("parking editor forms", () => {
       e.hass = withLanguage("en");
     });
 
-  it("keeps the appearance schema identity until the language changes", async () => {
+  it("keeps the lot schemas' identity until the language changes", async () => {
     const el = await mountEditor();
-    expect(forms(el)).toHaveLength(2);
-    const english = forms(el)[1]!.schema;
+    const english = formWith(el, "paint_width").schema;
+    const englishCars = formWith(el, "car_color_mode").schema;
 
-    // A new hass object in the same language must not rebuild the schema:
+    // A new hass object in the same language must not rebuild a schema:
     // ha-form skips work on an identical array.
     el.hass = withLanguage("en");
     await el.updateComplete;
-    expect(forms(el)[1]!.schema).toBe(english);
+    expect(formWith(el, "paint_width").schema).toBe(english);
+    expect(formWith(el, "car_color_mode").schema).toBe(englishCars);
 
     el.hass = withLanguage("de");
     await el.updateComplete;
-    const german = forms(el)[1]!.schema;
+    const german = formWith(el, "paint_width").schema;
     expect(german).not.toBe(english);
     expect(JSON.stringify(german)).not.toBe(JSON.stringify(english));
   });
@@ -753,7 +975,9 @@ describe("parking editor forms", () => {
     el.addEventListener("config-changed", (ev) => seen.push((ev as CustomEvent).detail.config));
     const next = { entity: "sensor.ladestellen_austria", car_color_mode: "fixed" };
 
-    forms(el)[1]!.dispatchEvent(new CustomEvent("value-changed", { detail: { value: next } }));
+    formWith(el, "car_color_mode").dispatchEvent(
+      new CustomEvent("value-changed", { detail: { value: next } }),
+    );
     await el.updateComplete;
 
     expect(seen).toEqual([next]);
@@ -761,5 +985,21 @@ describe("parking editor forms", () => {
     // config; the dashboard does not push a config-changed it received from
     // the editor back via setConfig.
     expect(el.shadowRoot!.querySelector('input[type="color"]')).not.toBeNull();
+  });
+
+  it("redraws the single-colour tile in the picked colour", async () => {
+    const el = await mountEditor();
+    el.setConfig({ entity: "sensor.ladestellen_austria", car_color_mode: "fixed" });
+    await el.updateComplete;
+    const before = formWith(el, "car_color_mode").schema;
+
+    const input = el.shadowRoot!.querySelector<HTMLInputElement>('input[type="color"]')!;
+    input.value = "#ff8800";
+    input.dispatchEvent(new Event("input"));
+    await el.updateComplete;
+
+    const after = formWith(el, "car_color_mode").schema;
+    expect(after).not.toBe(before);
+    expect(JSON.stringify(after)).toContain(encodeURIComponent("#ff8800"));
   });
 });

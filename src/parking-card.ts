@@ -27,10 +27,16 @@ import type {
 } from "./types";
 import { carSvg } from "./car-svg";
 import { localize } from "./localize/localize";
-import { renderFooter, renderVersionBanner } from "./shared-render";
+import {
+  renderFooter,
+  renderMissingEntity,
+  renderUnreachable,
+  renderVersionBanner,
+} from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
+  isFixedHeight,
   runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
@@ -74,6 +80,13 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   @property({ attribute: false }) public hass!: HomeAssistant;
+  // Set by HA: "grid" in a sections view, "panel" in a panel view, unset in
+  // the add-card picker and masonry. Reflected so the styles can fill the
+  // cell only when there is one -- see the grid-cell rules in styles.ts.
+  @property({ reflect: true }) public layout?: string;
+  // Set by HA to true while the card is the live preview in the edit-card
+  // dialog; renderVersionBanner keeps the reload banner out of it.
+  @property({ type: Boolean }) public preview = false;
   @state() private config!: ParkingLotCardConfig;
   // Slots whose info-overlay is currently revealed by tap. Hover already
   // reveals on desktop via CSS :hover; this set covers touch devices
@@ -110,8 +123,13 @@ export class LadestellenAustriaParkingCard extends LitElement {
   protected override shouldUpdate(changedProps: PropertyValues): boolean {
     // setConfig is called synchronously before mount; this.config is
     // non-null by the time any property change can fire shouldUpdate.
+    // Lit reflects attributes inside update(), so returning false here in
+    // the cycle that changes layout leaves the attribute stale and the
+    // grid-cell selectors in styles.ts never match.
     if (
       changedProps.has("config") ||
+      changedProps.has("layout") ||
+      changedProps.has("preview") ||
       changedProps.has("_revealedSlots") ||
       changedProps.has("_versionMismatch")
     ) {
@@ -121,10 +139,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   public getCardSize(): number {
-    // Fixed estimate: header + a small slot grid. Most stations have only
-    // a handful of points, so 3 is a reasonable constant — getCardSize is
-    // a layout hint, not a measured value.
-    return 3;
+    // In units of 50 px. Measured in a 400 px column, about masonry's
+    // width, which fits three slots per row: 57 px of padding and footer,
+    // 52 px of header, 120 px per row of slots. Before the station
+    // resolves there are no slots, which gives 3.
+    const entity = this.config.entity ? this.hass?.states[this.config.entity] : undefined;
+    const stations = (entity?.attributes["stations"] ?? []) as Station[];
+    const station = stations.find((s) => s.stationId === this.config.station_id);
+    const slotRows = Math.ceil((station?.points?.length ?? 0) / 3);
+    const px = 57 + (this.config.hide_header ? 0 : 52) + 120 * slotRows;
+    return Math.ceil(px / 50);
   }
 
   public getGridOptions(): {
@@ -139,6 +163,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
       min_columns: 4,
       min_rows: 3,
     };
+  }
+
+  private get _fixedHeight(): boolean {
+    return isFixedHeight(this.layout, this.config?.grid_options, this.getGridOptions().rows);
   }
 
   protected override willUpdate(changedProps: PropertyValues): void {
@@ -178,7 +206,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     opts: { footer?: TemplateResult; accent?: boolean } = {},
   ): TemplateResult {
     return html`
-      <ha-card>
+      <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
         <div class="card-content">
           <div
             class="wrap"
@@ -187,7 +215,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
           >
-            ${renderVersionBanner(this._versionMismatch)} ${body}
+            ${renderVersionBanner(this._versionMismatch, this.preview)} ${body}
           </div>
           ${opts.footer ?? nothing}
         </div>
@@ -279,22 +307,35 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const stateObj = this.config.entity ? this.hass.states[this.config.entity] : undefined;
 
     if (!stateObj) {
-      return this._renderShell(html`<div class="empty-state">${localize("card.no_entity")}</div>`, {
+      return this._renderShell(renderMissingEntity(this.config.entity), {
         footer: this._cardFooter(),
       });
+    }
+
+    const customTitle = this.config.name;
+    const showCustomHeader = Boolean(customTitle) && !this.config.hide_header;
+
+    // An unavailable sensor carries no stations, which would read as
+    // "The selected station is not in the sensor's current results".
+    if (stateObj.state === "unavailable") {
+      return this._renderShell(
+        html`
+          ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
+          ${renderUnreachable()}
+        `,
+        { footer: this._cardFooter() },
+      );
     }
 
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
     const stationId = this.config.station_id ?? "";
     const station = stations.find((s) => s.stationId === stationId);
-    const customTitle = this.config.name;
     const footer = this._cardFooter(stateObj.attributes.attribution);
 
     if (!stationId || !station) {
-      const showHeader = Boolean(customTitle) && !this.config.hide_header;
       return this._renderShell(
         html`
-          ${showHeader ? this._renderHeader(customTitle ?? "") : nothing}
+          ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
           <div class="empty-state">
             ${localize(stationId ? "parking.station_not_found" : "parking.no_station_selected")}
           </div>

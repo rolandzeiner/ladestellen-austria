@@ -99,6 +99,10 @@
     "tracker_missing": {
       "title": "Location tracker unavailable",
       "description": "The device_tracker entity **{entity_id}** configured for dynamic mode on **{entry_title}** is unavailable or reports no coordinates. Updates are falling back to the entry's configured location. Either restore the tracker, or reconfigure this entry to switch to fixed-location mode."
+    },
+    "upstream_unavailable": {
+      "title": "E-Control isn't sending charging stations",
+      "description": "The E-Control charging station directory has been answering with errors for more than 10 minutes. The fault is on E-Control's side: your Home Assistant setup and your API key are fine, and there's nothing you need to change. Stations come back on their own as soon as the service works again, and this message goes away with them."
     }
   }
 }

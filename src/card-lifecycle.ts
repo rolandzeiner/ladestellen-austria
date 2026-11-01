@@ -73,6 +73,9 @@ export function shouldUpdateForEntityState(
 ): boolean {
   const prev = changedProps.get("hass") as HomeAssistant | undefined;
   if (!prev || !entity) return true;
+  // A language switch changes no entity state; without this the card keeps
+  // the old language until its sensor next updates.
+  if (prev.language !== hass.language) return true;
   return prev.states[entity] !== hass.states[entity];
 }
 
@@ -140,4 +143,21 @@ export function entitySuggestionFor(cardType: `custom:${string}`): (
     }
     return { config: { type: cardType, entity: entityId } };
   };
+}
+
+/**
+ * Whether a card sits in a sections cell with a set number of rows, where
+ * its height is fixed. Stored grid_options win over getGridOptions(), so
+ * this tests the rows in force (`stored ?? defaultRows`), not only the
+ * stored ones. Outside a sections cell (masonry, a stack, the picker) the
+ * card takes its natural height.
+ */
+export function isFixedHeight(
+  layout: string | undefined,
+  gridOptions: unknown,
+  defaultRows: number | "auto",
+): boolean {
+  if (layout !== "grid") return false;
+  const stored = (gridOptions as { rows?: unknown } | undefined)?.rows;
+  return typeof (stored ?? defaultRows) === "number";
 }
