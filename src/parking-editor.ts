@@ -272,66 +272,7 @@ export class LadestellenAustriaParkingCardEditor extends LitElement implements L
             : nothing
         }
 
-        <div class="editor-section">
-          <div
-            class="section-header"
-            id="station-picker-heading"
-            role="heading"
-            aria-level="3"
-          >
-            ${localize("parking.editor_station_heading")}
-          </div>
-          <div class="editor-hint">
-            ${localize("parking.pick_station_hint")}
-          </div>
-          ${
-            !entityId
-              ? html`<div class="editor-hint editor-hint--muted">
-                ${localize("editor.pin_select_sensor_first")}
-              </div>`
-              : stations.length === 0
-                ? html`<div class="editor-hint editor-hint--muted">
-                ${localize("editor.pin_no_stations_yet")}
-              </div>`
-                : html`
-                <div
-                  class="pin-list"
-                  role="radiogroup"
-                  aria-labelledby="station-picker-heading"
-                >
-                  ${stations.map((s) => {
-                    const isSelected = s.stationId === selectedId;
-                    const distanceText =
-                      typeof s.distance === "number" ? `${s.distance.toFixed(2)} km` : "";
-                    return html`
-                      <button
-                        type="button"
-                        class=${isSelected ? "pin-row pinned" : "pin-row"}
-                        role="radio"
-                        aria-checked=${isSelected}
-                        @click=${() => this._selectStation(s.stationId)}
-                      >
-                        <ha-icon
-                          icon=${isSelected ? "mdi:radiobox-marked" : "mdi:radiobox-blank"}
-                          aria-hidden="true"
-                        ></ha-icon>
-                        <span class="pin-label">${s.label}</span>
-                        <span class="pin-meta">${distanceText}</span>
-                      </button>
-                    `;
-                  })}
-                </div>
-              `
-          }
-          ${
-            selectedId && !stations.some((s) => s.stationId === selectedId)
-              ? html`<div class="editor-hint editor-hint--muted">
-                ${localize("parking.station_not_in_range")}
-                <span class="orphan-id">${selectedId}</span>
-              </div>`
-              : nothing
-          }
-        </div>
+        ${this._renderStationPicker(entityId, stations, selectedId)}
 
         ${
           this.hass
@@ -345,41 +286,110 @@ export class LadestellenAustriaParkingCardEditor extends LitElement implements L
             : nothing
         }
 
-        ${
-          this._config.car_color_mode === "fixed"
-            ? html`<div class="editor-section">
-              <div class="section-header" role="heading" aria-level="3">
-                ${localize("editor.car_color_pick")}
-              </div>
-              <div class="toggle-row">
-                <label
-                  class="color-swatch"
-                  style=${`--swatch-color: ${this._config.car_color_fixed || "#1d4ed8"};`}
-                >
-                  <ha-icon
-                    icon="mdi:palette-swatch-variant"
-                    aria-hidden="true"
-                  ></ha-icon>
-                  <span class="color-swatch-hex"
-                    >${(this._config.car_color_fixed || "#1d4ed8").toUpperCase()}</span
-                  >
-                  <input
-                    type="color"
-                    class="color-swatch-input"
-                    .value=${this._config.car_color_fixed || "#1d4ed8"}
-                    aria-label=${localize("editor.car_color_pick")}
-                    @input=${this._carColorFixedChanged}
-                    @change=${this._carColorFixedChanged}
-                  />
-                </label>
-              </div>
-            </div>`
-            : nothing
-        }
+        ${this._renderCarColorPicker()}
 
         <div class="editor-hint">${localize("editor.hint_compliance")}</div>
       </div>
     `;
+  }
+
+  private _renderStationPicker(
+    entityId: string | undefined,
+    stations: Station[],
+    selectedId: string,
+  ): TemplateResult {
+    return html`<div class="editor-section">
+      <div
+        class="section-header"
+        id="station-picker-heading"
+        role="heading"
+        aria-level="3"
+      >
+        ${localize("parking.editor_station_heading")}
+      </div>
+      <div class="editor-hint">
+        ${localize("parking.pick_station_hint")}
+      </div>
+      ${
+        !entityId
+          ? html`<div class="editor-hint editor-hint--muted">
+            ${localize("editor.pin_select_sensor_first")}
+          </div>`
+          : stations.length === 0
+            ? html`<div class="editor-hint editor-hint--muted">
+            ${localize("editor.pin_no_stations_yet")}
+          </div>`
+            : html`
+            <div
+              class="pin-list"
+              role="radiogroup"
+              aria-labelledby="station-picker-heading"
+            >
+              ${stations.map((s) => this._renderStationOption(s, s.stationId === selectedId))}
+            </div>
+          `
+      }
+      ${
+        selectedId && !stations.some((s) => s.stationId === selectedId)
+          ? html`<div class="editor-hint editor-hint--muted">
+            ${localize("parking.station_not_in_range")}
+            <span class="orphan-id">${selectedId}</span>
+          </div>`
+          : nothing
+      }
+    </div>`;
+  }
+
+  private _renderStationOption(s: Station, isSelected: boolean): TemplateResult {
+    const distanceText = typeof s.distance === "number" ? `${s.distance.toFixed(2)} km` : "";
+    return html`
+      <button
+        type="button"
+        class=${isSelected ? "pin-row pinned" : "pin-row"}
+        role="radio"
+        aria-checked=${isSelected}
+        @click=${() => this._selectStation(s.stationId)}
+      >
+        <ha-icon
+          icon=${isSelected ? "mdi:radiobox-marked" : "mdi:radiobox-blank"}
+          aria-hidden="true"
+        ></ha-icon>
+        <span class="pin-label">${s.label}</span>
+        <span class="pin-meta">${distanceText}</span>
+      </button>
+    `;
+  }
+
+  private _renderCarColorPicker(): TemplateResult | typeof nothing {
+    if (this._config.car_color_mode !== "fixed") return nothing;
+    const color = this._config.car_color_fixed || "#1d4ed8";
+    return html`<div class="editor-section">
+      <div class="section-header" role="heading" aria-level="3">
+        ${localize("editor.car_color_pick")}
+      </div>
+      <div class="toggle-row">
+        <label
+          class="color-swatch"
+          style=${`--swatch-color: ${color};`}
+        >
+          <ha-icon
+            icon="mdi:palette-swatch-variant"
+            aria-hidden="true"
+          ></ha-icon>
+          <span class="color-swatch-hex"
+            >${color.toUpperCase()}</span
+          >
+          <input
+            type="color"
+            class="color-swatch-input"
+            .value=${color}
+            aria-label=${localize("editor.car_color_pick")}
+            @input=${this._carColorFixedChanged}
+            @change=${this._carColorFixedChanged}
+          />
+        </label>
+      </div>
+    </div>`;
   }
 
   static override styles: CSSResultGroup = editorStyles;

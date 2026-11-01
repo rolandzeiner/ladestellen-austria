@@ -778,44 +778,8 @@ export class LadestellenAustriaCard extends LitElement {
             : nothing
         }
         ${this._renderOpeningHoursSection(station.openingHours, openNow)}
-        ${
-          paymentChips.length > 0
-            ? html`<div class="detail-section">
-              <div class="detail-label">
-                ${localize("card.payment_heading")}
-              </div>
-              <div class="chip-row">
-                ${paymentChips.map(
-                  (a) => html`
-                    <span class="chip muted" title=${a.label}>
-                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
-                      <span>${a.label}</span>
-                    </span>
-                  `,
-                )}
-              </div>
-            </div>`
-            : nothing
-        }
-        ${
-          showAmenities && amenities.length > 0
-            ? html`<div class="detail-section">
-              <div class="detail-label">
-                ${localize("card.amenities_heading")}
-              </div>
-              <div class="chip-row">
-                ${amenities.map(
-                  (a) => html`
-                    <span class="chip muted" title=${a.label}>
-                      <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
-                      <span>${a.label}</span>
-                    </span>
-                  `,
-                )}
-              </div>
-            </div>`
-            : nothing
-        }
+        ${this._renderChipSection(localize("card.payment_heading"), paymentChips)}
+        ${showAmenities ? this._renderChipSection(localize("card.amenities_heading"), amenities) : nothing}
         ${
           address
             ? html`<div class="detail-section">
@@ -826,73 +790,92 @@ export class LadestellenAustriaCard extends LitElement {
             </div>`
             : nothing
         }
-        <div class="actions">
-          ${
-            mapsUrl
-              ? html`<a
-                class="btn-primary"
-                href=${mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon
-                  icon="mdi:map-marker-radius-outline"
-                  aria-hidden="true"
-                ></ha-icon>
-                <span>${localize("card.open_in_maps")}</span>
-              </a>`
-              : nothing
-          }
-          ${(() => {
-            const websiteUrl = safeHttpsUri(station.website);
-            return websiteUrl
-              ? html`<a
-                  class="btn-secondary"
-                  href=${websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  @click=${(ev: Event) => ev.stopPropagation()}
-                >
-                  <ha-icon icon="mdi:web" aria-hidden="true"></ha-icon>
-                  <span>${localize("card.website")}</span>
-                </a>`
-              : nothing;
-          })()}
-          ${
-            station.phoneNumber
-              ? html`<a
-                class="btn-secondary"
-                href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
-                @click=${(ev: Event) => ev.stopPropagation()}
-              >
-                <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
-                <span>${localize("card.call")}</span>
-              </a>`
-              : nothing
-          }
-          ${(() => {
-            const priceUrl = safeHttpsUri(station.priceUrl);
-            return priceUrl
-              ? html`<a
-                  class="btn-secondary"
-                  href=${priceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  @click=${(ev: Event) => ev.stopPropagation()}
-                >
-                  <ha-icon
-                    icon="mdi:cash-multiple"
-                    aria-hidden="true"
-                  ></ha-icon>
-                  <span>${localize("card.tariff")}</span>
-                </a>`
-              : nothing;
-          })()}
-        </div>
+        ${this._renderActions(station, mapsUrl)}
         </div>
       </div>
     `;
+  }
+
+  /** A labelled row of muted chips; nothing when there are no chips. */
+  private _renderChipSection(
+    heading: string,
+    chips: Array<{ icon: string; label: string }>,
+  ): TemplateResult | typeof nothing {
+    if (chips.length === 0) return nothing;
+    return html`<div class="detail-section">
+      <div class="detail-label">
+        ${heading}
+      </div>
+      <div class="chip-row">
+        ${chips.map(
+          (a) => html`
+            <span class="chip muted" title=${a.label}>
+              <ha-icon icon=${a.icon} aria-hidden="true"></ha-icon>
+              <span>${a.label}</span>
+            </span>
+          `,
+        )}
+      </div>
+    </div>`;
+  }
+
+  // Every link stops propagation so a tap doesn't also toggle the row.
+  private _renderActions(station: Station, mapsUrl: string): TemplateResult {
+    return html`<div class="actions">
+      ${
+        mapsUrl
+          ? html`<a
+            class="btn-primary"
+            href=${mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            @click=${(ev: Event) => ev.stopPropagation()}
+          >
+            <ha-icon
+              icon="mdi:map-marker-radius-outline"
+              aria-hidden="true"
+            ></ha-icon>
+            <span>${localize("card.open_in_maps")}</span>
+          </a>`
+          : nothing
+      }
+      ${this._renderExternalLink(station.website, "mdi:web", localize("card.website"))}
+      ${
+        station.phoneNumber
+          ? html`<a
+            class="btn-secondary"
+            href=${`tel:${station.phoneCountryCode ?? ""}${station.phoneNumber}`}
+            @click=${(ev: Event) => ev.stopPropagation()}
+          >
+            <ha-icon icon="mdi:phone-outline" aria-hidden="true"></ha-icon>
+            <span>${localize("card.call")}</span>
+          </a>`
+          : nothing
+      }
+      ${this._renderExternalLink(station.priceUrl, "mdi:cash-multiple", localize("card.tariff"))}
+    </div>`;
+  }
+
+  /** A secondary action opening `raw` in a new tab; nothing unless it is an http(s) URL. */
+  private _renderExternalLink(
+    raw: string | null,
+    icon: string,
+    label: string,
+  ): TemplateResult | typeof nothing {
+    const url = safeHttpsUri(raw);
+    if (!url) return nothing;
+    // aria-hidden is bound only to keep it after `icon` in the markup:
+    // Lit writes bound attributes after the static ones.
+    return html`<a
+      class="btn-secondary"
+      href=${url}
+      target="_blank"
+      rel="noopener noreferrer"
+      @click=${(ev: Event) => ev.stopPropagation()}
+    >
+      <ha-icon icon=${icon} aria-hidden=${"true"}></ha-icon>
+      <span>${label}</span>
+    </a>`;
   }
 
   private _renderRack(points: Point[]): TemplateResult {
