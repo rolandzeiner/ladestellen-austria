@@ -30,6 +30,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { LitElement } from "lit";
 
+import { localize } from "./localize/localize";
 import type { HomeAssistant, Station } from "./types";
 
 /** Custom-element names recorded as the bundle registers them. */
@@ -253,15 +254,15 @@ describe("ladestellen-austria-card", () => {
     const el = document.createElement("ladestellen-austria-card") as LitElement & {
       setConfig: (c: unknown) => void;
     };
-    expect(() => el.setConfig(null)).toThrow();
-    expect(() => el.setConfig("nope")).toThrow();
+    expect(() => el.setConfig(null)).toThrow(localize("common.invalid_configuration"));
+    expect(() => el.setConfig("nope")).toThrow(localize("common.invalid_configuration"));
   });
 
   it("rejects a non-string entity", () => {
     const el = document.createElement("ladestellen-austria-card") as LitElement & {
       setConfig: (c: unknown) => void;
     };
-    expect(() => el.setConfig({ entity: 42 })).toThrow();
+    expect(() => el.setConfig({ entity: 42 })).toThrow(localize("common.invalid_entity"));
   });
 
   it("renders a loading empty-state before hass arrives", async () => {
@@ -468,10 +469,10 @@ describe("station row disclosure", () => {
   it("keeps the maps link outside the trigger", async () => {
     const el = await mountCard();
     const row = el.shadowRoot!.querySelector("li.station")!;
+    // The fixture station carries a location, so the link must render.
     const link = row.querySelector("a.icon-action");
-    if (link) {
-      expect(link.closest("button.station-trigger")).toBeNull();
-    }
+    expect(link).not.toBeNull();
+    expect(link!.closest("button.station-trigger")).toBeNull();
   });
 
   it("names the trigger from the station and its status", async () => {
@@ -722,7 +723,7 @@ describe("ladestellen-austria-parking-card", () => {
     const el = document.createElement("ladestellen-austria-parking-card") as LitElement & {
       setConfig: (c: unknown) => void;
     };
-    expect(() => el.setConfig({ station_id: 7 })).toThrow();
+    expect(() => el.setConfig({ station_id: 7 })).toThrow(localize("common.invalid_station_id"));
   });
 
   it("renders one slot per point", async () => {
@@ -905,18 +906,30 @@ describe("editors", () => {
     }
   });
 
-  it("exposes the station picker as a radio group", async () => {
+  it("keeps the station picker heading without stations", async () => {
+    // The group renders only once stations are present; the labelling
+    // target must exist either way so the wiring cannot rot silently.
     const el = await mountEditor("ladestellen-austria-parking-card-editor");
     const root = el.shadowRoot!;
     expect(root.getElementById("station-picker-heading")?.textContent?.trim()).toBeTruthy();
-    // The group renders only once stations are present; the labelling
-    // target must exist either way so the wiring cannot rot silently.
+    expect(root.querySelector('[role="radiogroup"]')).toBeNull();
+  });
+
+  it("exposes the station picker as a radio group", async () => {
+    const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+      "ladestellen-austria-parking-card-editor",
+      (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria" });
+        e.hass = hass();
+      },
+    );
+    const root = el.shadowRoot!;
     const group = root.querySelector('[role="radiogroup"]');
-    if (group) {
-      expect(group.getAttribute("aria-labelledby")).toBe("station-picker-heading");
-      const radios = Array.from(group.querySelectorAll('[role="radio"]'));
-      expect(radios.every((r) => r.hasAttribute("aria-checked"))).toBe(true);
-    }
+    expect(group).not.toBeNull();
+    expect(group!.getAttribute("aria-labelledby")).toBe("station-picker-heading");
+    const radios = Array.from(group!.querySelectorAll('[role="radio"]'));
+    expect(radios.length).toBeGreaterThan(0);
+    expect(radios.every((r) => r.hasAttribute("aria-checked"))).toBe(true);
   });
 
   it("gives both editors a heading structure", async () => {

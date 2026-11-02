@@ -215,11 +215,8 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   /**
-   * Everything render() needs derived from the sensor's state object.
-   *
-   * This was ~55 lines inline at the top of render(), which is why the
-   * renderer carried eight `??`/ternary decision points before it drew
-   * anything. Pulling it out leaves render() as a layout description.
+   * Everything render() needs, derived once from the sensor's state
+   * object, so render() stays a layout description.
    */
   private _buildListView(stateObj: HassEntity): StationListView {
     const allStations = (stateObj.attributes["stations"] ?? []) as Station[];
@@ -264,9 +261,10 @@ export class LadestellenAustriaCard extends LitElement {
       dynamicEntity,
       filteredCount: filtered.length,
       totalCount: allStations.length,
-      // Hero always uses the distance-nearest station from the unfiltered,
-      // unpinned pool — a stable "how far is any charger from me" answer
-      // that shouldn't flip when the user resorts, filters, or pins.
+      // Hero always uses allStations[0]: the integration emits `stations`
+      // sorted by distance, so this is the nearest charger regardless of
+      // filters, sort mode or pins, and it doesn't flip when the user
+      // changes any of them.
       nearestByDistance: allStations[0],
       farthestShown: visibleLive[visibleLive.length - 1],
     };
@@ -414,9 +412,8 @@ export class LadestellenAustriaCard extends LitElement {
     // sort_by_power=false: distance asc → free > busy → (stable)
     //
     // In distance mode the free tier only fires on exact-distance ties
-    // (rare), so behaviour matches the previous distance-sort for
-    // essentially all stations. Included for consistency and to handle
-    // pathological edge cases where two stations share identical coords.
+    // (rare: two stations sharing identical coords), so for essentially
+    // all stations the order is plain distance asc.
     const sorted = [...stations];
     sorted.sort((a, b) => {
       if (this.config.sort_by_power) {
@@ -515,8 +512,7 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _filterStations(stations: Station[]): Station[] {
-    // Cache now + tz once for the only-open sweep; isOpenNow is a
-    // per-station call so we don't want to rebuild Date/tz in the loop.
+    // `now` and `tz` are built once per sweep; see filterStations.
     return filterStations(
       stations,
       this.config,
@@ -524,8 +520,6 @@ export class LadestellenAustriaCard extends LitElement {
       this.hass?.config?.time_zone ?? "Europe/Vienna",
     );
   }
-
-  // Footer rendering lives in shared-render.ts; both cards share it.
 
   private _renderHero(
     nearest: Station | undefined,
@@ -573,8 +567,8 @@ export class LadestellenAustriaCard extends LitElement {
 
   /**
    * The row's top line: kW, price, connector chips and the pin marker.
-   * Five conditional fragments that were inline in _renderStation and
-   * made up most of its branching.
+   * Kept out of _renderStation so the row template isn't five
+   * conditionals deep.
    */
   private _renderRowPrimary(v: {
     maxKw: number;
@@ -667,18 +661,17 @@ export class LadestellenAustriaCard extends LitElement {
     const detailId = `station-panel-${station.stationId}`;
     const nameId = `station-name-${station.stationId}`;
     const statusId = `station-status-${station.stationId}`;
+    // The disclosure trigger is a transparent overlay across the row, not
+    // a wrapper around it: a role="button" on the <li> would make the
+    // maps link a presentational child of a button, and assistive tech
+    // can drop a distinct destination that way. As a sibling the link
+    // stays reachable: .icon-action is positioned so it paints above the
+    // overlay and takes its own clicks, while the chevron deliberately
+    // stays below it so clicking the affordance still toggles the row.
+    // (A JS comment: Lit renders an HTML comment into every row.)
     return html`
       <li class=${cls}>
         <div class="station-body">
-          <!-- The disclosure trigger is a transparent overlay across the
-               row, not a wrapper around it. role="button" used to sit on
-               the <li>, which made the row's own maps link a
-               presentational child of a button — assistive tech can drop
-               a distinct destination that way. As a sibling the link
-               stays reachable: .icon-action is positioned so it paints
-               above the overlay and takes its own clicks, while the
-               chevron deliberately stays below it so clicking the
-               affordance still toggles the row. -->
           <button
             class="station-trigger"
             type="button"
@@ -1129,10 +1122,10 @@ export class LadestellenAustriaCard extends LitElement {
     }
   }
 
-  // One-line fee summary (or null). Uses the max of each extra fee across a
-  // station's points — mixed-fee stations are rare and showing a range is
-  // noisier than showing the worst case. Hidden when every point is free of
-  // extras.
+  // One-line fee summary (or null). Shows the worst case across a
+  // station's points (highest start fee, highest blocking rate, earliest
+  // blocking start): mixed-fee stations are rare and a range is noisier
+  // than the worst case. Hidden when every point is free of extras.
   private _feesLine(points: Point[]): string | null {
     const startFees = points.map((p) => p.startFeeCent ?? 0).filter((v) => v > 0);
     const blocking = points
@@ -1251,7 +1244,9 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _formatKm(value: string | number | undefined): string {
-    const n = typeof value === "number" ? value : parseFloat(String(value ?? ""));
+    // `distance` is typed number, but the stations attribute is
+    // unvalidated; accept a numeric string too.
+    const n = typeof value === "number" ? value : parseFloat(value ?? "");
     if (!Number.isFinite(n)) return "–";
     try {
       return new Intl.NumberFormat("de-AT", {

@@ -2,6 +2,7 @@
   "domain": "ladestellen_austria",
   "name": "Ladestellen Austria",
   "after_dependencies": ["frontend", "http", "lovelace"],
+  "categories": ["energy.ev_charging"],
   "codeowners": ["@rolandzeiner"],
   "config_flow": true,
   "dependencies": [],
@@ -11,5 +12,5 @@
   "issue_tracker": "https://github.com/rolandzeiner/ladestellen-austria/issues",
   "loggers": ["custom_components.ladestellen_austria"],
   "requirements": [],
-  "version": "1.2.0"
+  "version": "1.2.1"
 }

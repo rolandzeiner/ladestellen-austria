@@ -1,11 +1,8 @@
-// Station-level predicates and filtering, extracted from the card class.
+// Station-level predicates and filtering.
 //
-// These were private methods on LadestellenAustriaCard until the card's
-// complexity density made them the file's main risk concentration. None
-// of them touched `this` for anything but reading config, so moving them
-// to module scope costs nothing and buys two things: they are unit
-// testable without booting a Lit component, and the card file stops
-// carrying the branchiest logic in the bundle.
+// Module-scope functions, not card methods: they are unit-testable
+// without booting a Lit component, and they keep the branchiest logic
+// in the bundle out of the card file.
 //
 // Keep these pure. The card passes `now` and `tz` in rather than reading
 // the clock here, so opening-hours behaviour is deterministic in tests.
@@ -125,10 +122,11 @@ export function hoursToMow(dayName: string, time: string): number | null {
 
 /**
  * Is the station inside any of its opening ranges at `now` (in `tz`)?
- * Returns null when hours are missing or unparseable — callers treat
- * the closed-now signal as unknown rather than as closed. Ranges that
- * wrap the week boundary (from > to) are handled via OR, matching the
- * behaviour a single 7-day schedule expects.
+ * Returns null when there are no hours at all or the clock can't be
+ * read in `tz` — callers treat null as unknown, not as closed. Entries
+ * that don't parse are skipped, so a station whose only entries are
+ * unparseable reads closed. Ranges may wrap the week boundary
+ * (Sun 22:00 → Mon 06:00).
  */
 export function isOpenNow(
   hours: OpeningHours[] | undefined,
@@ -142,11 +140,13 @@ export function isOpenNow(
     const fromMow = hoursToMow(h.fromWeekday, h.fromTime);
     const toMow = hoursToMow(h.toWeekday, h.toTime);
     if (fromMow == null || toMow == null) continue;
-    if (fromMow <= toMow) {
-      if (nowMow >= fromMow && nowMow <= toMow) return true;
-    } else {
-      if (nowMow >= fromMow || nowMow <= toMow) return true;
-    }
+    // A range that wraps the week boundary (from > to) is an OR of its
+    // two halves; a plain range is the closed interval.
+    const inRange =
+      fromMow <= toMow
+        ? nowMow >= fromMow && nowMow <= toMow
+        : nowMow >= fromMow || nowMow <= toMow;
+    if (inRange) return true;
   }
   return false;
 }

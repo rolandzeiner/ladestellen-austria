@@ -7,4 +7,4 @@
 //
 // There is no dev-time suffix. const.py derives its value from manifest.json,
 // so a release is one edit there plus one here, in the same commit.
-export const CARD_VERSION = "1.2.0";
+export const CARD_VERSION = "1.2.1";
