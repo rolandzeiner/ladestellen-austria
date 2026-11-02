@@ -2,6 +2,7 @@
   "domain": "ladestellen_austria",
   "name": "Ladestellen Austria",
   "after_dependencies": ["frontend", "http", "lovelace"],
+  "categories": ["energy.ev_charging"],
   "codeowners": ["@rolandzeiner"],
   "config_flow": true,
   "dependencies": [],

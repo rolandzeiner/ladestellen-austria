@@ -19,6 +19,7 @@ from custom_components.ladestellen_austria.const import (
     DEFAULT_MAX_RESULTS,
     DOMAIN,
     DOMAIN_LAST_API_CALL_KEY,
+    EVENT_SLOT_STATUS_CHANGED,
 )
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
@@ -720,11 +721,6 @@ async def test_tracker_update_event_blocked_by_cooldown_no_refresh(
 # successful refreshes; no event on first refresh, on identical status, or
 # on a missing/null status on either side.
 # ---------------------------------------------------------------------------
-
-
-from custom_components.ladestellen_austria.const import (
-    EVENT_SLOT_STATUS_CHANGED,
-)
 
 
 def _stations(*pairs: tuple[str, str]) -> list[dict[str, object]]:
