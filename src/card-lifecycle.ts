@@ -1,15 +1,13 @@
 // Lifecycle helpers shared by both cards and both editors.
 //
-// These four bodies were duplicated verbatim across the files that need
-// them, which is worse than it sounds: each carries a guard whose reason
-// is not obvious from the code (the isConnected check, the `!prev`
-// early return, the set-the-flag-before-awaiting ordering). A guard
-// copied four times is a guard that gets fixed in one place and left
-// wrong in three.
+// Each carries a guard whose reason is not obvious from the code (the
+// isConnected check, the `!prev` early return, the
+// set-the-flag-before-awaiting ordering), so they live once, here: a
+// guard copied per class is a guard that gets fixed in one place and
+// left wrong in the others.
 //
 // `checkCardVersionWS` lives here rather than in shared-render.ts
-// because it is a lifecycle concern, not a render one — shared-render
-// is now purely the two render functions plus their private helpers.
+// because it is a lifecycle concern, not a render one.
 
 import type { PropertyValues } from "lit";
 
@@ -60,11 +58,8 @@ export function syncCardLanguage(
  * The `shouldUpdate` tail both cards share: re-render only when the
  * configured entity's state object actually changed identity.
  *
- * Returns true (update) when there is no previous hass or no configured
- * entity — conservative on purpose. Lit calls shouldUpdate before the
- * first render only after a property change, and HA's Lovelace pipeline
- * always invokes setConfig synchronously before mounting, so `config` is
- * non-null by the time this can run.
+ * Returns true (update) when there is no previous hass, no configured
+ * entity, or the UI language changed — conservative on purpose.
  */
 export function shouldUpdateForEntityState(
   changedProps: PropertyValues,
@@ -88,10 +83,9 @@ export function findStubEntity(entities: string[]): string {
   return entities.find((e) => e.startsWith("sensor.") && e.includes("ladestelle")) ?? "";
 }
 
-// Elements whose version probe has already been started. A WeakSet keyed
-// on the element replaces the per-class `_versionCheckDone` field: the
-// entry is added *before* the await, so a second call during the
-// in-flight probe is a no-op, and it is collected with the element.
+// Elements whose version probe has already been started. A WeakSet so
+// the entry is collected with the element; it is added *before* the
+// await, so a second call during the in-flight probe is a no-op.
 const versionCheckStarted = new WeakSet();
 
 /**
@@ -106,10 +100,11 @@ const versionCheckStarted = new WeakSet();
  * from.
  */
 export function runVersionCheckOnce(
-  // `hass` is explicitly `| undefined` rather than optional: under
-  // exactOptionalPropertyTypes those differ, and a card genuinely does
-  // hold an undefined `hass` before HA assigns it — which is the case
-  // the guard below exists for.
+  // `hass` is `?: ... | undefined`, not just `?:`: under
+  // exactOptionalPropertyTypes an optional-only property may be omitted
+  // but may not hold `undefined`, and a card genuinely holds an undefined
+  // `hass` before HA assigns it — which is the case the guard below
+  // exists for.
   host: { hass?: HomeAssistant | undefined; isConnected: boolean },
   onMismatch: (version: string) => void,
 ): void {
@@ -125,10 +120,10 @@ export function runVersionCheckOnce(
  * `window.customCards` entry (HA 2026.6 entity-first picker).
  *
  * Suggest a card only for this integration's own sensor entities,
- * judged by the entity registry's `platform`. Both cards had a copy of
- * this, each repeating the `"ladestellen_austria"` platform string — a
- * magic value that silently stops matching if the domain is ever
- * renamed in one file and not the other.
+ * judged by the entity registry's `platform`. Built once here so the
+ * `"ladestellen_austria"` platform string is not repeated per card — a
+ * magic value that silently stops matching if the domain is renamed in
+ * one place and not the other.
  */
 export function entitySuggestionFor(cardType: `custom:${string}`): (
   hass: HomeAssistant,

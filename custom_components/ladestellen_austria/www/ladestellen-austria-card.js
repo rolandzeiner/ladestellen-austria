@@ -2583,15 +2583,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     </div>`}_renderStation(e,t,n=!1){let r=e.points??[],i=sn(e),a=on(e),o=Array.from(nn(e)),s=o.slice(0,3),c=o.length-s.length,l=this._priceText(r),u=r.some(e=>e.freeOfCharge),d=r.length,f=r.filter(e=>U(e.status)===`AVAILABLE`).length,p=e.stationStatus===`ACTIVE`,ee=this.hass?.config?.time_zone??`Europe/Vienna`,te=$t(e.openingHours,/* @__PURE__ */ new Date,ee),m=en(t,p,r,te),h=this._expanded.has(e.stationId),g=cn(e.location),ne=this.config?.show_amenities??!0,re=this.config?.show_pricing??!0,_=[`station`,h?`expanded`:``,n?`is-pinned`:``,m===`inactive`?`is-inactive`:``].filter(Boolean).join(` `),v=[[e.postCode,e.city].filter(Boolean).join(` `),Number.isFinite(e.distance)?`${this._formatKm(e.distance)} km`:``].filter(Boolean).join(` · `),y=`station-panel-${e.stationId}`,b=`station-name-${e.stationId}`,x=`station-status-${e.stationId}`;return A`
       <li class=${_}>
         <div class="station-body">
-          <!-- The disclosure trigger is a transparent overlay across the
-               row, not a wrapper around it. role="button" used to sit on
-               the <li>, which made the row's own maps link a
-               presentational child of a button — assistive tech can drop
-               a distinct destination that way. As a sibling the link
-               stays reachable: .icon-action is positioned so it paints
-               above the overlay and takes its own clicks, while the
-               chevron deliberately stays below it so clicking the
-               affordance still toggles the row. -->
           <button
             class="station-trigger"
             type="button"
