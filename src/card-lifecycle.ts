@@ -92,7 +92,7 @@ export function findStubEntity(entities: string[]): string {
 // on the element replaces the per-class `_versionCheckDone` field: the
 // entry is added *before* the await, so a second call during the
 // in-flight probe is a no-op, and it is collected with the element.
-const versionCheckStarted = new WeakSet<object>();
+const versionCheckStarted = new WeakSet();
 
 /**
  * Fire the WS card-version probe at most once per element.

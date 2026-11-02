@@ -287,7 +287,7 @@ export class LadestellenAustriaCardEditor
     const pinnedSet = new Set(pinned);
     const liveIds = new Set(stations.map((s) => s.stationId));
     const orphanIds = pinned.filter((id) => !liveIds.has(id));
-    const dynamicMode = (stateObj?.attributes?.["dynamic_mode"] as boolean) === true;
+    const dynamicMode = stateObj?.attributes?.["dynamic_mode"] === true;
     return html`
       <div class="field">
         <div class="field-label">${localize("editor.pinned")}</div>

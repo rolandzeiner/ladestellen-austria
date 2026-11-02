@@ -142,11 +142,13 @@ export function isOpenNow(
     const fromMow = hoursToMow(h.fromWeekday, h.fromTime);
     const toMow = hoursToMow(h.toWeekday, h.toTime);
     if (fromMow == null || toMow == null) continue;
-    if (fromMow <= toMow) {
-      if (nowMow >= fromMow && nowMow <= toMow) return true;
-    } else {
-      if (nowMow >= fromMow || nowMow <= toMow) return true;
-    }
+    // A range that wraps the week boundary (from > to) is an OR of its
+    // two halves; a plain range is the closed interval.
+    const inRange =
+      fromMow <= toMow
+        ? nowMow >= fromMow && nowMow <= toMow
+        : nowMow >= fromMow || nowMow <= toMow;
+    if (inRange) return true;
   }
   return false;
 }

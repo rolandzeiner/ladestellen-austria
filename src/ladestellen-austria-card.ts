@@ -1251,7 +1251,7 @@ export class LadestellenAustriaCard extends LitElement {
   }
 
   private _formatKm(value: string | number | undefined): string {
-    const n = typeof value === "number" ? value : parseFloat(String(value ?? ""));
+    const n = typeof value === "number" ? value : parseFloat(value ?? "");
     if (!Number.isFinite(n)) return "–";
     try {
       return new Intl.NumberFormat("de-AT", {
