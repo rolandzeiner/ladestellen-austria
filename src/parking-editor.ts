@@ -1,8 +1,9 @@
 // Visual editor for the parking-slot card. The sensor, the station (a
 // picked one, or the nearest; the card shows nothing without one) and
-// the title sit at the top; the header, the lot's look and the footer
-// each get a collapsible group. Typed fields go through <ha-form>; the
-// station picker and the colour swatch are hand-written.
+// the title sit at the top; the plug and power filter, the header, the
+// lot's look and the footer each get a collapsible group. Typed fields
+// go through <ha-form>; the station list, the plug chips and the colour
+// swatch are hand-written.
 
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
@@ -265,8 +266,8 @@ export class LadestellenAustriaParkingCardEditor
         </div>
         ${form(NAME_SCHEMA)}
         ${this._renderPanels([
-          // Leads the part groups: in nearest mode it decides which
-          // station the card shows at all.
+          // First group: in nearest mode it decides which station the
+          // card shows at all.
           {
             id: "plug",
             icon: "mdi:ev-plug-type2",

@@ -28,12 +28,11 @@ import {
 } from "./editor-panels";
 
 /**
- * The config fields backed by a string array and edited by a chip or
- * pin toggle. Typing the chip helper's key with this union keeps
- * `_toggleListItem` calls honest — a typo'd key is a compile error,
- * not a silently ignored write.
+ * The string-array fields the chip helpers below toggle. Typing their
+ * key with this union makes a typo'd key a compile error there;
+ * `_toggleListItem` itself takes any string.
  */
-type ListConfigKey = "connector_types" | "amenities" | "payment_methods" | "pinned_station_ids";
+type ListConfigKey = "connector_types" | "amenities" | "payment_methods";
 
 const ENTITY_SELECTOR = {
   entity: { filter: { domain: "sensor", integration: "ladestellen_austria" } },

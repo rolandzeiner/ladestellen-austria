@@ -300,7 +300,8 @@ export function hasPointFilters(f: PointFilters): boolean {
  * Does this charging point fit the plug and power filter? Matched per
  * point, not per station, because stations mix them: one with a free
  * 3.7 kW Type 2 and a busy 22 kW Type 2 has no free point for "Type 2,
- * at least 11 kW", although it has Type 2, 11 kW and a free point.
+ * at least 11 kW", although it has Type 2, a point of at least 11 kW
+ * and a free point.
  * Plugs are OR; a point with no reported power fails a power minimum,
  * since nothing says it reaches it.
  */
@@ -351,7 +352,8 @@ export type ParkingPick = { station: Station } | { station?: undefined; emptyKey
  * first) that has a point fitting the plug and power filter, and
  * `station_id` is ignored; `only_available` narrows that to the nearest
  * one with a usable spot. Otherwise it is `station_id`, whatever the
- * filter says: there the filter only hatches the spots that don't fit.
+ * filter and only_available say: there the filter only hatches the
+ * spots that don't fit.
  */
 export function pickParkingStation(
   stations: Station[],

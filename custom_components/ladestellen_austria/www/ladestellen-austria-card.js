@@ -1509,26 +1509,18 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     --lade-slot-radius: var(--ha-border-radius-sm, 4px);
     --lade-slot-gap: 8px;
 
-    /* Parking-card surface tokens — defaults match the rollback look
-       so cards with no asphalt/paint config render unchanged. The
-       data-* attributes on .wrap (driven by parking-card.ts config)
-       override these per-card when the user opts into the asphalt
-       presets. */
+    /* Parking surface tokens. --lade-paint-width is only the fallback:
+       parking-card.ts always sets data-paint-width on .wrap, and the
+       appearance presets below map it to a width. --lade-paint is fixed. */
     --lade-paint: rgba(255, 255, 255, 0.92);
     --lade-paint-width: 3px;
 
-    /* Asphalt color + noise for the textured preset. The grain is an
-       inline SVG fractalNoise filter (vector-based, randomly
-       distributed by construction — no visible tile grid like
-       layered radial-gradients produce). The CSS-Tricks "grainy
-       gradients" recipe is the canonical reference for this
-       technique. baseFrequency='4' gives a fine asphalt-grade grain
-       (lower values give coarser, cloud-like noise; '0.65' is
-       gradient-grain, '4' is asphalt-grain). numOctaves='3' adds
-       fractal detail. stitchTiles='stitch' makes the 200×200 SVG
-       tile seamlessly when the slot exceeds it. feColorMatrix zeros
-       RGB and rescales alpha (×0.55) so the overlay reads as soft
-       black grain instead of feTurbulence's default rainbow noise. */
+    /* Asphalt base colour for the textured preset. The grain is an
+       inline SVG fractalNoise (baseFrequency 1.2, numOctaves 3,
+       stitchTiles so the 200×200 tile repeats seamlessly) on a rect at
+       0.3 opacity, with no visible tile grid the way layered
+       radial-gradients have; see the CSS-Tricks "grainy gradients"
+       recipe. */
     --lade-asphalt-color: #3a3d42;
     /* (Asphalt noise URL is inlined in each .parking-slot rule below
        rather than stored on this var — Lit's static styles + CSS
@@ -1668,6 +1660,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     background: color-mix(in srgb, var(--primary-color) 12%, transparent);
     color: var(--primary-color);
   }
+  /* Undo the shared a:focus-visible 6px radius, which outranks .map-link. */
   .map-link:focus-visible {
     border-radius: 50%;
   }
@@ -2049,9 +2042,8 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
      are blended into the asphalt color via color-mix so the grain
      stays visible on top, instead of laying a translucent fill ABOVE
      the grain (which would mute it). Specificity (0,3,0) wins over
-     the base status rules at (0,2,0). The grain itself comes from
-     --lade-asphalt-noise (a single SVG data URI; var substitution
-     for one image works reliably, unlike multi-gradient lists). */
+     the base status rules at (0,2,0). The grain is the SVG data URI
+     inlined in each rule (see the note under --lade-asphalt-color). */
   .wrap[data-asphalt-style="textured"] .parking-slot {
     background-color: var(--lade-asphalt-color);
     background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
@@ -2230,8 +2222,9 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     .slot-status-word {
       forced-color-adjust: none;
     }
-    /* Forced colours flatten the paint mix; keep the hatch in a system
-       colour so a spot that doesn't fit still reads as one. */
+    /* Forced colours drop gradient backgrounds, which would erase the
+       hatch. Opt the pseudo-element out and draw the stripes in
+       GrayText so a spot that doesn't fit still reads as one. */
     .parking-slot.is-unmatched::after {
       forced-color-adjust: none;
       background: repeating-linear-gradient(-45deg, GrayText 0 2px, transparent 2px 12px);

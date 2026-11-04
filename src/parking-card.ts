@@ -176,7 +176,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     };
   }
 
-  /** The station to show: the picked one, or the nearest (usable) one. */
+  /** The station to show: the picked one, or the nearest fitting (usable) one; see pickParkingStation. */
   private _pick(stations: Station[]): ParkingPick {
     return pickParkingStation(
       stations,
@@ -251,7 +251,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
   /**
    * Station header. `count` is passed only when the free-slot counter
    * should show, so the show_free_count decision stays at the call site
-   * where the counts are already in scope.
+   * where the counts are already in scope; `map` likewise only when the
+   * station has coordinates.
    */
   private _renderHeader(
     title: string,
@@ -317,10 +318,9 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   /**
-   * Header for the resolved-station branch. Owns all four of its
-   * config decisions (hide_header, custom title, show_free_count,
-   * auto_nearest) so render() carries none of them — those nested
-   * ternaries were most of its remaining cognitive complexity.
+   * Header for the resolved-station branch. Owns the header's config
+   * decisions (hide_header, custom title, show_free_count, auto_nearest)
+   * so render() carries none of them.
    */
   private _stationHeader(
     station: Station,

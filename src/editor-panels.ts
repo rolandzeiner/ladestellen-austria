@@ -1,6 +1,6 @@
 // What both card editors share: the collapsible groups, the labels and
-// helpers for their ha-forms, and how a form's value becomes the saved
-// config.
+// helpers for their ha-forms, the chip row and the string-list toggle
+// behind it, and how a form's value becomes the saved config.
 
 import {
   LitElement,

@@ -125,9 +125,10 @@ export interface LadestellenAustriaCardConfig extends LovelaceCardConfig {
 }
 
 // Second card type — single-station "parking lot from above" visualization.
-// User picks one station and the card renders every point as a parking
-// slot; AVAILABLE points pop, non-available points are muted. Lives in
-// the same bundle as the list card.
+// User picks one station, or lets the card follow the nearest one
+// (auto_nearest), and the card renders every point as a parking slot;
+// AVAILABLE points pop, non-available points are muted. Lives in the
+// same bundle as the list card.
 export interface ParkingLotCardConfig extends LovelaceCardConfig {
   type: string;
   entity?: string;
@@ -135,8 +136,10 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   // Show the sensor's nearest station instead of station_id, which is
   // then ignored but kept, so switching back restores the pick.
   auto_nearest?: boolean;
-  // With auto_nearest: the nearest station with a free, working point
-  // that isn't closed right now. Same key as the list card's filter.
+  // With auto_nearest: the nearest ACTIVE station, not closed per its
+  // opening hours, with a free point that fits connector_types / min_kw.
+  // Same key as the list card's filter, which doesn't check hours.
+  // Ignored without auto_nearest.
   only_available?: boolean;
   // Plug and power the driver needs, matched per charging point (not per
   // station): auto_nearest picks the nearest station with a matching

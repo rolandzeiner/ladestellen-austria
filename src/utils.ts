@@ -229,7 +229,7 @@ export function formatKw(v: number | undefined): string {
 }
 
 /**
- * Distance formatter — Austrian comma decimals, always two digits
+ * Distance formatter — Austrian comma decimals, always two decimals
  * (callers add "km"). 1.234 → "1,23". `distance` is typed number, but
  * the stations attribute is unvalidated, so a numeric string is
  * accepted too; anything else gives "–".
@@ -371,9 +371,9 @@ export function slotStatusWord(bucket: string, fallback: string): string {
 }
 
 /**
- * The slot button's full class list. The status cascade and the five
- * conditional modifiers were inline in the renderer, where they were
- * most of its branching and none of it was reachable from a test.
+ * The slot button's full class list: the status, the overlay, tint and
+ * reveal modifiers, or just `is-unmatched` when the spot doesn't fit the
+ * plug and power filter.
  */
 export function slotClassList(
   variant: SlotVariant,
