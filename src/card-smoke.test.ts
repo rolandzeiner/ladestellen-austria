@@ -881,6 +881,106 @@ describe("ladestellen-austria-parking-card", () => {
       expect(el.shadowRoot?.querySelector(".parking-slot")).toBeNull();
     });
   });
+
+  describe("plug and power filter", () => {
+    const point = (
+      evseId: string,
+      consumerName: string,
+      key: string,
+      kw: number,
+      status: string,
+    ) => ({
+      ...basePoint(),
+      evseId,
+      capacityKw: kw,
+      status,
+      connectorType: [{ consumerName, key }],
+    });
+    // A free slow Type 2, a busy fast CCS and a free fast CCS.
+    const mixed = station({
+      stationId: "at-1",
+      points: [
+        point("AT*TST*E1", "TYPE_2_AC", "CTYPE2", 11, "AVAILABLE"),
+        point("AT*TST*E2", "COMBO2_CCS_DC", "IEC_62196_T2_COMBO", 80, "CHARGING"),
+        point("AT*TST*E3", "COMBO2_CCS_DC", "IEC_62196_T2_COMBO", 80, "AVAILABLE"),
+      ],
+    } as Partial<Station>);
+    const slots = (el: LitElement) => [
+      ...(el.shadowRoot?.querySelectorAll<HTMLElement>(".parking-slot") ?? []),
+    ];
+
+    it("hatches the spots that don't fit and keeps the rest as they are", async () => {
+      const el = await mountParking({ connector_types: ["CCS"] }, mixed);
+      expect(slots(el).map((s) => s.classList.contains("is-unmatched"))).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      // The busy CCS spot keeps its car; the hatched one gets none.
+      expect(slots(el)[1]!.querySelector(".slot-car")).not.toBeNull();
+      expect(slots(el)[0]!.querySelector(".slot-car, .slot-overlay-icon")).toBeNull();
+    });
+
+    it("tells screen readers why a spot is hatched", async () => {
+      const el = await mountParking({ min_kw: 50 }, mixed);
+      expect(slots(el)[0]!.getAttribute("aria-label")).toContain(
+        localize("parking.slot_unmatched"),
+      );
+      expect(slots(el)[2]!.getAttribute("aria-label")).not.toContain(
+        localize("parking.slot_unmatched"),
+      );
+    });
+
+    it("counts only the spots that fit", async () => {
+      const el = await mountParking({ connector_types: ["CCS"] }, mixed);
+      expect(el.shadowRoot?.querySelector(".header-count-num")?.textContent).toBe("1");
+      expect(el.shadowRoot?.querySelector(".header-count-of")?.textContent).toBe("/ 2");
+    });
+
+    it("drops the counter when no spot fits", async () => {
+      const el = await mountParking({ min_kw: 150 }, mixed);
+      expect(el.shadowRoot?.querySelector(".header-count")).toBeNull();
+      expect(slots(el).every((s) => s.classList.contains("is-unmatched"))).toBe(true);
+    });
+
+    it("hatches nothing without a filter", async () => {
+      const el = await mountParking({}, mixed);
+      expect(el.shadowRoot?.querySelector(".is-unmatched")).toBeNull();
+    });
+
+    it("follows the nearest station with a fitting point", async () => {
+      const acOnly = station({
+        stationId: "at-ac",
+        label: "Nur AC",
+        points: [point("AT*TST*A1", "TYPE_2_AC", "CTYPE2", 22, "AVAILABLE")],
+      } as Partial<Station>);
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({
+            entity: "sensor.ladestellen_austria",
+            auto_nearest: true,
+            connector_types: ["CCS"],
+          });
+          e.hass = hass([acOnly, { ...mixed, label: "Gemischt" }]);
+        },
+      );
+      expect(el.shadowRoot?.querySelector(".title")?.textContent?.trim()).toBe("Gemischt");
+    });
+
+    it("says so when no nearby station has a fitting point", async () => {
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({ entity: "sensor.ladestellen_austria", auto_nearest: true, min_kw: 150 });
+          e.hass = hass([mixed]);
+        },
+      );
+      expect(el.shadowRoot?.querySelector(".empty-state")?.textContent?.trim()).toBe(
+        localize("parking.none_matching"),
+      );
+    });
+  });
 });
 
 describe("parking card size", () => {

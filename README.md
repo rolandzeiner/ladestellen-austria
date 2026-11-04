@@ -192,13 +192,15 @@ entity: sensor.ladestellen_austria_nearest_station
 station_id: <stationId>
 ```
 
-Or always the nearest station with a free space, which moves with you when the entry follows a tracker:
+Or always the nearest fast charger with a free CCS space, which moves with you when the entry follows a tracker:
 
 ```yaml
 type: custom:ladestellen-austria-parking-card
 entity: sensor.ladestellen_austria_nearest_station
 auto_nearest: true
 only_available: true
+connector_types: [CCS]
+min_kw: 50
 ```
 
 | Option | Default | Description |
@@ -207,6 +209,8 @@ only_available: true
 | `station_id` | none | The station to show. The editor lets you pick it from the sensor's stations. Ignored with `auto_nearest`. |
 | `auto_nearest` | `false` | Shows the sensor's nearest station instead, with its distance in the header. |
 | `only_available` | `false` | With `auto_nearest`: the nearest station with a free, working charging point that isn't closed right now. If none of the ten has one, the card says so. |
+| `connector_types` | none | The plugs your car takes: `Type 2`, `CCS`, `CHAdeMO`, `Type 1`, `Tesla`, `Schuko`, `CEE`. Matched per charging point: with `auto_nearest` the card shows the nearest station with a point that fits, and spots that don't fit are hatched. |
+| `min_kw` | none | The least power a charging point needs, in kW, for example `11` (AC) or `50` (DC fast charging). Works like `connector_types`. |
 | `name` | the station's name | The card title. |
 | `hide_header` | `false` | Hides the header. |
 | `show_free_count` | `true` | Shows the free / total counter. |

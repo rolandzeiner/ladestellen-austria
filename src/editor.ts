@@ -17,12 +17,21 @@ import {
   type Station,
 } from "./types";
 import { localize } from "./localize/localize";
-import { PanelEditor, boxSelector, formText, keyedMemo, type HaFormSchema } from "./editor-panels";
+import {
+  PanelEditor,
+  boxSelector,
+  chipGroup,
+  filterChip,
+  formText,
+  keyedMemo,
+  type HaFormSchema,
+} from "./editor-panels";
 
 /**
  * The config fields backed by a string array and edited by a chip or
- * pin toggle. Naming them as a union keeps `_toggleListItem` honest —
- * a typo'd key is a compile error, not a silently ignored write.
+ * pin toggle. Typing the chip helper's key with this union keeps
+ * `_toggleListItem` calls honest — a typo'd key is a compile error,
+ * not a silently ignored write.
  */
 type ListConfigKey = "connector_types" | "amenities" | "payment_methods" | "pinned_station_ids";
 
@@ -157,20 +166,6 @@ export class LadestellenAustriaCardEditor
     return next;
   }
 
-  /**
-   * Add or remove `value` in one of the config's string-array fields.
-   * The config is replaced rather than mutated: `_config` drives the
-   * widgets' selected-state visuals, so it has to change identity for
-   * Lit to notice. An emptied list is dropped, not saved as `[]`.
-   */
-  private _toggleListItem(key: ListConfigKey, value: string): void {
-    const current = this._config[key] ?? [];
-    const list = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-    const next = { ...this._config, [key]: list };
-    if (list.length === 0) delete next[key];
-    this._commit(next);
-  }
-
   protected override render(): TemplateResult {
     const c = this._config;
     const data: Record<string, unknown> = {
@@ -224,16 +219,8 @@ export class LadestellenAustriaCardEditor
     const connectors = this._config.connector_types ?? [];
     const payments = this._config.payment_methods ?? [];
     const amenities = this._config.amenities ?? [];
-    const chip = (key: ListConfigKey, value: string, on: boolean, content: unknown) => html`
-      <button
-        type="button"
-        class=${on ? "filter-chip active" : "filter-chip"}
-        aria-pressed=${on}
-        @click=${() => this._toggleListItem(key, value)}
-      >
-        ${content}
-      </button>
-    `;
+    const chip = (key: ListConfigKey, value: string, on: boolean, content: unknown) =>
+      filterChip(on, () => this._toggleListItem(key, value), content);
     const iconChip = (
       key: ListConfigKey,
       selected: ReadonlyArray<string>,
@@ -265,18 +252,12 @@ export class LadestellenAustriaCardEditor
   }
 
   private _chipGroup(id: string, chips: TemplateResult[]): TemplateResult {
-    return html`<div
-      class="chip-group"
-      role="group"
-      aria-labelledby=${`chips-${id}`}
-      aria-describedby=${`chips-${id}-hint`}
-    >
-      <div class="field-label" id=${`chips-${id}`}>${localize(`editor.chips_${id}`)}</div>
-      <div class="chip-row">${chips}</div>
-      <div class="editor-hint" id=${`chips-${id}-hint`}>
-        ${localize(`editor.chips_${id}_helper`)}
-      </div>
-    </div>`;
+    return chipGroup(
+      id,
+      localize(`editor.chips_${id}`),
+      localize(`editor.chips_${id}_helper`),
+      chips,
+    );
   }
 
   private _renderPinSection(): TemplateResult {

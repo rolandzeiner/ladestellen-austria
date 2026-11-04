@@ -138,6 +138,13 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   // With auto_nearest: the nearest station with a free, working point
   // that isn't closed right now. Same key as the list card's filter.
   only_available?: boolean;
+  // Plug and power the driver needs, matched per charging point (not per
+  // station): auto_nearest picks the nearest station with a matching
+  // point, and points that don't match are hatched in the lot. Plug
+  // tokens are CONNECTOR_FILTER_OPTIONS labels, OR semantics, the same
+  // key the list card uses. min_kw 0 / absent means any power.
+  connector_types?: string[];
+  min_kw?: number;
   name?: string;
   // Whether the X / Y free counter renders in the header. Defaults to
   // true; users who only want the lot visualization can hide it.

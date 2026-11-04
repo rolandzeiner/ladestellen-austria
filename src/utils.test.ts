@@ -344,6 +344,12 @@ describe("slotClassList", () => {
     expect(slotClassList(base, false).split(" ")[0]).toBe("parking-slot");
   });
 
+  it("hatches a spot that doesn't fit, dropping its status tint and overlay", () => {
+    const busyWithCar = { ...base, isAvailable: false, isBusy: true, showCar: true };
+    expect(slotClassList(busyWithCar, true, true)).toBe("parking-slot is-unmatched");
+    expect(slotClassList(base, false, true)).toBe("parking-slot is-unmatched");
+  });
+
   it.each([
     [{ isAvailable: true, isBusy: false, isWarn: false }, "is-available"],
     [{ isAvailable: false, isBusy: true, isWarn: false }, "is-busy"],

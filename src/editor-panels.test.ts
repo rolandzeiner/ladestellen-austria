@@ -116,10 +116,19 @@ describe("groups", () => {
       car_color_mode: "fixed",
     });
     expect(panels(el).map((p) => p.secondary)).toEqual([
+      "All plugs · any power",
       "Hidden",
       "Grainy · One colour · Medium",
       "Logo in E-Control colours",
     ]);
+  });
+
+  it("summarises the plug and power picked", async () => {
+    const el = await mount("ladestellen-austria-parking-card-editor", {
+      connector_types: ["CCS", "Type 2"],
+      min_kw: 50,
+    });
+    expect(panels(el)[0]!.secondary).toBe("CCS, Type 2 · from 50 kW");
   });
 });
 
@@ -200,9 +209,60 @@ describe("saved config", () => {
     });
   });
 
+  it("saves the power tile as kW and drops the default", async () => {
+    const el = await mount("ladestellen-austria-parking-card-editor", {});
+    await open(el, 0);
+    const base = { entity: "sensor.ladestellen_austria", show_header: true };
+    expect(await change(el, "min_kw", { ...base, min_kw: "50" })).toEqual({
+      entity: "sensor.ladestellen_austria",
+      min_kw: 50,
+    });
+    expect(await change(el, "min_kw", { ...base, min_kw: "0" })).toEqual({
+      entity: "sensor.ladestellen_austria",
+    });
+  });
+
+  it("gives a power minimum written in YAML a tile of its own", async () => {
+    const el = await mount("ladestellen-austria-parking-card-editor", { min_kw: 22 });
+    await open(el, 0);
+    const form = [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")].find((f) =>
+      f.schema.some((s) => s.name === "min_kw"),
+    )!;
+    const field = form.schema.find((s) => s.name === "min_kw") as {
+      selector: { select: { options: { value: string }[] } };
+    };
+    expect(field.selector.select.options.map((o) => o.value)).toEqual([
+      "0",
+      "11",
+      "22",
+      "50",
+      "150",
+    ]);
+  });
+
+  it("toggles a plug chip into connector_types and out again", async () => {
+    const el = await mount("ladestellen-austria-parking-card-editor", {});
+    await open(el, 0);
+    const saved: Record<string, unknown>[] = [];
+    el.addEventListener("config-changed", (ev) => saved.push((ev as CustomEvent).detail.config));
+    const ccs = () =>
+      [...el.shadowRoot!.querySelectorAll<HTMLButtonElement>("button.filter-chip")].find(
+        (b) => b.textContent?.trim() === "CCS",
+      )!;
+    ccs().click();
+    await el.updateComplete;
+    expect(ccs().getAttribute("aria-pressed")).toBe("true");
+    ccs().click();
+    await el.updateComplete;
+    expect(saved).toEqual([
+      { entity: "sensor.ladestellen_austria", connector_types: ["CCS"] },
+      { entity: "sensor.ladestellen_austria" },
+    ]);
+  });
+
   it("greys out the counter while the parking header is hidden", async () => {
     const el = await mount("ladestellen-austria-parking-card-editor", { hide_header: true });
-    await open(el, 0);
+    await open(el, 1);
     const form = [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")].find((f) =>
       f.schema.some((s) => s.name === "show_free_count"),
     )!;

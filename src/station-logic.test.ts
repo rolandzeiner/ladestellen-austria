@@ -16,12 +16,15 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   filterStations,
+  hasPointFilters,
   hasUsableSpot,
   hoursToMow,
   isOpenNow,
   mapsDeeplink,
   minuteOfWeek,
   pickParkingStation,
+  pointMatches,
+  type PointFilters,
   stationConnectorTokens,
   stationHasAmenity,
   stationHasDcPoint,
@@ -446,6 +449,74 @@ describe("hasUsableSpot", () => {
   });
 });
 
+/** A point with one plug, as the payload carries it (consumerName + key). */
+function plugPoint(plug: "T2" | "CCS" | "SCHUKO", capacityKw: number, status = "AVAILABLE"): Point {
+  const connector = {
+    T2: { consumerName: "TYPE_2_AC", key: "CTYPE2" },
+    CCS: { consumerName: "COMBO2_CCS_DC", key: "IEC_62196_T2_COMBO" },
+    SCHUKO: { consumerName: "OTHER", key: "DOMESTIC_F" },
+  }[plug];
+  return point({ status, capacityKw, connectorType: [connector] as Point["connectorType"] });
+}
+
+describe("pointMatches", () => {
+  it("matches everything without a filter", () => {
+    expect(pointMatches(plugPoint("SCHUKO", 3), {})).toBe(true);
+  });
+
+  it("matches any of the picked plugs", () => {
+    const filter = { connector_types: ["CCS", "Type 2"] };
+    expect(pointMatches(plugPoint("T2", 11), filter)).toBe(true);
+    expect(pointMatches(plugPoint("CCS", 80), filter)).toBe(true);
+    expect(pointMatches(plugPoint("SCHUKO", 3), filter)).toBe(false);
+  });
+
+  it("needs at least the minimum power", () => {
+    expect(pointMatches(plugPoint("T2", 11), { min_kw: 11 })).toBe(true);
+    expect(pointMatches(plugPoint("T2", 3.7), { min_kw: 11 })).toBe(false);
+  });
+
+  it("fails a power minimum when the point reports no power", () => {
+    expect(
+      pointMatches(point({ capacityKw: undefined as unknown as number }), { min_kw: 11 }),
+    ).toBe(false);
+  });
+
+  it("needs plug and power together", () => {
+    const filter = { connector_types: ["Type 2"], min_kw: 50 };
+    expect(pointMatches(plugPoint("T2", 22), filter)).toBe(false);
+    expect(pointMatches(plugPoint("CCS", 80), filter)).toBe(false);
+  });
+
+  it("ignores filter values of the wrong type from hand-written YAML", () => {
+    const filter = { connector_types: "CCS", min_kw: "50" } as unknown as PointFilters;
+    expect(hasPointFilters(filter)).toBe(false);
+    expect(pointMatches(plugPoint("SCHUKO", 3), filter)).toBe(true);
+  });
+});
+
+describe("hasUsableSpot with a plug and power filter", () => {
+  const now = viennaDate("2026-09-23T10:00:00Z");
+
+  it("needs the free point itself to fit, not just any point on the station", () => {
+    // Shaped like "Wieselburg, EKZ": the free points are the slow ones,
+    // the fast Type 2 points are charging.
+    const ekz = station({
+      points: [
+        plugPoint("SCHUKO", 3),
+        plugPoint("T2", 22, "CHARGING"),
+        plugPoint("T2", 3.7),
+        plugPoint("T2", 11, "CHARGING"),
+      ],
+    });
+    expect(hasUsableSpot(ekz, now, VIENNA)).toBe(true);
+    expect(hasUsableSpot(ekz, now, VIENNA, { connector_types: ["Type 2"], min_kw: 11 })).toBe(
+      false,
+    );
+    expect(hasUsableSpot(ekz, now, VIENNA, { connector_types: ["Type 2"] })).toBe(true);
+  });
+});
+
 describe("pickParkingStation", () => {
   const now = viennaDate("2026-09-23T10:00:00Z"); // Wednesday noon Vienna
   const near = station({ stationId: "near" });
@@ -537,6 +608,53 @@ describe("pickParkingStation", () => {
       expect(pickParkingStation([], cfg, now, VIENNA)).toEqual({
         emptyKey: "parking.no_stations",
       });
+    });
+  });
+
+  describe("plug and power filter", () => {
+    const slowAc = station({ stationId: "slow", points: [plugPoint("T2", 11)] });
+    const fastDc = station({ stationId: "fast", points: [plugPoint("CCS", 80, "CHARGING")] });
+    const fastDcFree = station({ stationId: "fast-free", points: [plugPoint("CCS", 400)] });
+    const ccs = { connector_types: ["CCS"] };
+
+    it("skips stations without a fitting point for the nearest one with one", () => {
+      const pick = pickParkingStation(
+        [slowAc, fastDc],
+        { auto_nearest: true, ...ccs },
+        now,
+        VIENNA,
+      );
+      expect(pick).toEqual({ station: fastDc });
+    });
+
+    it("needs a free fitting point with only_available", () => {
+      const pick = pickParkingStation(
+        [slowAc, fastDc, fastDcFree],
+        { auto_nearest: true, only_available: true, ...ccs },
+        now,
+        VIENNA,
+      );
+      expect(pick).toEqual({ station: fastDcFree });
+    });
+
+    it("says so when no nearby station has a fitting point", () => {
+      const pick = pickParkingStation([slowAc], { auto_nearest: true, min_kw: 50 }, now, VIENNA);
+      expect(pick).toEqual({ emptyKey: "parking.none_matching" });
+    });
+
+    it("tells a fitting-but-busy neighbourhood apart from one with nothing fitting", () => {
+      const pick = pickParkingStation(
+        [slowAc, fastDc],
+        { auto_nearest: true, only_available: true, ...ccs },
+        now,
+        VIENNA,
+      );
+      expect(pick).toEqual({ emptyKey: "parking.none_available" });
+    });
+
+    it("leaves a picked station alone; there the filter only hatches spots", () => {
+      const pick = pickParkingStation([slowAc], { station_id: "slow", ...ccs }, now, VIENNA);
+      expect(pick).toEqual({ station: slowAc });
     });
   });
 });

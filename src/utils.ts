@@ -375,7 +375,15 @@ export function slotStatusWord(bucket: string, fallback: string): string {
  * conditional modifiers were inline in the renderer, where they were
  * most of its branching and none of it was reachable from a test.
  */
-export function slotClassList(variant: SlotVariant, isRevealed: boolean): string {
+export function slotClassList(
+  variant: SlotVariant,
+  isRevealed: boolean,
+  unmatched = false,
+): string {
+  // A spot that doesn't fit the plug and power filter is hatched like a
+  // no-parking area: no status tint (a green "free" glow would say "go
+  // here") and no car or icon over its spec, which says why it's out.
+  if (unmatched) return "parking-slot is-unmatched";
   const { isAvailable, isBusy, isWarn, overlay, showCar, showOverlayIcon } = variant;
   const status = isAvailable
     ? "is-available"

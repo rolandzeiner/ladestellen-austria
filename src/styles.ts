@@ -185,34 +185,6 @@ const cardOwnStyles = css`
     --lade-slot-height: 64px;
     --lade-slot-radius: var(--ha-border-radius-md, 8px);
     --lade-slot-gap: 8px;
-
-    /* Parking-card surface tokens — defaults match the rollback look
-       so cards with no asphalt/paint config render unchanged. The
-       data-* attributes on .wrap (driven by parking-card.ts config)
-       override these per-card when the user opts into the asphalt
-       presets. */
-    --lade-paint: rgba(255, 255, 255, 0.92);
-    --lade-paint-width: 3px;
-
-    /* Asphalt color + noise for the textured preset. The grain is an
-       inline SVG fractalNoise filter (vector-based, randomly
-       distributed by construction — no visible tile grid like
-       layered radial-gradients produce). The CSS-Tricks "grainy
-       gradients" recipe is the canonical reference for this
-       technique. baseFrequency='4' gives a fine asphalt-grade grain
-       (lower values give coarser, cloud-like noise; '0.65' is
-       gradient-grain, '4' is asphalt-grain). numOctaves='3' adds
-       fractal detail. stitchTiles='stitch' makes the 200×200 SVG
-       tile seamlessly when the slot exceeds it. feColorMatrix zeros
-       RGB and rescales alpha (×0.55) so the overlay reads as soft
-       black grain instead of feTurbulence's default rainbow noise. */
-    --lade-asphalt-color: #3a3d42;
-    /* (Asphalt noise URL is inlined in each .parking-slot rule below
-       rather than stored on this var — Lit's static styles + CSS
-       custom-property var() substitution into background-image with
-       a base64 data URI did not resolve in our testing, even though
-       the same URL inlined directly works. We accept the duplication
-       to keep the noise visible.) */
   }
   ha-card {
     overflow: hidden;
@@ -1516,6 +1488,34 @@ const parkingOwnStyles = css`
     --lade-slot-height: 120px;
     --lade-slot-radius: var(--ha-border-radius-sm, 4px);
     --lade-slot-gap: 8px;
+
+    /* Parking-card surface tokens — defaults match the rollback look
+       so cards with no asphalt/paint config render unchanged. The
+       data-* attributes on .wrap (driven by parking-card.ts config)
+       override these per-card when the user opts into the asphalt
+       presets. */
+    --lade-paint: rgba(255, 255, 255, 0.92);
+    --lade-paint-width: 3px;
+
+    /* Asphalt color + noise for the textured preset. The grain is an
+       inline SVG fractalNoise filter (vector-based, randomly
+       distributed by construction — no visible tile grid like
+       layered radial-gradients produce). The CSS-Tricks "grainy
+       gradients" recipe is the canonical reference for this
+       technique. baseFrequency='4' gives a fine asphalt-grade grain
+       (lower values give coarser, cloud-like noise; '0.65' is
+       gradient-grain, '4' is asphalt-grain). numOctaves='3' adds
+       fractal detail. stitchTiles='stitch' makes the 200×200 SVG
+       tile seamlessly when the slot exceeds it. feColorMatrix zeros
+       RGB and rescales alpha (×0.55) so the overlay reads as soft
+       black grain instead of feTurbulence's default rainbow noise. */
+    --lade-asphalt-color: #3a3d42;
+    /* (Asphalt noise URL is inlined in each .parking-slot rule below
+       rather than stored on this var — Lit's static styles + CSS
+       custom-property var() substitution into background-image with
+       a base64 data URI did not resolve in our testing, even though
+       the same URL inlined directly works. We accept the duplication
+       to keep the noise visible.) */
   }
   ha-card {
     overflow: hidden;
@@ -1916,6 +1916,55 @@ const parkingOwnStyles = css`
     opacity: 0.85;
   }
 
+  /* Spots that don't fit the plug and power filter are painted as a
+     no-parking hatch (Sperrfläche): diagonal stripes in the lane-line
+     paint, as wide as the lines, so the paint_width preset carries over.
+     On a pseudo-element, not the background, so it lies on top of both
+     asphalt styles without fighting the textured rules' specificity.
+     The spec sits on a clear patch in the middle, cut down to power and
+     plug, which say why the spot is out; its status doesn't matter to
+     this driver (the aria-label still carries it). */
+  .parking-slot.is-unmatched {
+    --lade-hatch-patch: color-mix(
+      in srgb,
+      var(--primary-text-color) 14%,
+      var(--ha-card-background, var(--card-background-color, #fff))
+    );
+  }
+  .wrap[data-asphalt-style="textured"] .parking-slot.is-unmatched {
+    --lade-hatch-patch: var(--lade-asphalt-color);
+  }
+  .parking-slot.is-unmatched::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--lade-paint, #fff) 45%, transparent) 0
+        var(--lade-paint-width, 3px),
+      transparent var(--lade-paint-width, 3px) 12px
+    );
+    pointer-events: none;
+  }
+  .parking-slot.is-unmatched .slot-inner {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    border-radius: var(--lade-radius-sm);
+    background: var(--lade-hatch-patch);
+  }
+  .parking-slot.is-unmatched .slot-power-badge,
+  .parking-slot.is-unmatched .slot-status-word {
+    display: none;
+  }
+  .parking-slot.is-unmatched .slot-kw {
+    color: var(--secondary-text-color);
+  }
+
   /* ── Empty state ─────────────────────────────────────────────────── */
   .empty-state {
     padding: 24px 0;
@@ -1981,6 +2030,14 @@ const parkingOwnStyles = css`
     background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMS4yIiBudW1PY3RhdmVzPSIzIiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIwLjMiLz48L3N2Zz4=");
     background-size: 200px 200px;
     background-repeat: repeat;
+  }
+  /* Textured asphalt is dark whatever the theme (its editor tile shows
+     it so), so the lot's text takes light tones on it: in a light theme
+     the theme's dark text would vanish into the asphalt. #b0b6bd on
+     the asphalt is 5.3:1, #eceff1 about 10:1. */
+  .wrap[data-asphalt-style="textured"] .parking-lot {
+    --primary-text-color: #eceff1;
+    --secondary-text-color: #b0b6bd;
   }
   /* Per-slot background-position offsets so adjacent slots show
      different windows onto the noise. Seven nth-child buckets cycle
@@ -2113,6 +2170,12 @@ const parkingOwnStyles = css`
     .slot-power-badge,
     .slot-status-word {
       forced-color-adjust: none;
+    }
+    /* Forced colours flatten the paint mix; keep the hatch in a system
+       colour so a spot that doesn't fit still reads as one. */
+    .parking-slot.is-unmatched::after {
+      forced-color-adjust: none;
+      background: repeating-linear-gradient(-45deg, GrayText 0 2px, transparent 2px 12px);
     }
   }
   /* prefers-reduced-motion catch-all lives in sharedReducedMotion. */

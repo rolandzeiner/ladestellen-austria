@@ -7,11 +7,19 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { type LovelaceCardEditor, type ParkingLotCardConfig, type Station } from "./types";
+import {
+  CONNECTOR_FILTER_OPTIONS,
+  type LovelaceCardEditor,
+  type ParkingLotCardConfig,
+  type Station,
+} from "./types";
 import { localize } from "./localize/localize";
+import { formatKw } from "./utils";
 import {
   PanelEditor,
   boxSelector,
+  chipGroup,
+  filterChip,
   formText,
   keyedMemo,
   svgImage,
@@ -24,6 +32,7 @@ import {
 const FORM_DEFAULTS: Record<string, unknown> = {
   auto_nearest: false,
   only_available: false,
+  min_kw: 0,
   hide_header: false,
   show_free_count: true,
   logo_adapt_to_theme: false,
@@ -56,6 +65,50 @@ const stationSchema = (freeOff: boolean): HaFormSchema => [
 ];
 const STATION_SCHEMA_AUTO = stationSchema(false);
 const STATION_SCHEMA_FIXED = stationSchema(true);
+
+// The power minimum as tiles: the four steps a driver tells apart (any,
+// normal AC, fast DC, high power). A YAML value off those steps gets a
+// tile of its own, so the form never shows a blank choice. Option values
+// are strings, as box selects need; _fromForm turns them back into kW.
+const POWER_STEPS = [0, 11, 50, 150];
+const powerSchema = keyedMemo<HaFormSchema, number>((current) => {
+  const steps = POWER_STEPS.includes(current)
+    ? POWER_STEPS
+    : [
+        ...POWER_STEPS.filter((kw) => kw < current),
+        current,
+        ...POWER_STEPS.filter((kw) => kw > current),
+      ];
+  return [
+    {
+      name: "min_kw",
+      selector: boxSelector(
+        steps.map((kw) => ({
+          value: String(kw),
+          label:
+            kw === 0
+              ? localize("parking_editor.min_kw_any")
+              : localize("parking_editor.min_kw_from", "{kw}", formatKw(kw)),
+          ...(POWER_STEPS.includes(kw)
+            ? { description: localize(`parking_editor.min_kw_${kw === 0 ? "any" : kw}_helper`) }
+            : {}),
+        })),
+        2,
+      ),
+    },
+  ];
+});
+
+/** The plug and power group's state: "CCS · ab 50 kW", "Alle Stecker · jede Leistung". */
+function plugSummary(c: ParkingLotCardConfig): string {
+  const plugs = c.connector_types?.length
+    ? c.connector_types.join(", ")
+    : localize("parking_editor.summary_all_plugs");
+  const power = c.min_kw
+    ? localize("parking_editor.summary_min_kw", "{kw}", formatKw(c.min_kw))
+    : localize("parking_editor.summary_any_power");
+  return `${plugs} · ${power}`;
+}
 
 // `show_header` is the form's name for `hide_header`: a positive switch
 // reads better than one whose "off" shows the header. It never reaches
@@ -167,6 +220,7 @@ export class LadestellenAustriaParkingCardEditor
   protected _fromForm(value: Record<string, unknown>): Record<string, unknown> {
     const { show_header, ...next } = value;
     if (show_header !== undefined) next["hide_header"] = show_header === false;
+    if (typeof next["min_kw"] === "string") next["min_kw"] = Number(next["min_kw"]) || 0;
     return next;
   }
 
@@ -187,10 +241,12 @@ export class LadestellenAustriaParkingCardEditor
     const entityId = c.entity;
     const stateObj = entityId ? this.hass?.states[entityId] : undefined;
     const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
+    const minKw = typeof c.min_kw === "number" && c.min_kw > 0 ? c.min_kw : 0;
     const data: Record<string, unknown> = {
       ...FORM_DEFAULTS,
       ...c,
       show_header: c.hide_header !== true,
+      min_kw: String(minKw),
     };
     const form = (schema: HaFormSchema) => this._form(schema, data);
     const lang = this.hass?.language ?? "";
@@ -209,6 +265,20 @@ export class LadestellenAustriaParkingCardEditor
         </div>
         ${form(NAME_SCHEMA)}
         ${this._renderPanels([
+          // Leads the part groups: in nearest mode it decides which
+          // station the card shows at all.
+          {
+            id: "plug",
+            icon: "mdi:ev-plug-type2",
+            header: localize("parking_editor.group_plug"),
+            summary: plugSummary(c),
+            body: () => html`
+              ${this._renderPlugChips()}
+              <hr />
+              ${form(powerSchema(`${lang}|${minKw}`, minKw))}
+              <div class="editor-hint">${localize("parking_editor.plug_power_hint")}</div>
+            `,
+          },
           {
             id: "header",
             icon: "mdi:page-layout-header",
@@ -251,6 +321,23 @@ export class LadestellenAustriaParkingCardEditor
         ])}
       </div>
     `;
+  }
+
+  /** The plug chips, the same row the list card's filters use. */
+  private _renderPlugChips(): TemplateResult {
+    const picked = this._config.connector_types ?? [];
+    return chipGroup(
+      "plug",
+      localize("parking_editor.plugs"),
+      localize("parking_editor.plugs_helper"),
+      CONNECTOR_FILTER_OPTIONS.map((token) =>
+        filterChip(
+          picked.includes(token),
+          () => this._toggleListItem("connector_types", token),
+          token,
+        ),
+      ),
+    );
   }
 
   /** The theme's accent colour, for the "accent colour" tile's cars. */

@@ -43,7 +43,12 @@ import {
   syncCardLanguage,
 } from "./card-lifecycle";
 import { parkingLotStyles } from "./styles";
-import { pickParkingStation, type ParkingPick } from "./station-logic";
+import {
+  hasPointFilters,
+  pickParkingStation,
+  pointMatches,
+  type ParkingPick,
+} from "./station-logic";
 import {
   formatDistanceKm,
   formatKw,
@@ -287,9 +292,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
         ${localize("parking.no_points")}
       </div>`;
     }
+    const filtering = hasPointFilters(this.config);
     return html`<div class="rack-block">
       <div class="parking-lot" role="group" aria-label=${countText}>
-        ${points.map((p) => this._renderSlot(p))}
+        ${points.map((p) => this._renderSlot(p, filtering && !pointMatches(p, this.config)))}
       </div>
     </div>`;
   }
@@ -306,7 +312,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
     counts: { avail: number; total: number; label: string },
   ): TemplateResult | typeof nothing {
     if (this.config.hide_header) return nothing;
-    const showCount = this.config.show_free_count !== false;
+    // Nothing to count when the station has no point (that fits).
+    const showCount = this.config.show_free_count !== false && counts.total > 0;
     // A followed station changes as you move, so say how far it is.
     const km = this.config.auto_nearest ? formatDistanceKm(station.distance) : "–";
     const distance = km === "–" ? "" : `${km} km`;
@@ -365,8 +372,11 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // EMSP-ID ordinal — see _evse_sort_key in coordinator.py. We just
     // consume the array order.
     const points = station.points ?? [];
-    const availCount = points.filter((p) => rackSlotStatus(p.status) === "ok").length;
-    const totalCount = points.length;
+    // The counter answers "can I charge here", so it counts only the
+    // spots that fit the plug and power filter.
+    const fitting = points.filter((p) => pointMatches(p, this.config));
+    const availCount = fitting.filter((p) => rackSlotStatus(p.status) === "ok").length;
+    const totalCount = fitting.length;
     const countText = localize("parking.available_count")
       .replaceAll("{avail}", String(availCount))
       .replaceAll("{total}", String(totalCount));
@@ -443,37 +453,46 @@ export class LadestellenAustriaParkingCard extends LitElement {
     </span>`;
   }
 
-  private _renderSlot(point: Point): TemplateResult {
+  /** One spot. `unmatched`: it doesn't fit the plug and power filter, so
+   *  it is hatched, with its spec showing why and no car or icon over it. */
+  private _renderSlot(point: Point, unmatched = false): TemplateResult {
     const variant = slotVariant(point);
     const { bucket: statusCat, overlay, showCar, showOverlayIcon } = variant;
-    const hasOverlay = showCar || showOverlayIcon;
+    const hasOverlay = !unmatched && (showCar || showOverlayIcon);
     const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const powerType = pointPowerType(point);
     const connector = pointConnectorLabel(point);
     const kwText = formatKw(point.capacityKw);
     const statusLabel = pointStatusLabel(point.status);
+    const statusText = unmatched
+      ? `${statusLabel} · ${localize("parking.slot_unmatched")}`
+      : statusLabel;
     const aria = slotAriaLabel({
       powerType,
       capacityKw: point.capacityKw,
       kwText,
       connector,
-      statusLabel,
+      statusLabel: statusText,
     });
     return html`
       <button
         type="button"
-        class=${slotClassList(variant, isRevealed)}
+        class=${slotClassList(variant, isRevealed, unmatched)}
         data-status=${statusCat}
         tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
         aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
-        title=${`${point.evseId ?? ""} · ${statusLabel}`.trim()}
+        title=${`${point.evseId ?? ""} · ${statusText}`.trim()}
         @click=${(ev: Event) => {
           ev.preventDefault();
           if (hasOverlay) this._toggleSlot(point.evseId);
         }}
       >
-        ${this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)}
+        ${
+          hasOverlay
+            ? this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)
+            : nothing
+        }
         ${this._renderSlotInner(point, powerType, kwText, connector, statusLabel)}
       </button>
     `;
