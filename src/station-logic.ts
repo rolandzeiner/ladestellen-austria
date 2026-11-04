@@ -8,7 +8,13 @@
 // the clock here, so opening-hours behaviour is deterministic in tests.
 
 import { normStatus, safeHttpsUri, shortConnector } from "./utils";
-import type { LadestellenAustriaCardConfig, OpeningHours, Point, Station } from "./types";
+import type {
+  LadestellenAustriaCardConfig,
+  OpeningHours,
+  ParkingLotCardConfig,
+  Point,
+  Station,
+} from "./types";
 
 export type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
 
@@ -272,6 +278,106 @@ export function filterStations(
     }
     return true;
   });
+}
+
+/** The parking card's plug and power filter. */
+export type PointFilters = Pick<ParkingLotCardConfig, "connector_types" | "min_kw">;
+
+/** The filter's plug tokens and minimum power, defended against hand-written YAML. */
+function pointFilterParts(f: PointFilters): { plugs: string[]; minKw: number } {
+  const plugs = Array.isArray(f.connector_types) ? f.connector_types : [];
+  const minKw = typeof f.min_kw === "number" && Number.isFinite(f.min_kw) ? f.min_kw : 0;
+  return { plugs, minKw };
+}
+
+/** Is a plug or power filter set at all? */
+export function hasPointFilters(f: PointFilters): boolean {
+  const { plugs, minKw } = pointFilterParts(f);
+  return plugs.length > 0 || minKw > 0;
+}
+
+/**
+ * Does this charging point fit the plug and power filter? Matched per
+ * point, not per station, because stations mix them: one with a free
+ * 3.7 kW Type 2 and a busy 22 kW Type 2 has no free point for "Type 2,
+ * at least 11 kW", although it has Type 2, a point of at least 11 kW
+ * and a free point.
+ * Plugs are OR; a point with no reported power fails a power minimum,
+ * since nothing says it reaches it.
+ */
+export function pointMatches(p: Point, f: PointFilters): boolean {
+  const { plugs, minKw } = pointFilterParts(f);
+  if (plugs.length > 0) {
+    const tokens = (p.connectorType ?? []).map((c) => shortConnector(c.consumerName, c.key));
+    if (!plugs.some((t) => tokens.includes(t))) return false;
+  }
+  return minKw <= 0 || (p.capacityKw ?? 0) >= minKw;
+}
+
+/**
+ * Could you plug in here right now? A free point that fits the plug and
+ * power filter, on an ACTIVE station (as in the list card's
+ * only_available), not closed by its opening hours: a free point behind
+ * a shut garage gate isn't free. No published hours counts as open, as
+ * in only_open.
+ */
+export function hasUsableSpot(
+  s: Station,
+  now: Date,
+  tz: string,
+  filters: PointFilters = {},
+): boolean {
+  return (
+    s.stationStatus === "ACTIVE" &&
+    (s.points ?? []).some(
+      (p) => normStatus(p.status) === "AVAILABLE" && pointMatches(p, filters),
+    ) &&
+    isOpenNow(s.openingHours, now, tz) !== false
+  );
+}
+
+/** What the parking card shows when no station qualifies. */
+export type ParkingEmptyKey =
+  | "parking.no_station_selected"
+  | "parking.station_not_found"
+  | "parking.no_stations"
+  | "parking.none_matching"
+  | "parking.none_available";
+
+export type ParkingPick = { station: Station } | { station?: undefined; emptyKey: ParkingEmptyKey };
+
+/**
+ * The station the parking card shows. With `auto_nearest` it is the
+ * first station the sensor reports (the coordinator sorts them nearest
+ * first) that has a point fitting the plug and power filter, and
+ * `station_id` is ignored; `only_available` narrows that to the nearest
+ * one with a usable spot. Otherwise it is `station_id`, whatever the
+ * filter and only_available say: there the filter only hatches the
+ * spots that don't fit.
+ */
+export function pickParkingStation(
+  stations: Station[],
+  config: Pick<
+    ParkingLotCardConfig,
+    "station_id" | "auto_nearest" | "only_available" | "connector_types" | "min_kw"
+  >,
+  now: Date,
+  tz: string,
+): ParkingPick {
+  if (config.auto_nearest) {
+    if (stations.length === 0) return { emptyKey: "parking.no_stations" };
+    const fitting = hasPointFilters(config)
+      ? stations.filter((s) => (s.points ?? []).some((p) => pointMatches(p, config)))
+      : stations;
+    if (fitting.length === 0) return { emptyKey: "parking.none_matching" };
+    if (!config.only_available) return { station: fitting[0]! };
+    const usable = fitting.find((s) => hasUsableSpot(s, now, tz, config));
+    return usable ? { station: usable } : { emptyKey: "parking.none_available" };
+  }
+  const stationId = config.station_id ?? "";
+  if (!stationId) return { emptyKey: "parking.no_station_selected" };
+  const station = stations.find((s) => s.stationId === stationId);
+  return station ? { station } : { emptyKey: "parking.station_not_found" };
 }
 
 /** Highest advertised capacity across a station's points; 0 when none report one. */

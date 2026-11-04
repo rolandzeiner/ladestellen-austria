@@ -2,11 +2,12 @@
 //
 // Ships in the same Rolldown bundle as the main list card. Registers its
 // own @customElement + window.customCards entry so Lovelace's "Add Card"
-// picker shows both. The user picks one sensor + one station; the card
-// renders every point as a parking slot viewed from above, with
-// painted-lane separators and an asphalt-tinted surface. AVAILABLE
-// points stand out, non-available ones are muted so the "where can I
-// plug in right now" reading is instant.
+// picker shows both. The user picks one sensor and one station, or lets
+// the card follow the nearest one (auto_nearest, optionally only one
+// with a usable spot). The card renders every point as a parking slot
+// viewed from above, with painted-lane separators and an asphalt-tinted
+// surface. AVAILABLE points stand out, non-available ones are muted so
+// the "where can I plug in right now" reading is instant.
 
 import {
   LitElement,
@@ -43,6 +44,14 @@ import {
 } from "./card-lifecycle";
 import { parkingLotStyles } from "./styles";
 import {
+  hasPointFilters,
+  mapsDeeplink,
+  pickParkingStation,
+  pointMatches,
+  type ParkingPick,
+} from "./station-logic";
+import {
+  formatDistanceKm,
   formatKw,
   pointConnectorLabel,
   pointPowerType,
@@ -109,6 +118,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // `!== false` scattered through render). Mirrors the list card's
     // setConfig policy — both cards now share one shape.
     this.config = {
+      auto_nearest: false,
+      only_available: false,
       hide_header: false,
       show_free_count: true,
       logo_adapt_to_theme: false,
@@ -145,7 +156,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // resolves there are no slots, which gives 3.
     const entity = this.config.entity ? this.hass?.states[this.config.entity] : undefined;
     const stations = (entity?.attributes["stations"] ?? []) as Station[];
-    const station = stations.find((s) => s.stationId === this.config.station_id);
+    const { station } = this._pick(stations);
     const slotRows = Math.ceil((station?.points?.length ?? 0) / 3);
     const px = 57 + (this.config.hide_header ? 0 : 52) + 120 * slotRows;
     return Math.ceil(px / 50);
@@ -163,6 +174,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
       min_columns: 4,
       min_rows: 3,
     };
+  }
+
+  /** The station to show: the picked one, or the nearest fitting (usable) one; see pickParkingStation. */
+  private _pick(stations: Station[]): ParkingPick {
+    return pickParkingStation(
+      stations,
+      this.config,
+      new Date(),
+      this.hass?.config?.time_zone ?? "Europe/Vienna",
+    );
   }
 
   private get _fixedHeight(): boolean {
@@ -230,12 +251,14 @@ export class LadestellenAustriaParkingCard extends LitElement {
   /**
    * Station header. `count` is passed only when the free-slot counter
    * should show, so the show_free_count decision stays at the call site
-   * where the counts are already in scope.
+   * where the counts are already in scope; `map` likewise only when the
+   * station has coordinates.
    */
   private _renderHeader(
     title: string,
     subtitle = "",
     count?: { avail: number; total: number; label: string },
+    map?: { url: string; place: string },
   ): TemplateResult {
     return html`<header class="header">
       <div class="icon-tile" aria-hidden="true">
@@ -263,6 +286,20 @@ export class LadestellenAustriaParkingCard extends LitElement {
           </div>`
           : nothing
       }
+      ${
+        map
+          ? html`<a
+            class="map-link"
+            href=${map.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label=${`${localize("card.open_in_maps")}: ${map.place}`}
+            title=${localize("card.open_in_maps")}
+          >
+            <ha-icon icon="mdi:map-marker-outline" aria-hidden="true"></ha-icon>
+          </a>`
+          : nothing
+      }
     </header>`;
   }
 
@@ -272,30 +309,38 @@ export class LadestellenAustriaParkingCard extends LitElement {
         ${localize("parking.no_points")}
       </div>`;
     }
+    const filtering = hasPointFilters(this.config);
     return html`<div class="rack-block">
       <div class="parking-lot" role="group" aria-label=${countText}>
-        ${points.map((p) => this._renderSlot(p))}
+        ${points.map((p) => this._renderSlot(p, filtering && !pointMatches(p, this.config)))}
       </div>
     </div>`;
   }
 
   /**
-   * Header for the resolved-station branch. Owns all three of its
-   * config decisions (hide_header, custom title, show_free_count) so
-   * render() carries none of them — those nested ternaries were most of
-   * its remaining cognitive complexity.
+   * Header for the resolved-station branch. Owns the header's config
+   * decisions (hide_header, custom title, show_free_count, auto_nearest)
+   * so render() carries none of them.
    */
   private _stationHeader(
-    stationLabel: string,
+    station: Station,
     customTitle: string | undefined,
     counts: { avail: number; total: number; label: string },
   ): TemplateResult | typeof nothing {
     if (this.config.hide_header) return nothing;
-    const showCount = this.config.show_free_count !== false;
+    // Nothing to count when the station has no point (that fits).
+    const showCount = this.config.show_free_count !== false && counts.total > 0;
+    // A followed station changes as you move, so say how far it is.
+    const km = this.config.auto_nearest ? formatDistanceKm(station.distance) : "–";
+    const distance = km === "–" ? "" : `${km} km`;
+    const subtitle = [customTitle ? station.label : "", distance].filter(Boolean).join(" · ");
+    // The same maps link as the list card's rows; "" without coordinates.
+    const mapsUrl = mapsDeeplink(station.location);
     return this._renderHeader(
-      customTitle ?? stationLabel,
-      customTitle ? stationLabel : "",
+      customTitle ?? station.label,
+      subtitle,
       showCount ? counts : undefined,
+      mapsUrl ? { url: mapsUrl, place: station.label } : undefined,
     );
   }
 
@@ -328,35 +373,36 @@ export class LadestellenAustriaParkingCard extends LitElement {
     }
 
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
-    const stationId = this.config.station_id ?? "";
-    const station = stations.find((s) => s.stationId === stationId);
+    const pick = this._pick(stations);
     const footer = this._cardFooter(stateObj.attributes.attribution);
 
-    if (!stationId || !station) {
+    if (!pick.station) {
       return this._renderShell(
         html`
           ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
-          <div class="empty-state">
-            ${localize(stationId ? "parking.station_not_found" : "parking.no_station_selected")}
-          </div>
+          <div class="empty-state">${localize(pick.emptyKey)}</div>
         `,
         { footer },
       );
     }
+    const station = pick.station;
 
     // Coordinator already sorts each station's points by the trailing
     // EMSP-ID ordinal — see _evse_sort_key in coordinator.py. We just
     // consume the array order.
     const points = station.points ?? [];
-    const availCount = points.filter((p) => rackSlotStatus(p.status) === "ok").length;
-    const totalCount = points.length;
+    // The counter answers "can I charge here", so it counts only the
+    // spots that fit the plug and power filter.
+    const fitting = points.filter((p) => pointMatches(p, this.config));
+    const availCount = fitting.filter((p) => rackSlotStatus(p.status) === "ok").length;
+    const totalCount = fitting.length;
     const countText = localize("parking.available_count")
       .replaceAll("{avail}", String(availCount))
       .replaceAll("{total}", String(totalCount));
 
     return this._renderShell(
       html`
-        ${this._stationHeader(station.label, customTitle, {
+        ${this._stationHeader(station, customTitle, {
           avail: availCount,
           total: totalCount,
           label: countText,
@@ -426,37 +472,46 @@ export class LadestellenAustriaParkingCard extends LitElement {
     </span>`;
   }
 
-  private _renderSlot(point: Point): TemplateResult {
+  /** One spot. `unmatched`: it doesn't fit the plug and power filter, so
+   *  it is hatched, with its spec showing why and no car or icon over it. */
+  private _renderSlot(point: Point, unmatched = false): TemplateResult {
     const variant = slotVariant(point);
     const { bucket: statusCat, overlay, showCar, showOverlayIcon } = variant;
-    const hasOverlay = showCar || showOverlayIcon;
+    const hasOverlay = !unmatched && (showCar || showOverlayIcon);
     const isRevealed = hasOverlay && this._revealedSlots.has(point.evseId);
     const powerType = pointPowerType(point);
     const connector = pointConnectorLabel(point);
     const kwText = formatKw(point.capacityKw);
     const statusLabel = pointStatusLabel(point.status);
+    const statusText = unmatched
+      ? `${statusLabel} · ${localize("parking.slot_unmatched")}`
+      : statusLabel;
     const aria = slotAriaLabel({
       powerType,
       capacityKw: point.capacityKw,
       kwText,
       connector,
-      statusLabel,
+      statusLabel: statusText,
     });
     return html`
       <button
         type="button"
-        class=${slotClassList(variant, isRevealed)}
+        class=${slotClassList(variant, isRevealed, unmatched)}
         data-status=${statusCat}
         tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
         aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
-        title=${`${point.evseId ?? ""} · ${statusLabel}`.trim()}
+        title=${`${point.evseId ?? ""} · ${statusText}`.trim()}
         @click=${(ev: Event) => {
           ev.preventDefault();
           if (hasOverlay) this._toggleSlot(point.evseId);
         }}
       >
-        ${this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)}
+        ${
+          hasOverlay
+            ? this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)
+            : nothing
+        }
         ${this._renderSlotInner(point, powerType, kwText, connector, statusLabel)}
       </button>
     `;

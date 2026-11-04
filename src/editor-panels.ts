@@ -1,6 +1,6 @@
 // What both card editors share: the collapsible groups, the labels and
-// helpers for their ha-forms, and how a form's value becomes the saved
-// config.
+// helpers for their ha-forms, the chip row and the string-list toggle
+// behind it, and how a form's value becomes the saved config.
 
 import {
   LitElement,
@@ -43,6 +43,39 @@ export interface BoxOption {
 export const boxSelector = (options: ReadonlyArray<BoxOption>, columns?: number) => ({
   select: { mode: "box", options, ...(columns ? { box_max_columns: columns } : {}) },
 });
+
+/** A toggle chip: a button carrying its pressed state. */
+export function filterChip(on: boolean, toggle: () => void, content: unknown): TemplateResult {
+  return html`
+    <button
+      type="button"
+      class=${on ? "filter-chip active" : "filter-chip"}
+      aria-pressed=${on}
+      @click=${toggle}
+    >
+      ${content}
+    </button>
+  `;
+}
+
+/** A labelled row of chips with its hint, announced as one group. */
+export function chipGroup(
+  id: string,
+  label: string,
+  hint: string,
+  chips: ReadonlyArray<TemplateResult>,
+): TemplateResult {
+  return html`<div
+    class="chip-group"
+    role="group"
+    aria-labelledby=${`chips-${id}`}
+    aria-describedby=${`chips-${id}-hint`}
+  >
+    <div class="field-label" id=${`chips-${id}`}>${label}</div>
+    <div class="chip-row">${chips}</div>
+    <div class="editor-hint" id=${`chips-${id}-hint`}>${hint}</div>
+  </div>`;
+}
 
 /** An SVG drawing as an image URL a box-select tile can show. */
 export const svgImage = (body: string, viewBox = "0 0 72 44"): string =>
@@ -132,6 +165,20 @@ export abstract class PanelEditor<C extends LovelaceCardConfig> extends LitEleme
   protected _commit(config: C): void {
     this._config = config;
     fireEvent(this, "config-changed", { config });
+  }
+
+  /**
+   * Add or remove `value` in one of the config's string-array fields.
+   * The config is replaced rather than mutated: `_config` drives the
+   * widgets' selected-state visuals, so it has to change identity for
+   * Lit to notice. An emptied list is dropped, not saved as `[]`.
+   */
+  protected _toggleListItem(key: string, value: string): void {
+    const current = (this._config[key] as ReadonlyArray<string> | undefined) ?? [];
+    const list = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    const next: C = { ...this._config, [key]: list };
+    if (list.length === 0) delete next[key];
+    this._commit(next);
   }
 
   // Every ha-form gets the whole config as `data`, so each one sends back

@@ -55,6 +55,7 @@ import {
 } from "./station-logic";
 import {
   formatCent,
+  formatDistanceKm,
   formatEuro,
   formatKw,
   normStatus,
@@ -532,11 +533,11 @@ export class LadestellenAustriaCard extends LitElement {
         <span aria-live="polite">${localize("card.no_stations")}</span>
       </section>`;
     }
-    const km = this._formatKm(nearest.distance);
+    const km = formatDistanceKm(nearest.distance);
     const cityLabel = this._heroCity(nearest);
-    const farKm = farthest ? this._formatKm(farthest.distance) : km;
+    const farKm = farthest ? formatDistanceKm(farthest.distance) : km;
     const rangeText = localize("card.hero_range")
-      .replaceAll("{min}", this._formatKm(nearest.distance))
+      .replaceAll("{min}", formatDistanceKm(nearest.distance))
       .replaceAll("{max}", farKm);
     const countText =
       filteredTotal === rawTotal
@@ -653,7 +654,7 @@ export class LadestellenAustriaCard extends LitElement {
 
     const cityLine = [station.postCode, station.city].filter(Boolean).join(" ");
     const distanceText = Number.isFinite(station.distance)
-      ? `${this._formatKm(station.distance)} km`
+      ? `${formatDistanceKm(station.distance)} km`
       : "";
     const locParts = [cityLine, distanceText].filter(Boolean);
     const locText = locParts.join(" · ");
@@ -1241,21 +1242,6 @@ export class LadestellenAustriaCard extends LitElement {
         label: localize("amenities.resting"),
       },
     ].filter((i) => i.flag);
-  }
-
-  private _formatKm(value: string | number | undefined): string {
-    // `distance` is typed number, but the stations attribute is
-    // unvalidated; accept a numeric string too.
-    const n = typeof value === "number" ? value : parseFloat(value ?? "");
-    if (!Number.isFinite(n)) return "–";
-    try {
-      return new Intl.NumberFormat("de-AT", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(n);
-    } catch {
-      return n.toFixed(2);
-    }
   }
 
   static override styles: CSSResultGroup = cardStyles;

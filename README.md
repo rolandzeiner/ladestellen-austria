@@ -33,7 +33,7 @@ EV charging stations near you in Home Assistant, from E-Control's official [Lade
 - Distance to the nearest charging station, plus the ten nearest with connectors, power, live status, operator, prices and opening hours.
 - A sensor that turns on when any nearby charging point is free, and an event whenever a charging point changes status.
 - Follow a phone or car tracker instead of a fixed location, so the station list moves with you.
-- Two cards: a station list with filters and pinned stations, and a top-down parking-lot view of a single station.
+- Two cards: a station list with filters and pinned stations, and a top-down parking lot of one station, picked or always the nearest.
 - Pick one of the integration's sensors in the card picker, and the matching card offers itself already set up.
 - When E-Control is down, a repair says so, and the cards show it instead of an empty list.
 - Setup, cards and card editors in English and German. Both cards and their editors meet WCAG 2.2 AA.
@@ -184,7 +184,7 @@ entity: sensor.ladestellen_austria_nearest_station
 
 ### Parking lot
 
-One station seen from above, each charging point a parking spot, in the order of their charging-point numbers. Free spots glow green, occupied ones show a car, and faulty, planned or removed ones show an icon for their status. Hover or tap a spot to see its power, connector and status. In the card picker it's **Ladestellen Austria — Parking**.
+One station seen from above, each charging point a parking spot, in the order of their charging-point numbers. Free spots glow green, occupied ones show a car, and faulty, planned or removed ones show an icon for their status. Hover or tap a spot to see its power, connector and status. The pin in the header opens the station in your maps app. In the card picker it's **Ladestellen Austria — Parking**.
 
 ```yaml
 type: custom:ladestellen-austria-parking-card
@@ -192,10 +192,25 @@ entity: sensor.ladestellen_austria_nearest_station
 station_id: <stationId>
 ```
 
+Or always the nearest fast charger with a free CCS spot, which moves with you when the entry follows a tracker:
+
+```yaml
+type: custom:ladestellen-austria-parking-card
+entity: sensor.ladestellen_austria_nearest_station
+auto_nearest: true
+only_available: true
+connector_types: [CCS]
+min_kw: 50
+```
+
 | Option | Default | Description |
 |---|---|---|
 | `entity` | required | A **Nearest station** sensor. |
-| `station_id` | required | The station to show. The editor lets you pick it from the sensor's stations. |
+| `station_id` | none | The station to show. The editor lets you pick it from the sensor's stations. Ignored with `auto_nearest`. |
+| `auto_nearest` | `false` | Shows the sensor's nearest station instead, with its distance in the header. |
+| `only_available` | `false` | With `auto_nearest`: the nearest station with a free, working charging point that isn't closed right now. If none of the ten has one, the card says so. |
+| `connector_types` | none | The plugs your car takes: `Type 2`, `CCS`, `CHAdeMO`, `Type 1`, `Tesla`, `Schuko`, `CEE`. Matched per charging point: with `auto_nearest` the card shows the nearest station with a point that fits, and spots that don't fit are hatched. |
+| `min_kw` | none | The least power a charging point needs, in kW, for example `11` (AC) or `50` (DC fast charging). Works like `connector_types`. |
 | `name` | the station's name | The card title. |
 | `hide_header` | `false` | Hides the header. |
 | `show_free_count` | `true` | Shows the free / total counter. |
@@ -287,7 +302,7 @@ actions:
 - **Ten stations at most.** The API returns the nearest stations and has no radius search. The integration keeps the ten nearest.
 - **You need a registered domain name.** E-Control checks the `Referer` of every request against the domains you registered. The integration builds it from **Registered domain**, so that domain has to be one you registered at ladestellen.at.
 - **Pinning doesn't work with a tracker.** The list follows your position, so the station list card hides pinned stations while the entry follows a tracker. They come back when you switch to a fixed location.
-- **The parking lot needs its station in the list.** It shows only a station among the sensor's ten nearest. With a tracker, it shows *not found* once you've moved away.
+- **A picked parking-lot station has to be in the list.** The card shows it only while it's among the sensor's ten nearest. With a tracker, it shows *not found* once you've moved away; `auto_nearest` follows you instead.
 - **YAML dashboards don't get the resource added.** The integration adds the card to the dashboard resources only for dashboards edited in the UI. For a YAML dashboard, add `/ladestellen_austria/ladestellen-austria-card.js` as a JavaScript module yourself.
 
 ## Troubleshooting

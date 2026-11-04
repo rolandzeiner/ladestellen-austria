@@ -826,6 +826,203 @@ describe("ladestellen-austria-parking-card", () => {
     const el = await mountParking({}, station({ points: [] }));
     expect(el.shadowRoot).not.toBeNull();
   });
+
+  describe("map pin", () => {
+    const pin = (el: LitElement) => el.shadowRoot?.querySelector<HTMLAnchorElement>("a.map-link");
+
+    it("links the station's coordinates to the maps app in a new tab", async () => {
+      const el = await mountParking({}, station({ location: { lat: 48.13, lon: 15.14 } }));
+      const a = pin(el)!;
+      expect(a.getAttribute("href")).toBe(
+        "https://www.google.com/maps/search/?api=1&query=48.13,15.14",
+      );
+      expect(a.getAttribute("target")).toBe("_blank");
+      expect(a.getAttribute("rel")).toBe("noopener noreferrer");
+      expect(a.getAttribute("aria-label")).toBe(`${localize("card.open_in_maps")}: Testladestelle`);
+    });
+
+    it("follows the station the card picked in nearest mode", async () => {
+      const near = station({ stationId: "n", label: "Nah", location: { lat: 48.1, lon: 15.1 } });
+      const far = station({ stationId: "f", label: "Fern", location: { lat: 48.9, lon: 16.9 } });
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({ entity: "sensor.ladestellen_austria", auto_nearest: true });
+          e.hass = hass([near, far]);
+        },
+      );
+      expect(pin(el)!.getAttribute("href")).toContain("query=48.1,15.1");
+    });
+
+    it("is left out for a station without coordinates", async () => {
+      // The attribute is unvalidated, so a station can arrive without it.
+      const el = await mountParking(
+        {},
+        station({ location: undefined } as unknown as Partial<Station>),
+      );
+      expect(pin(el)).toBeNull();
+    });
+
+    it("goes with the header when the header is hidden", async () => {
+      const el = await mountParking({ hide_header: true });
+      expect(pin(el)).toBeNull();
+    });
+  });
+
+  it("leaves the distance out for a picked station", async () => {
+    const el = await mountParking({}, station({ distance: 1.25 }));
+    expect(el.shadowRoot?.querySelector(".subtitle")).toBeNull();
+  });
+
+  describe("auto_nearest", () => {
+    const fullStation = station({
+      stationId: "at-full",
+      label: "Voll",
+      distance: 0.3,
+      points: [{ ...basePoint(), status: "OCCUPIED" }],
+    } as Partial<Station>);
+    const freeStation = station({ stationId: "at-free", label: "Frei", distance: 1.25 });
+
+    async function mountAuto(config: Record<string, unknown>, stations: Station[]) {
+      return mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({ entity: "sensor.ladestellen_austria", auto_nearest: true, ...config });
+          e.hass = hass(stations);
+        },
+      );
+    }
+    const text = (el: LitElement, selector: string) =>
+      el.shadowRoot?.querySelector(selector)?.textContent?.trim();
+
+    it("shows the nearest station without a station_id", async () => {
+      const el = await mountAuto({}, [fullStation, freeStation]);
+      expect(text(el, ".title")).toBe("Voll");
+      expect(el.shadowRoot?.querySelectorAll(".parking-slot").length).toBe(1);
+    });
+
+    it("says how far the followed station is", async () => {
+      const el = await mountAuto({}, [freeStation]);
+      expect(text(el, ".subtitle")).toBe("1,25 km");
+    });
+
+    it("keeps the station's name under a custom title", async () => {
+      const el = await mountAuto({ name: "Laden" }, [freeStation]);
+      expect(text(el, ".title")).toBe("Laden");
+      expect(text(el, ".subtitle")).toBe("Frei · 1,25 km");
+    });
+
+    it("skips a full station with only_available", async () => {
+      const el = await mountAuto({ only_available: true }, [fullStation, freeStation]);
+      expect(text(el, ".title")).toBe("Frei");
+    });
+
+    it("says so when no nearby station has a free space", async () => {
+      const el = await mountAuto({ only_available: true }, [fullStation]);
+      expect(text(el, ".empty-state")).toBe(localize("parking.none_available"));
+      expect(el.shadowRoot?.querySelector(".parking-slot")).toBeNull();
+    });
+  });
+
+  describe("plug and power filter", () => {
+    const point = (
+      evseId: string,
+      consumerName: string,
+      key: string,
+      kw: number,
+      status: string,
+    ) => ({
+      ...basePoint(),
+      evseId,
+      capacityKw: kw,
+      status,
+      connectorType: [{ consumerName, key }],
+    });
+    // A free slow Type 2, a busy fast CCS and a free fast CCS.
+    const mixed = station({
+      stationId: "at-1",
+      points: [
+        point("AT*TST*E1", "TYPE_2_AC", "CTYPE2", 11, "AVAILABLE"),
+        point("AT*TST*E2", "COMBO2_CCS_DC", "IEC_62196_T2_COMBO", 80, "CHARGING"),
+        point("AT*TST*E3", "COMBO2_CCS_DC", "IEC_62196_T2_COMBO", 80, "AVAILABLE"),
+      ],
+    } as Partial<Station>);
+    const slots = (el: LitElement) => [
+      ...(el.shadowRoot?.querySelectorAll<HTMLElement>(".parking-slot") ?? []),
+    ];
+
+    it("hatches the spots that don't fit and keeps the rest as they are", async () => {
+      const el = await mountParking({ connector_types: ["CCS"] }, mixed);
+      expect(slots(el).map((s) => s.classList.contains("is-unmatched"))).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      // The busy CCS spot keeps its car; the hatched one gets none.
+      expect(slots(el)[1]!.querySelector(".slot-car")).not.toBeNull();
+      expect(slots(el)[0]!.querySelector(".slot-car, .slot-overlay-icon")).toBeNull();
+    });
+
+    it("tells screen readers why a spot is hatched", async () => {
+      const el = await mountParking({ min_kw: 50 }, mixed);
+      expect(slots(el)[0]!.getAttribute("aria-label")).toContain(
+        localize("parking.slot_unmatched"),
+      );
+      expect(slots(el)[2]!.getAttribute("aria-label")).not.toContain(
+        localize("parking.slot_unmatched"),
+      );
+    });
+
+    it("counts only the spots that fit", async () => {
+      const el = await mountParking({ connector_types: ["CCS"] }, mixed);
+      expect(el.shadowRoot?.querySelector(".header-count-num")?.textContent).toBe("1");
+      expect(el.shadowRoot?.querySelector(".header-count-of")?.textContent).toBe("/ 2");
+    });
+
+    it("drops the counter when no spot fits", async () => {
+      const el = await mountParking({ min_kw: 150 }, mixed);
+      expect(el.shadowRoot?.querySelector(".header-count")).toBeNull();
+      expect(slots(el).every((s) => s.classList.contains("is-unmatched"))).toBe(true);
+    });
+
+    it("hatches nothing without a filter", async () => {
+      const el = await mountParking({}, mixed);
+      expect(el.shadowRoot?.querySelector(".is-unmatched")).toBeNull();
+    });
+
+    it("follows the nearest station with a fitting point", async () => {
+      const acOnly = station({
+        stationId: "at-ac",
+        label: "Nur AC",
+        points: [point("AT*TST*A1", "TYPE_2_AC", "CTYPE2", 22, "AVAILABLE")],
+      } as Partial<Station>);
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({
+            entity: "sensor.ladestellen_austria",
+            auto_nearest: true,
+            connector_types: ["CCS"],
+          });
+          e.hass = hass([acOnly, { ...mixed, label: "Gemischt" }]);
+        },
+      );
+      expect(el.shadowRoot?.querySelector(".title")?.textContent?.trim()).toBe("Gemischt");
+    });
+
+    it("says so when no nearby station has a fitting point", async () => {
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({ entity: "sensor.ladestellen_austria", auto_nearest: true, min_kw: 150 });
+          e.hass = hass([mixed]);
+        },
+      );
+      expect(el.shadowRoot?.querySelector(".empty-state")?.textContent?.trim()).toBe(
+        localize("parking.none_matching"),
+      );
+    });
+  });
 });
 
 describe("parking card size", () => {
@@ -855,6 +1052,10 @@ describe("parking card size", () => {
     [11, { hide_header: true }, 11],
   ])("is %i slots with %j → %i", async (n, config, expected) => {
     expect(await size(n, config)).toBe(expected);
+  });
+
+  it("measures the nearest station while following it", async () => {
+    expect(await size(5, { auto_nearest: true, station_id: "elsewhere" })).toBe(7);
   });
 
   it("falls back to 3 before the station resolves", () => {

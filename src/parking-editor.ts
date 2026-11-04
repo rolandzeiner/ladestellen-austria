@@ -1,17 +1,26 @@
-// Visual editor for the parking-slot card. The sensor, the station (the
-// card shows nothing without one) and the title sit at the top; the
-// header, the lot's look and the footer each get a collapsible group.
-// Typed fields go through <ha-form>; the station picker and the colour
+// Visual editor for the parking-slot card. The sensor, the station (a
+// picked one, or the nearest; the card shows nothing without one) and
+// the title sit at the top; the plug and power filter, the header, the
+// lot's look and the footer each get a collapsible group. Typed fields
+// go through <ha-form>; the station list, the plug chips and the colour
 // swatch are hand-written.
 
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { type LovelaceCardEditor, type ParkingLotCardConfig, type Station } from "./types";
+import {
+  CONNECTOR_FILTER_OPTIONS,
+  type LovelaceCardEditor,
+  type ParkingLotCardConfig,
+  type Station,
+} from "./types";
 import { localize } from "./localize/localize";
+import { formatKw } from "./utils";
 import {
   PanelEditor,
   boxSelector,
+  chipGroup,
+  filterChip,
   formText,
   keyedMemo,
   svgImage,
@@ -22,6 +31,9 @@ import {
 // The card's own defaults. The form shows them for keys the config
 // leaves out; withoutDefaults drops them again.
 const FORM_DEFAULTS: Record<string, unknown> = {
+  auto_nearest: false,
+  only_available: false,
+  min_kw: 0,
   hide_header: false,
   show_free_count: true,
   logo_adapt_to_theme: false,
@@ -44,6 +56,60 @@ const ENTITY_SCHEMA: HaFormSchema = [
 ];
 
 const NAME_SCHEMA: HaFormSchema = [{ name: "name", selector: { text: {} } }];
+
+// Follow the nearest station instead of a picked one. `only_available`
+// narrows the nearest station, so it is greyed out until the card
+// follows one.
+const stationSchema = (freeOff: boolean): HaFormSchema => [
+  { name: "auto_nearest", selector: { boolean: {} } },
+  { name: "only_available", disabled: freeOff, selector: { boolean: {} } },
+];
+const STATION_SCHEMA_AUTO = stationSchema(false);
+const STATION_SCHEMA_FIXED = stationSchema(true);
+
+// The power minimum as tiles: the four steps a driver tells apart (any,
+// normal AC, fast DC, high power). A YAML value off those steps gets a
+// tile of its own, so the form never shows a blank choice. Option values
+// are strings, as box selects need; _fromForm turns them back into kW.
+const POWER_STEPS = [0, 11, 50, 150];
+const powerSchema = keyedMemo<HaFormSchema, number>((current) => {
+  const steps = POWER_STEPS.includes(current)
+    ? POWER_STEPS
+    : [
+        ...POWER_STEPS.filter((kw) => kw < current),
+        current,
+        ...POWER_STEPS.filter((kw) => kw > current),
+      ];
+  return [
+    {
+      name: "min_kw",
+      selector: boxSelector(
+        steps.map((kw) => ({
+          value: String(kw),
+          label:
+            kw === 0
+              ? localize("parking_editor.min_kw_any")
+              : localize("parking_editor.min_kw_from", "{kw}", formatKw(kw)),
+          ...(POWER_STEPS.includes(kw)
+            ? { description: localize(`parking_editor.min_kw_${kw === 0 ? "any" : kw}_helper`) }
+            : {}),
+        })),
+        2,
+      ),
+    },
+  ];
+});
+
+/** The plug and power group's state: "CCS · ab 50 kW", "Alle Stecker · jede Leistung". */
+function plugSummary(c: ParkingLotCardConfig): string {
+  const plugs = c.connector_types?.length
+    ? c.connector_types.join(", ")
+    : localize("parking_editor.summary_all_plugs");
+  const power = c.min_kw
+    ? localize("parking_editor.summary_min_kw", "{kw}", formatKw(c.min_kw))
+    : localize("parking_editor.summary_any_power");
+  return `${plugs} · ${power}`;
+}
 
 // `show_header` is the form's name for `hide_header`: a positive switch
 // reads better than one whose "off" shows the header. It never reaches
@@ -155,6 +221,7 @@ export class LadestellenAustriaParkingCardEditor
   protected _fromForm(value: Record<string, unknown>): Record<string, unknown> {
     const { show_header, ...next } = value;
     if (show_header !== undefined) next["hide_header"] = show_header === false;
+    if (typeof next["min_kw"] === "string") next["min_kw"] = Number(next["min_kw"]) || 0;
     return next;
   }
 
@@ -175,21 +242,44 @@ export class LadestellenAustriaParkingCardEditor
     const entityId = c.entity;
     const stateObj = entityId ? this.hass?.states[entityId] : undefined;
     const stations = (stateObj?.attributes?.["stations"] ?? []) as Station[];
+    const minKw = typeof c.min_kw === "number" && c.min_kw > 0 ? c.min_kw : 0;
     const data: Record<string, unknown> = {
       ...FORM_DEFAULTS,
       ...c,
       show_header: c.hide_header !== true,
+      min_kw: String(minKw),
     };
     const form = (schema: HaFormSchema) => this._form(schema, data);
     const lang = this.hass?.language ?? "";
     const mode = String(c.car_color_mode ?? FORM_DEFAULTS["car_color_mode"]);
+    const auto = c.auto_nearest === true;
 
     return html`
       <div class="editor">
         ${form(ENTITY_SCHEMA)} ${this._renderEntityAlert()}
-        ${this._renderStationPicker(entityId, stations, c.station_id ?? "")}
+        <div class="field">
+          <div class="field-label" id="station-picker-heading">
+            ${localize("parking.editor_station_heading")}
+          </div>
+          ${form(auto ? STATION_SCHEMA_AUTO : STATION_SCHEMA_FIXED)}
+          ${auto ? nothing : this._renderStationPicker(entityId, stations, c.station_id ?? "")}
+        </div>
         ${form(NAME_SCHEMA)}
         ${this._renderPanels([
+          // First group: in nearest mode it decides which station the
+          // card shows at all.
+          {
+            id: "plug",
+            icon: "mdi:ev-plug-type2",
+            header: localize("parking_editor.group_plug"),
+            summary: plugSummary(c),
+            body: () => html`
+              ${this._renderPlugChips()}
+              <hr />
+              ${form(powerSchema(`${lang}|${minKw}`, minKw))}
+              <div class="editor-hint">${localize("parking_editor.plug_power_hint")}</div>
+            `,
+          },
           {
             id: "header",
             icon: "mdi:page-layout-header",
@@ -234,20 +324,36 @@ export class LadestellenAustriaParkingCardEditor
     `;
   }
 
+  /** The plug chips, the same row the list card's filters use. */
+  private _renderPlugChips(): TemplateResult {
+    const picked = this._config.connector_types ?? [];
+    return chipGroup(
+      "plug",
+      localize("parking_editor.plugs"),
+      localize("parking_editor.plugs_helper"),
+      CONNECTOR_FILTER_OPTIONS.map((token) =>
+        filterChip(
+          picked.includes(token),
+          () => this._toggleListItem("connector_types", token),
+          token,
+        ),
+      ),
+    );
+  }
+
   /** The theme's accent colour, for the "accent colour" tile's cars. */
   private _accent(): string {
     return getComputedStyle(this).getPropertyValue("--primary-color").trim() || FALLBACK_ACCENT;
   }
 
+  /** The fixed-station radio list with its hints; hidden while the card
+   *  follows the nearest station. */
   private _renderStationPicker(
     entityId: string | undefined,
     stations: Station[],
     selectedId: string,
   ): TemplateResult {
-    return html`<div class="field">
-      <div class="field-label" id="station-picker-heading">
-        ${localize("parking.editor_station_heading")}
-      </div>
+    return html`
       ${
         !entityId
           ? html`<div class="editor-hint editor-hint--muted">
@@ -279,7 +385,7 @@ export class LadestellenAustriaParkingCardEditor
       <div class="editor-hint" id="station-picker-hint">
         ${localize("parking.pick_station_hint")}
       </div>
-    </div>`;
+    `;
   }
 
   private _renderStationOption(s: Station, isSelected: boolean): TemplateResult {

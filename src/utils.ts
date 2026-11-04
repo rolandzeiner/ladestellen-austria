@@ -229,6 +229,25 @@ export function formatKw(v: number | undefined): string {
 }
 
 /**
+ * Distance formatter — Austrian comma decimals, always two decimals
+ * (callers add "km"). 1.234 → "1,23". `distance` is typed number, but
+ * the stations attribute is unvalidated, so a numeric string is
+ * accepted too; anything else gives "–".
+ */
+export function formatDistanceKm(value: string | number | undefined): string {
+  const n = typeof value === "number" ? value : parseFloat(value ?? "");
+  if (!Number.isFinite(n)) return "–";
+  try {
+    return new Intl.NumberFormat("de-AT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return n.toFixed(2);
+  }
+}
+
+/**
  * Convert cents to a euro-formatted number string (no currency symbol
  * — callers add "€"). 65 → "0,65", 100 → "1,00". Fixed 2 fractional
  * digits for alignment in price tables.
@@ -352,11 +371,19 @@ export function slotStatusWord(bucket: string, fallback: string): string {
 }
 
 /**
- * The slot button's full class list. The status cascade and the five
- * conditional modifiers were inline in the renderer, where they were
- * most of its branching and none of it was reachable from a test.
+ * The slot button's full class list: the status, the overlay, tint and
+ * reveal modifiers, or just `is-unmatched` when the spot doesn't fit the
+ * plug and power filter.
  */
-export function slotClassList(variant: SlotVariant, isRevealed: boolean): string {
+export function slotClassList(
+  variant: SlotVariant,
+  isRevealed: boolean,
+  unmatched = false,
+): string {
+  // A spot that doesn't fit the plug and power filter is hatched like a
+  // no-parking area: no status tint (a green "free" glow would say "go
+  // here") and no car or icon over its spec, which says why it's out.
+  if (unmatched) return "parking-slot is-unmatched";
   const { isAvailable, isBusy, isWarn, overlay, showCar, showOverlayIcon } = variant;
   const status = isAvailable
     ? "is-available"
