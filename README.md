@@ -192,7 +192,7 @@ entity: sensor.ladestellen_austria_nearest_station
 station_id: <stationId>
 ```
 
-Or always the nearest fast charger with a free CCS space, which moves with you when the entry follows a tracker:
+Or always the nearest fast charger with a free CCS spot, which moves with you when the entry follows a tracker:
 
 ```yaml
 type: custom:ladestellen-austria-parking-card
