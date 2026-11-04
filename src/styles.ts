@@ -1624,14 +1624,14 @@ const parkingOwnStyles = css`
   /* Map pin: opens the station in the maps app, the same link the list
      card's rows carry. A 44 px round target (the house floor outside
      dense rows) at the header's end, under the thumb on a phone. The
-     negative margins keep the header's height and line the glyph up
-     with the lot's right edge; the hit area reaches into the padding. */
+     block margins keep the header's height. No inline overshoot: in a
+     fixed-height cell .wrap scrolls, and a pin reaching past it would
+     scroll sideways. */
   .map-link {
     flex-shrink: 0;
     width: 44px;
     height: 44px;
     margin-block: -2px;
-    margin-inline-end: -11px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2133,6 +2133,14 @@ const parkingOwnStyles = css`
   }
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
+  /* Below about five columns the header can't hold the tile, a title,
+     the counter and the map pin in one row. The tile is decorative, so
+     it goes and the title keeps the room. */
+  @container plcard (inline-size < 240px) {
+    .icon-tile {
+      display: none;
+    }
+  }
   @container plcard (inline-size < 360px) {
     :host {
       --lade-pad-x: 14px;
