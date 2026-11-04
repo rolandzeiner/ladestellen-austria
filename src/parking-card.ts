@@ -2,11 +2,12 @@
 //
 // Ships in the same Rolldown bundle as the main list card. Registers its
 // own @customElement + window.customCards entry so Lovelace's "Add Card"
-// picker shows both. The user picks one sensor + one station; the card
-// renders every point as a parking slot viewed from above, with
-// painted-lane separators and an asphalt-tinted surface. AVAILABLE
-// points stand out, non-available ones are muted so the "where can I
-// plug in right now" reading is instant.
+// picker shows both. The user picks one sensor and one station, or lets
+// the card follow the nearest one (auto_nearest, optionally only one
+// with a usable spot). The card renders every point as a parking slot
+// viewed from above, with painted-lane separators and an asphalt-tinted
+// surface. AVAILABLE points stand out, non-available ones are muted so
+// the "where can I plug in right now" reading is instant.
 
 import {
   LitElement,
@@ -42,7 +43,9 @@ import {
   syncCardLanguage,
 } from "./card-lifecycle";
 import { parkingLotStyles } from "./styles";
+import { pickParkingStation, type ParkingPick } from "./station-logic";
 import {
+  formatDistanceKm,
   formatKw,
   pointConnectorLabel,
   pointPowerType,
@@ -109,6 +112,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // `!== false` scattered through render). Mirrors the list card's
     // setConfig policy — both cards now share one shape.
     this.config = {
+      auto_nearest: false,
+      only_available: false,
       hide_header: false,
       show_free_count: true,
       logo_adapt_to_theme: false,
@@ -145,7 +150,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     // resolves there are no slots, which gives 3.
     const entity = this.config.entity ? this.hass?.states[this.config.entity] : undefined;
     const stations = (entity?.attributes["stations"] ?? []) as Station[];
-    const station = stations.find((s) => s.stationId === this.config.station_id);
+    const { station } = this._pick(stations);
     const slotRows = Math.ceil((station?.points?.length ?? 0) / 3);
     const px = 57 + (this.config.hide_header ? 0 : 52) + 120 * slotRows;
     return Math.ceil(px / 50);
@@ -163,6 +168,16 @@ export class LadestellenAustriaParkingCard extends LitElement {
       min_columns: 4,
       min_rows: 3,
     };
+  }
+
+  /** The station to show: the picked one, or the nearest (usable) one. */
+  private _pick(stations: Station[]): ParkingPick {
+    return pickParkingStation(
+      stations,
+      this.config,
+      new Date(),
+      this.hass?.config?.time_zone ?? "Europe/Vienna",
+    );
   }
 
   private get _fixedHeight(): boolean {
@@ -280,21 +295,25 @@ export class LadestellenAustriaParkingCard extends LitElement {
   }
 
   /**
-   * Header for the resolved-station branch. Owns all three of its
-   * config decisions (hide_header, custom title, show_free_count) so
-   * render() carries none of them — those nested ternaries were most of
-   * its remaining cognitive complexity.
+   * Header for the resolved-station branch. Owns all four of its
+   * config decisions (hide_header, custom title, show_free_count,
+   * auto_nearest) so render() carries none of them — those nested
+   * ternaries were most of its remaining cognitive complexity.
    */
   private _stationHeader(
-    stationLabel: string,
+    station: Station,
     customTitle: string | undefined,
     counts: { avail: number; total: number; label: string },
   ): TemplateResult | typeof nothing {
     if (this.config.hide_header) return nothing;
     const showCount = this.config.show_free_count !== false;
+    // A followed station changes as you move, so say how far it is.
+    const km = this.config.auto_nearest ? formatDistanceKm(station.distance) : "–";
+    const distance = km === "–" ? "" : `${km} km`;
+    const subtitle = [customTitle ? station.label : "", distance].filter(Boolean).join(" · ");
     return this._renderHeader(
-      customTitle ?? stationLabel,
-      customTitle ? stationLabel : "",
+      customTitle ?? station.label,
+      subtitle,
       showCount ? counts : undefined,
     );
   }
@@ -328,21 +347,19 @@ export class LadestellenAustriaParkingCard extends LitElement {
     }
 
     const stations = (stateObj.attributes["stations"] ?? []) as Station[];
-    const stationId = this.config.station_id ?? "";
-    const station = stations.find((s) => s.stationId === stationId);
+    const pick = this._pick(stations);
     const footer = this._cardFooter(stateObj.attributes.attribution);
 
-    if (!stationId || !station) {
+    if (!pick.station) {
       return this._renderShell(
         html`
           ${showCustomHeader ? this._renderHeader(customTitle ?? "") : nothing}
-          <div class="empty-state">
-            ${localize(stationId ? "parking.station_not_found" : "parking.no_station_selected")}
-          </div>
+          <div class="empty-state">${localize(pick.emptyKey)}</div>
         `,
         { footer },
       );
     }
+    const station = pick.station;
 
     // Coordinator already sorts each station's points by the trailing
     // EMSP-ID ordinal — see _evse_sort_key in coordinator.py. We just
@@ -356,7 +373,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
 
     return this._renderShell(
       html`
-        ${this._stationHeader(station.label, customTitle, {
+        ${this._stationHeader(station, customTitle, {
           avail: availCount,
           total: totalCount,
           label: countText,

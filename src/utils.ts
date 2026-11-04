@@ -229,6 +229,25 @@ export function formatKw(v: number | undefined): string {
 }
 
 /**
+ * Distance formatter — Austrian comma decimals, always two digits
+ * (callers add "km"). 1.234 → "1,23". `distance` is typed number, but
+ * the stations attribute is unvalidated, so a numeric string is
+ * accepted too; anything else gives "–".
+ */
+export function formatDistanceKm(value: string | number | undefined): string {
+  const n = typeof value === "number" ? value : parseFloat(value ?? "");
+  if (!Number.isFinite(n)) return "–";
+  try {
+    return new Intl.NumberFormat("de-AT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return n.toFixed(2);
+  }
+}
+
+/**
  * Convert cents to a euro-formatted number string (no currency symbol
  * — callers add "€"). 65 → "0,65", 100 → "1,00". Fixed 2 fractional
  * digits for alignment in price tables.

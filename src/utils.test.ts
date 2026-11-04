@@ -18,6 +18,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   formatCent,
+  formatDistanceKm,
   formatEuro,
   formatKw,
   normStatus,
@@ -169,6 +170,23 @@ describe("formatKw", () => {
     expect(formatKw(undefined)).toBe("–");
     expect(formatKw(NaN)).toBe("–");
     expect(formatKw(Infinity)).toBe("–");
+  });
+});
+
+describe("formatDistanceKm", () => {
+  it("uses Austrian comma decimals with two fixed digits", () => {
+    expect(formatDistanceKm(1.234)).toBe("1,23");
+    expect(formatDistanceKm(2)).toBe("2,00");
+  });
+
+  it("accepts a numeric string, since the stations attribute is unvalidated", () => {
+    expect(formatDistanceKm("0.4")).toBe("0,40");
+  });
+
+  it("renders an en dash for missing or non-numeric values", () => {
+    expect(formatDistanceKm(undefined)).toBe("–");
+    expect(formatDistanceKm("far")).toBe("–");
+    expect(formatDistanceKm(NaN)).toBe("–");
   });
 });
 

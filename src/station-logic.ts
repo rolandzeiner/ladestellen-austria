@@ -8,7 +8,13 @@
 // the clock here, so opening-hours behaviour is deterministic in tests.
 
 import { normStatus, safeHttpsUri, shortConnector } from "./utils";
-import type { LadestellenAustriaCardConfig, OpeningHours, Point, Station } from "./types";
+import type {
+  LadestellenAustriaCardConfig,
+  OpeningHours,
+  ParkingLotCardConfig,
+  Point,
+  Station,
+} from "./types";
 
 export type StatusLevel = "ok" | "partial" | "busy" | "inactive" | "unknown";
 
@@ -272,6 +278,49 @@ export function filterStations(
     }
     return true;
   });
+}
+
+/**
+ * Could you plug in here right now? A free point on an ACTIVE station
+ * (the list card's only_available), and not closed by its opening
+ * hours: a free point behind a shut garage gate isn't free. No published
+ * hours counts as open, as in only_open.
+ */
+export function hasUsableSpot(s: Station, now: Date, tz: string): boolean {
+  return hasActivePoint(s) && isOpenNow(s.openingHours, now, tz) !== false;
+}
+
+/** What the parking card shows when no station qualifies. */
+export type ParkingEmptyKey =
+  | "parking.no_station_selected"
+  | "parking.station_not_found"
+  | "parking.no_stations"
+  | "parking.none_available";
+
+export type ParkingPick = { station: Station } | { station?: undefined; emptyKey: ParkingEmptyKey };
+
+/**
+ * The station the parking card shows. With `auto_nearest` it is the
+ * first station the sensor reports (the coordinator sorts them nearest
+ * first) and `station_id` is ignored; `only_available` narrows that to
+ * the nearest one with a usable spot. Otherwise it is `station_id`.
+ */
+export function pickParkingStation(
+  stations: Station[],
+  config: Pick<ParkingLotCardConfig, "station_id" | "auto_nearest" | "only_available">,
+  now: Date,
+  tz: string,
+): ParkingPick {
+  if (config.auto_nearest) {
+    if (stations.length === 0) return { emptyKey: "parking.no_stations" };
+    if (!config.only_available) return { station: stations[0]! };
+    const usable = stations.find((s) => hasUsableSpot(s, now, tz));
+    return usable ? { station: usable } : { emptyKey: "parking.none_available" };
+  }
+  const stationId = config.station_id ?? "";
+  if (!stationId) return { emptyKey: "parking.no_station_selected" };
+  const station = stations.find((s) => s.stationId === stationId);
+  return station ? { station } : { emptyKey: "parking.station_not_found" };
 }
 
 /** Highest advertised capacity across a station's points; 0 when none report one. */

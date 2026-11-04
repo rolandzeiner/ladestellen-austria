@@ -1,8 +1,8 @@
-// Visual editor for the parking-slot card. The sensor, the station (the
-// card shows nothing without one) and the title sit at the top; the
-// header, the lot's look and the footer each get a collapsible group.
-// Typed fields go through <ha-form>; the station picker and the colour
-// swatch are hand-written.
+// Visual editor for the parking-slot card. The sensor, the station (a
+// picked one, or the nearest; the card shows nothing without one) and
+// the title sit at the top; the header, the lot's look and the footer
+// each get a collapsible group. Typed fields go through <ha-form>; the
+// station picker and the colour swatch are hand-written.
 
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
@@ -22,6 +22,8 @@ import {
 // The card's own defaults. The form shows them for keys the config
 // leaves out; withoutDefaults drops them again.
 const FORM_DEFAULTS: Record<string, unknown> = {
+  auto_nearest: false,
+  only_available: false,
   hide_header: false,
   show_free_count: true,
   logo_adapt_to_theme: false,
@@ -44,6 +46,16 @@ const ENTITY_SCHEMA: HaFormSchema = [
 ];
 
 const NAME_SCHEMA: HaFormSchema = [{ name: "name", selector: { text: {} } }];
+
+// Follow the nearest station instead of a picked one. `only_available`
+// narrows the nearest station, so it is greyed out until the card
+// follows one.
+const stationSchema = (freeOff: boolean): HaFormSchema => [
+  { name: "auto_nearest", selector: { boolean: {} } },
+  { name: "only_available", disabled: freeOff, selector: { boolean: {} } },
+];
+const STATION_SCHEMA_AUTO = stationSchema(false);
+const STATION_SCHEMA_FIXED = stationSchema(true);
 
 // `show_header` is the form's name for `hide_header`: a positive switch
 // reads better than one whose "off" shows the header. It never reaches
@@ -183,11 +195,18 @@ export class LadestellenAustriaParkingCardEditor
     const form = (schema: HaFormSchema) => this._form(schema, data);
     const lang = this.hass?.language ?? "";
     const mode = String(c.car_color_mode ?? FORM_DEFAULTS["car_color_mode"]);
+    const auto = c.auto_nearest === true;
 
     return html`
       <div class="editor">
         ${form(ENTITY_SCHEMA)} ${this._renderEntityAlert()}
-        ${this._renderStationPicker(entityId, stations, c.station_id ?? "")}
+        <div class="field">
+          <div class="field-label" id="station-picker-heading">
+            ${localize("parking.editor_station_heading")}
+          </div>
+          ${form(auto ? STATION_SCHEMA_AUTO : STATION_SCHEMA_FIXED)}
+          ${auto ? nothing : this._renderStationPicker(entityId, stations, c.station_id ?? "")}
+        </div>
         ${form(NAME_SCHEMA)}
         ${this._renderPanels([
           {
@@ -239,15 +258,14 @@ export class LadestellenAustriaParkingCardEditor
     return getComputedStyle(this).getPropertyValue("--primary-color").trim() || FALLBACK_ACCENT;
   }
 
+  /** The fixed-station radio list with its hints; hidden while the card
+   *  follows the nearest station. */
   private _renderStationPicker(
     entityId: string | undefined,
     stations: Station[],
     selectedId: string,
   ): TemplateResult {
-    return html`<div class="field">
-      <div class="field-label" id="station-picker-heading">
-        ${localize("parking.editor_station_heading")}
-      </div>
+    return html`
       ${
         !entityId
           ? html`<div class="editor-hint editor-hint--muted">
@@ -279,7 +297,7 @@ export class LadestellenAustriaParkingCardEditor
       <div class="editor-hint" id="station-picker-hint">
         ${localize("parking.pick_station_hint")}
       </div>
-    </div>`;
+    `;
   }
 
   private _renderStationOption(s: Station, isSelected: boolean): TemplateResult {

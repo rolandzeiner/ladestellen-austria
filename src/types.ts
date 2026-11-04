@@ -132,6 +132,12 @@ export interface ParkingLotCardConfig extends LovelaceCardConfig {
   type: string;
   entity?: string;
   station_id?: string;
+  // Show the sensor's nearest station instead of station_id, which is
+  // then ignored but kept, so switching back restores the pick.
+  auto_nearest?: boolean;
+  // With auto_nearest: the nearest station with a free, working point
+  // that isn't closed right now. Same key as the list card's filter.
+  only_available?: boolean;
   name?: string;
   // Whether the X / Y free counter renders in the header. Defaults to
   // true; users who only want the lot visualization can hide it.

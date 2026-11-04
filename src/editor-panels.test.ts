@@ -161,6 +161,45 @@ describe("saved config", () => {
     expect(saved).toEqual([{ entity: "sensor.ladestellen_austria" }]);
   });
 
+  it("greys out the free-space filter until the card follows the nearest station", async () => {
+    const disabled = async (config: Record<string, unknown>) => {
+      const el = await mount("ladestellen-austria-parking-card-editor", config);
+      const form = [...el.shadowRoot!.querySelectorAll<FormEl>("ha-form")].find((f) =>
+        f.schema.some((s) => s.name === "only_available"),
+      )!;
+      return (form.schema.find((s) => s.name === "only_available") as { disabled?: boolean })
+        .disabled;
+    };
+    expect(await disabled({})).toBe(true);
+    expect(await disabled({ auto_nearest: true })).toBe(false);
+  });
+
+  it("hides the station list while following the nearest station", async () => {
+    const hint = async (config: Record<string, unknown>) =>
+      (await mount("ladestellen-austria-parking-card-editor", config)).shadowRoot!.querySelector(
+        "#station-picker-hint",
+      );
+    expect(await hint({ station_id: "at-1" })).not.toBeNull();
+    expect(await hint({ station_id: "at-1", auto_nearest: true })).toBeNull();
+  });
+
+  it("keeps the picked station when switching to the nearest one", async () => {
+    const el = await mount("ladestellen-austria-parking-card-editor", { station_id: "at-1" });
+    const saved = await change(el, "auto_nearest", {
+      entity: "sensor.ladestellen_austria",
+      station_id: "at-1",
+      show_header: true,
+      auto_nearest: true,
+      only_available: false,
+    });
+    // The off-by-default filter is left out; the pick stays for switching back.
+    expect(saved).toEqual({
+      entity: "sensor.ladestellen_austria",
+      station_id: "at-1",
+      auto_nearest: true,
+    });
+  });
+
   it("greys out the counter while the parking header is hidden", async () => {
     const el = await mount("ladestellen-austria-parking-card-editor", { hide_header: true });
     await open(el, 0);
