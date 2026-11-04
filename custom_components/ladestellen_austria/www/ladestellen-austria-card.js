@@ -2076,11 +2076,12 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   }
   /* Textured asphalt is dark whatever the theme (its editor tile shows
      it so), so the lot's text takes light tones on it: in a light theme
-     the theme's dark text would vanish into the asphalt. #b0b6bd on
-     the asphalt is 5.3:1, #eceff1 about 10:1. */
+     the theme's dark text would vanish into the asphalt. On the bare
+     asphalt #cdd2d7 is 7.2:1 and #eceff1 9.4:1; on the 22 % status
+     tints #cdd2d7 stays at 5.0:1 or more (the green is the lowest). */
   .wrap[data-asphalt-style="textured"] .parking-lot {
     --primary-text-color: #eceff1;
-    --secondary-text-color: #b0b6bd;
+    --secondary-text-color: #cdd2d7;
   }
   /* Per-slot background-position offsets so adjacent slots show
      different windows onto the noise. Seven nth-child buckets cycle
