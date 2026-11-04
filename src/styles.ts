@@ -1621,6 +1621,37 @@ const parkingOwnStyles = css`
     white-space: nowrap;
   }
 
+  /* Map pin: opens the station in the maps app, the same link the list
+     card's rows carry. A 44 px round target (the house floor outside
+     dense rows) at the header's end, under the thumb on a phone. The
+     negative margins keep the header's height and line the glyph up
+     with the lot's right edge; the hit area reaches into the padding. */
+  .map-link {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    margin-block: -2px;
+    margin-inline-end: -11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--secondary-text-color);
+    text-decoration: none;
+    --mdc-icon-size: 22px;
+    transition:
+      background-color var(--ha-animation-duration-fast, 150ms) ease,
+      color var(--ha-animation-duration-fast, 150ms) ease;
+  }
+  .map-link:hover,
+  .map-link:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+  }
+  .map-link:focus-visible {
+    border-radius: 50%;
+  }
+
   /* ── Header count (avail / total free, right-aligned) ─────────────── */
   /* Sits in the header row alongside the icon-tile + title. Compact
      stack: big tabular number + " / total" suffix on top, UPPERCASE

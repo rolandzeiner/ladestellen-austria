@@ -184,7 +184,7 @@ entity: sensor.ladestellen_austria_nearest_station
 
 ### Parking lot
 
-One station seen from above, each charging point a parking spot, in the order of their charging-point numbers. Free spots glow green, occupied ones show a car, and faulty, planned or removed ones show an icon for their status. Hover or tap a spot to see its power, connector and status. In the card picker it's **Ladestellen Austria — Parking**.
+One station seen from above, each charging point a parking spot, in the order of their charging-point numbers. Free spots glow green, occupied ones show a car, and faulty, planned or removed ones show an icon for their status. Hover or tap a spot to see its power, connector and status. The pin in the header opens the station in your maps app. In the card picker it's **Ladestellen Austria — Parking**.
 
 ```yaml
 type: custom:ladestellen-austria-parking-card

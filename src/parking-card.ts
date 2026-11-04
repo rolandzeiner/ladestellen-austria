@@ -45,6 +45,7 @@ import {
 import { parkingLotStyles } from "./styles";
 import {
   hasPointFilters,
+  mapsDeeplink,
   pickParkingStation,
   pointMatches,
   type ParkingPick,
@@ -256,6 +257,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
     title: string,
     subtitle = "",
     count?: { avail: number; total: number; label: string },
+    map?: { url: string; place: string },
   ): TemplateResult {
     return html`<header class="header">
       <div class="icon-tile" aria-hidden="true">
@@ -281,6 +283,20 @@ export class LadestellenAustriaParkingCard extends LitElement {
               ${localize("parking.slot_status_free")}
             </div>
           </div>`
+          : nothing
+      }
+      ${
+        map
+          ? html`<a
+            class="map-link"
+            href=${map.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label=${`${localize("card.open_in_maps")}: ${map.place}`}
+            title=${localize("card.open_in_maps")}
+          >
+            <ha-icon icon="mdi:map-marker-outline" aria-hidden="true"></ha-icon>
+          </a>`
           : nothing
       }
     </header>`;
@@ -318,10 +334,13 @@ export class LadestellenAustriaParkingCard extends LitElement {
     const km = this.config.auto_nearest ? formatDistanceKm(station.distance) : "–";
     const distance = km === "–" ? "" : `${km} km`;
     const subtitle = [customTitle ? station.label : "", distance].filter(Boolean).join(" · ");
+    // The same maps link as the list card's rows; "" without coordinates.
+    const mapsUrl = mapsDeeplink(station.location);
     return this._renderHeader(
       customTitle ?? station.label,
       subtitle,
       showCount ? counts : undefined,
+      mapsUrl ? { url: mapsUrl, place: station.label } : undefined,
     );
   }
 

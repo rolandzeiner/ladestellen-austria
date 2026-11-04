@@ -827,6 +827,48 @@ describe("ladestellen-austria-parking-card", () => {
     expect(el.shadowRoot).not.toBeNull();
   });
 
+  describe("map pin", () => {
+    const pin = (el: LitElement) => el.shadowRoot?.querySelector<HTMLAnchorElement>("a.map-link");
+
+    it("links the station's coordinates to the maps app in a new tab", async () => {
+      const el = await mountParking({}, station({ location: { lat: 48.13, lon: 15.14 } }));
+      const a = pin(el)!;
+      expect(a.getAttribute("href")).toBe(
+        "https://www.google.com/maps/search/?api=1&query=48.13,15.14",
+      );
+      expect(a.getAttribute("target")).toBe("_blank");
+      expect(a.getAttribute("rel")).toBe("noopener noreferrer");
+      expect(a.getAttribute("aria-label")).toBe(`${localize("card.open_in_maps")}: Testladestelle`);
+    });
+
+    it("follows the station the card picked in nearest mode", async () => {
+      const near = station({ stationId: "n", label: "Nah", location: { lat: 48.1, lon: 15.1 } });
+      const far = station({ stationId: "f", label: "Fern", location: { lat: 48.9, lon: 16.9 } });
+      const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+        "ladestellen-austria-parking-card",
+        (e) => {
+          e.setConfig({ entity: "sensor.ladestellen_austria", auto_nearest: true });
+          e.hass = hass([near, far]);
+        },
+      );
+      expect(pin(el)!.getAttribute("href")).toContain("query=48.1,15.1");
+    });
+
+    it("is left out for a station without coordinates", async () => {
+      // The attribute is unvalidated, so a station can arrive without it.
+      const el = await mountParking(
+        {},
+        station({ location: undefined } as unknown as Partial<Station>),
+      );
+      expect(pin(el)).toBeNull();
+    });
+
+    it("goes with the header when the header is hidden", async () => {
+      const el = await mountParking({ hide_header: true });
+      expect(pin(el)).toBeNull();
+    });
+  });
+
   it("leaves the distance out for a picked station", async () => {
     const el = await mountParking({}, station({ distance: 1.25 }));
     expect(el.shadowRoot?.querySelector(".subtitle")).toBeNull();

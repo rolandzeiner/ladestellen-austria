@@ -1641,6 +1641,37 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     white-space: nowrap;
   }
 
+  /* Map pin: opens the station in the maps app, the same link the list
+     card's rows carry. A 44 px round target (the house floor outside
+     dense rows) at the header's end, under the thumb on a phone. The
+     negative margins keep the header's height and line the glyph up
+     with the lot's right edge; the hit area reaches into the padding. */
+  .map-link {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    margin-block: -2px;
+    margin-inline-end: -11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--secondary-text-color);
+    text-decoration: none;
+    --mdc-icon-size: 22px;
+    transition:
+      background-color var(--ha-animation-duration-fast, 150ms) ease,
+      color var(--ha-animation-duration-fast, 150ms) ease;
+  }
+  .map-link:hover,
+  .map-link:focus-visible {
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+  }
+  .map-link:focus-visible {
+    border-radius: 50%;
+  }
+
   /* ── Header count (avail / total free, right-aligned) ─────────────── */
   /* Sits in the header row alongside the icon-tile + title. Compact
      stack: big tabular number + " / total" suffix on top, UPPERCASE
@@ -2456,7 +2487,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
           ${t.footer??j}
         </div>
       </ha-card>
-    `}_cardFooter(e){return B(this.hass,e,this.config?.logo_adapt_to_theme===!0)}_renderHeader(e,t=``,n){return k`<header class="header">
+    `}_cardFooter(e){return B(this.hass,e,this.config?.logo_adapt_to_theme===!0)}_renderHeader(e,t=``,n,r){return k`<header class="header">
       <div class="icon-tile" aria-hidden="true">
         <ha-icon icon="mdi:ev-station"></ha-icon>
       </div>
@@ -2478,13 +2509,23 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
               ${z(`parking.slot_status_free`)}
             </div>
           </div>`:j}
+      ${r?k`<a
+            class="map-link"
+            href=${r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label=${`${z(`card.open_in_maps`)}: ${r.place}`}
+            title=${z(`card.open_in_maps`)}
+          >
+            <ha-icon icon="mdi:map-marker-outline" aria-hidden="true"></ha-icon>
+          </a>`:j}
     </header>`}_renderLot(e,t){if(e.length===0)return k`<div class="empty-state">
         ${z(`parking.no_points`)}
       </div>`;let n=cn(this.config);return k`<div class="rack-block">
       <div class="parking-lot" role="group" aria-label=${t}>
         ${e.map(e=>this._renderSlot(e,n&&!G(e,this.config)))}
       </div>
-    </div>`}_stationHeader(e,t,n){if(this.config.hide_header)return j;let r=this.config.show_free_count!==!1&&n.total>0,i=this.config.auto_nearest?U(e.distance):`–`,a=i===`–`?``:`${i} km`,o=[t?e.label:``,a].filter(Boolean).join(` · `);return this._renderHeader(t??e.label,o,r?n:void 0)}render(){if(!this.hass||!this.config)return this._renderShell(k`<div class="empty-state">${z(`common.loading`)}</div>`);let e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return this._renderShell(mt(this.config.entity),{footer:this._cardFooter()});let t=this.config.name,n=!!t&&!this.config.hide_header;if(e.state===`unavailable`)return this._renderShell(k`
+    </div>`}_stationHeader(e,t,n){if(this.config.hide_header)return j;let r=this.config.show_free_count!==!1&&n.total>0,i=this.config.auto_nearest?U(e.distance):`–`,a=i===`–`?``:`${i} km`,o=[t?e.label:``,a].filter(Boolean).join(` · `),s=pn(e.location);return this._renderHeader(t??e.label,o,r?n:void 0,s?{url:s,place:e.label}:void 0)}render(){if(!this.hass||!this.config)return this._renderShell(k`<div class="empty-state">${z(`common.loading`)}</div>`);let e=this.config.entity?this.hass.states[this.config.entity]:void 0;if(!e)return this._renderShell(mt(this.config.entity),{footer:this._cardFooter()});let t=this.config.name,n=!!t&&!this.config.hide_header;if(e.state===`unavailable`)return this._renderShell(k`
           ${n?this._renderHeader(t??``):j}
           ${pt()}
         `,{footer:this._cardFooter()});let r=e.attributes.stations??[],i=this._pick(r),a=this._cardFooter(e.attributes.attribution);if(!i.station)return this._renderShell(k`
