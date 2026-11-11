@@ -237,7 +237,7 @@ A timer still refreshes every 6 hours, in case the tracker doesn't move. When th
 
 ### When E-Control fails
 
-The sensors become unavailable, and both cards show *Can't reach E-Control* instead of an empty list. Pinned stations stay pinned. The first failure keeps the interval. From the second failure in a row the interval doubles each time (10, 20, 40 minutes with the default), up to 12 hours, and the first successful search restores it.
+The sensors become unavailable, and both cards show *Can't reach E-Control* instead of an empty list. Pinned stations stay pinned. The first failure keeps the interval. From the second failure in a row the interval doubles each time (10, 20, 40 minutes with the default), up to an hour, and the first successful search restores it. An interval you set longer than an hour stays as it is.
 
 After 10 minutes of server errors or unreadable answers from E-Control, a repair says the fault is on their side, and it clears itself once stations return. Timeouts and connection errors don't count toward it, because those can come from your own network. When E-Control rejects your key or domain, Home Assistant asks you to enter them again.
 

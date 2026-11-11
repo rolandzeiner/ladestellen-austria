@@ -67,13 +67,19 @@ MIN_POLL_MINUTES: Final = 5
 MAX_POLL_MINUTES: Final = 720
 
 # Exponential-backoff cap for consecutive `_async_update_data` failures.
-# Bound to MAX_POLL_MINUTES (12 h) so a sustained ladestellen.at /search
-# outage settles into a slow poll instead of hammering the API every
-# 10 min — 6 retries/h, 144/day. First failure stays at the user-configured
-# cadence (transient hiccups shouldn't slow down the loop); from the
-# second failure onwards the interval doubles each tick, capped here,
-# until the next success resets it.
-BACKOFF_CAP_SECONDS: Final = MAX_POLL_MINUTES * 60
+# First failure stays at the user-configured cadence (transient hiccups
+# shouldn't slow down the loop); from the second failure onwards the
+# interval doubles each tick, capped here, until the next success resets it.
+#
+# One hour: a sustained /search outage settles at one request an hour
+# instead of six at the default 10 min, and stations come back within an
+# hour of E-Control. The cap used to be MAX_POLL_MINUTES (12 h). Because the
+# interval grows with the outage, the next try then landed about as long
+# after E-Control's recovery as the outage had lasted, so a few hours' outage
+# kept the sensors unavailable, and the Repairs issue up, for hours after
+# E-Control was back. An interval configured above the cap is never
+# shortened by backoff (see `_note_failure`).
+BACKOFF_CAP_SECONDS: Final = 60 * 60
 
 # ------------------------------------------------------------------
 # Sensor-attribute size discipline (live payload, not recorder).

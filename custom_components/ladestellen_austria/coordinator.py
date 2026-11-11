@@ -501,6 +501,10 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         BACKOFF_CAP_SECONDS so a sustained outage settles into a slow
         poll instead of hammering /search every interval. The next
         successful tick resets it.
+
+        An interval configured above the cap (up to MAX_POLL_MINUTES, or the
+        dynamic-mode safety interval) stays as it is: backoff never makes a
+        failing API get asked more often than a working one.
         """
         self._consecutive_failures += 1
         if self._consecutive_failures < 2:
@@ -510,7 +514,9 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # over within a few doublings, and from the 1025th failure in a
         # row `2 ** n` no longer converts to a float.
         doublings = min(self._consecutive_failures - 1, 32)
-        backoff_secs = min(normal_secs * 2**doublings, BACKOFF_CAP_SECONDS)
+        backoff_secs = min(
+            normal_secs * 2**doublings, max(BACKOFF_CAP_SECONDS, normal_secs)
+        )
         new_interval = timedelta(seconds=backoff_secs)
         if self.update_interval != new_interval:
             self.update_interval = new_interval

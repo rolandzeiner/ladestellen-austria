@@ -20,6 +20,7 @@ from custom_components.ladestellen_austria.const import (
     DOMAIN,
     DOMAIN_LAST_API_CALL_KEY,
     EVENT_SLOT_STATUS_CHANGED,
+    MAX_POLL_MINUTES,
 )
 from custom_components.ladestellen_austria.coordinator import (
     LadestellenAustriaCoordinator,
@@ -255,6 +256,34 @@ async def test_backoff_holds_the_cap_through_a_very_long_outage(
     for _ in range(3000):
         coordinator._note_failure()
     assert coordinator.update_interval == timedelta(seconds=BACKOFF_CAP_SECONDS)
+
+
+async def test_backoff_cap_is_one_hour(hass: HomeAssistant) -> None:
+    """At most an hour between tries, so stations return within an hour of E-Control.
+
+    The cap used to be 12 h, which kept the sensors unavailable for about as
+    long after E-Control recovered as the outage itself had lasted.
+    """
+    entry = _make_entry({CONF_SCAN_INTERVAL: 10})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    for _ in range(10):
+        coordinator._note_failure()
+    assert coordinator.update_interval == timedelta(hours=1)
+
+
+async def test_backoff_never_shortens_a_longer_configured_interval(
+    hass: HomeAssistant,
+) -> None:
+    """An interval above the cap stays as it is through an outage."""
+    entry = _make_entry({CONF_SCAN_INTERVAL: MAX_POLL_MINUTES})
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    for _ in range(10):
+        coordinator._note_failure()
+    assert coordinator.update_interval == timedelta(minutes=MAX_POLL_MINUTES)
 
 
 async def test_fetch_filters_non_dict_entries(hass: HomeAssistant) -> None:
