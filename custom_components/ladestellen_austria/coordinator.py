@@ -31,6 +31,7 @@ from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
+from homeassistant.util.hass_dict import HassKey
 from homeassistant.util.location import distance
 
 from .api import (
@@ -174,6 +175,14 @@ def _evse_sort_key(point: dict[str, Any]) -> tuple[int, int, str]:
     except ValueError:
         return (1, 0, raw)
     return (0, ordinal, raw)
+
+
+# Entries whose outage is already in the log. It lives in hass.data, not on
+# the coordinator: a setup retry builds a fresh coordinator whose
+# `last_update_success` starts out True, so a flag on the instance let every
+# retry of an outage that began before setup warn again, and HA keeps
+# retrying every 10 minutes for as long as the outage lasts (2026-11-11).
+UNAVAILABLE_LOGGED: HassKey[set[str]] = HassKey(f"{DOMAIN}_unavailable_logged")
 
 
 class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -452,6 +461,29 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return True
 
+    def _log_unavailable(self, err: UpdateFailed) -> None:
+        """Warn once per outage of this entry, its setup retries included.
+
+        Core's own "Error fetching ... data" line renders `str(err)`, which is
+        the bare translation key, so without this line the status code never
+        reaches the log at all.
+        """
+        logged = self.hass.data.setdefault(UNAVAILABLE_LOGGED, set())
+        if self._entry.entry_id in logged:
+            return
+        logged.add(self._entry.entry_id)
+        _LOGGER.warning("Ladestellen Austria API unavailable: %s", _describe_error(err))
+
+    def _log_available(self, station_count: int) -> None:
+        """Say once that the API answers again, if its outage was logged."""
+        logged = self.hass.data.get(UNAVAILABLE_LOGGED)
+        if logged is None or self._entry.entry_id not in logged:
+            return
+        logged.discard(self._entry.entry_id)
+        _LOGGER.info(
+            "Ladestellen Austria API available again (%d stations)", station_count
+        )
+
     def _note_success(self) -> None:
         """Reset the consecutive-failure counter and restore normal cadence."""
         if self._consecutive_failures == 0:
@@ -545,20 +577,11 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lat = self._latitude
             lng = self._longitude
 
-        was_available = self.last_update_success
-
         try:
             stations = await self._fetch_search(lat, lng)
         except UpdateFailed as err:
             self._note_failure()
-            # Log once on the available -> unavailable transition, not on every
-            # poll of a sustained outage. Core's own "Error fetching ... data"
-            # line renders `str(err)`, which is the bare translation key — so
-            # without this the status code never reached the log at all.
-            if was_available:
-                _LOGGER.warning(
-                    "Ladestellen Austria API unavailable: %s", _describe_error(err)
-                )
+            self._log_unavailable(err)
             raise
         # Local-only dev hook: contributors export
         # `LADESTELLEN_AUSTRIA_DEV_FIXTURE=1` and drop a (gitignored)
@@ -591,11 +614,7 @@ class LadestellenAustriaCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if isinstance(points, list):
                 station["points"] = sorted(points, key=_evse_sort_key)
 
-        if not was_available:
-            _LOGGER.info(
-                "Ladestellen Austria API available again (%d stations)",
-                len(truncated),
-            )
+        self._log_available(len(truncated))
 
         # Diff per-EVSE status between previous and current refresh; fire
         # one bus event per transition. Skipped on the first successful

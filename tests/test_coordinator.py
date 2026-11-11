@@ -917,15 +917,61 @@ async def test_failure_log_carries_http_status(
 async def test_failure_log_not_repeated_during_sustained_outage(
     hass: HomeAssistant, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """Only the available -> unavailable transition is logged."""
+    """One warning per outage, however many polls it lasts."""
     entry = _make_entry()
     entry.add_to_hass(hass)
     coordinator = LadestellenAustriaCoordinator(hass, entry)
 
     with patch.object(coordinator, "_fetch_search", side_effect=_http_error()):
         for _ in range(3):
-            coordinator.last_update_success = False
             with pytest.raises(UpdateFailed):
                 await coordinator._async_update_data()
 
-    assert "Ladestellen Austria API unavailable" not in caplog.text
+    assert caplog.text.count("Ladestellen Austria API unavailable") == 1
+
+
+async def test_failure_log_not_repeated_by_setup_retries(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A setup retry's fresh coordinator doesn't warn again for the same outage.
+
+    HA builds a new coordinator on every retry, and its `last_update_success`
+    starts out True, so during the 2026-11-11 outage every retry warned again.
+    """
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+
+    with patch.object(
+        LadestellenAustriaCoordinator, "_fetch_search", side_effect=_http_error()
+    ):
+        for _ in range(3):
+            with pytest.raises(UpdateFailed):
+                await LadestellenAustriaCoordinator(hass, entry)._async_update_data()
+
+    assert caplog.text.count("Ladestellen Austria API unavailable") == 1
+
+
+async def test_recovery_logged_once_and_next_outage_warns(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The first answer after an outage says so once; a later outage warns anew."""
+    entry = _make_entry()
+    entry.add_to_hass(hass)
+    coordinator = LadestellenAustriaCoordinator(hass, entry)
+
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=_http_error()),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+    with patch.object(coordinator, "_fetch_search", return_value=[]):
+        await coordinator._async_update_data()
+        await coordinator._async_update_data()
+    with (
+        patch.object(coordinator, "_fetch_search", side_effect=_http_error()),
+        pytest.raises(UpdateFailed),
+    ):
+        await coordinator._async_update_data()
+
+    assert caplog.text.count("Ladestellen Austria API available again") == 1
+    assert caplog.text.count("Ladestellen Austria API unavailable") == 2
