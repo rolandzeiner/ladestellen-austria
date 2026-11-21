@@ -255,8 +255,8 @@ export class LadestellenAustriaParkingCard extends LitElement {
    * station has coordinates.
    *
    * The counter is a status region that reads as one sentence ("1 of 8
-   * charging points available"): a live region on the bare figure
-   * announced "1" when a spot came free.
+   * charging points available"); a live region on the bare figure would
+   * announce only "1" when a spot comes free.
    */
   private _renderHeader(
     title: string,

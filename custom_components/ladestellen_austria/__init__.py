@@ -83,9 +83,9 @@ async def async_setup_entry(
     # coordinator._async_setup(), which subscribes to the tracker, and raises
     # ConfigEntryNotReady when the fetch fails; HA then runs the callbacks
     # registered so far. Registered afterwards, every setup retry of an
-    # outage left a tracker listener behind, and each of those stamped the
-    # domain-wide cooldown ahead of the live coordinator, which then skipped
-    # its own tracker refreshes until the next restart.
+    # outage would leave a tracker listener behind, and each of those stamps
+    # the domain-wide cooldown ahead of the live coordinator, which then
+    # skips its own tracker refreshes until the next restart.
     entry.async_on_unload(coordinator.async_teardown)
     await coordinator.async_config_entry_first_refresh()
 

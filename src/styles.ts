@@ -502,8 +502,8 @@ const cardOwnStyles = css`
   .station.is-pinned:focus-within {
     background: color-mix(in srgb, var(--primary-color) 8%, transparent);
   }
-  /* An inactive or closed station is greyed through its text colours.
-     Fading the whole row to 65 % left nothing in it above 2.5:1. */
+  /* An inactive or closed station is greyed through its text colours,
+     not by fading the row: at 65 % opacity nothing in it reaches 4.5:1. */
   .station.is-inactive .metric-kw,
   .station.is-inactive .metric-kw.dc,
   .station.is-inactive .metric-kw.dc .kw-unit,
@@ -1327,7 +1327,7 @@ const editorOwnStyles = css`
     flex-shrink: 0;
   }
   /* The "nothing to pick yet" hints. In italics, not faded: at 70 %
-     opacity the secondary grey fell to about 3:1. */
+     opacity the secondary grey falls to about 3:1. */
   .editor-hint--muted {
     font-style: italic;
   }
@@ -1587,9 +1587,9 @@ const parkingOwnStyles = css`
   /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header (icon-tile + title group) ────────────────────────── */
-  /* The header wraps: with a long station name the counter and the map
-     pin move to a second row instead of squeezing the name down to a
-     few letters, which is what a six-column cell did. */
+  /* The header wraps: beside a long station name a six-column cell has
+     no room for the counter and the map pin, so they move to a second
+     row and the name keeps the first. */
   .header {
     display: flex;
     flex-wrap: wrap;
