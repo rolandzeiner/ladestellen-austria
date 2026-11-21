@@ -145,7 +145,7 @@ On the card side, `src/render-snapshot.test.ts` pins the markup of the station d
 
 ### Coverage
 
-`pytest.ini` enforces `--cov-fail-under=90` on the package total; `pytest tests/ --cov-report=term-missing` gives the per-file view. The card side has no gate and the provider is not a dependency. To see which branches a change left unexercised, install it for one run at the Vitest version Vite+ bundles:
+`pytest.ini` enforces `--cov-fail-under=95` on the package total; `pytest tests/ --cov-report=term-missing` gives the per-file view. The card side has no gate and the provider is not a dependency. To see which branches a change left unexercised, install it for one run at the Vitest version Vite+ bundles:
 
 ```bash
 V=$(npx vp toolchain vitest | grep -oE 'vitest@[0-9.]+' | head -1 | cut -d@ -f2)

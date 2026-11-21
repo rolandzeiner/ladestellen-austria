@@ -72,6 +72,10 @@ implicit_reexport = true
 
 [tool.coverage.run]
 source = ["custom_components/ladestellen_austria"]
+# Gitignored and present only on a contributor's machine (see the dev hook
+# in coordinator.py). Counted, it puts the local figure about a point under
+# CI's, which never sees the file.
+omit = ["*/_dev_fixture.py"]
 
 [tool.coverage.report]
 exclude_lines = [
