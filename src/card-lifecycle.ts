@@ -59,7 +59,8 @@ export function syncCardLanguage(
  * configured entity's state object actually changed identity.
  *
  * Returns true (update) when there is no previous hass, no configured
- * entity, or the UI language changed — conservative on purpose.
+ * entity, or something else the cards read off hass changed (the UI
+ * language, light or dark theme, the time zone) — conservative on purpose.
  */
 export function shouldUpdateForEntityState(
   changedProps: PropertyValues,
@@ -71,6 +72,11 @@ export function shouldUpdateForEntityState(
   // A language switch changes no entity state; without this the card keeps
   // the old language until its sensor next updates.
   if (prev.language !== hass.language) return true;
+  // Nor does a switch between a light and a dark theme, which picks the
+  // footer logo's silhouette when logo_adapt_to_theme is on.
+  if (prev.themes?.darkMode !== hass.themes?.darkMode) return true;
+  // Opening hours are judged in HA's time zone.
+  if (prev.config?.time_zone !== hass.config?.time_zone) return true;
   return prev.states[entity] !== hass.states[entity];
 }
 

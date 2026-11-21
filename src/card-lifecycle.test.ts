@@ -7,8 +7,8 @@
 //
 //  - shouldUpdateForEntityState returns TRUE on a missing previous hass
 //    (conservative: render rather than risk a stale card)
-//  - ... and TRUE when only hass.language changed: a profile language
-//    switch leaves every state object as it was
+//  - ... and TRUE when only hass.language, the light or dark theme or the
+//    time zone changed: none of them touches a state object
 //  - runVersionCheckOnce marks the element BEFORE awaiting, so a second
 //    call during the in-flight probe cannot start a second one
 //  - the isConnected check happens in the late callback, not up front,
@@ -130,6 +130,27 @@ describe("shouldUpdateForEntityState", () => {
     const prev = { ...hassWith({ [entity]: stateA }), language: "en" };
     const props = new Map<string, unknown>([["hass", prev]]);
     expect(shouldUpdateForEntityState(props, { ...prev, language: "de" }, entity)).toBe(true);
+  });
+
+  it("updates when only the theme switched between light and dark", () => {
+    // The adaptive footer logo takes its silhouette from themes.darkMode.
+    const prev = { ...hassWith({ [entity]: stateA }), themes: { darkMode: false } };
+    const props = new Map<string, unknown>([["hass", prev]]);
+    expect(shouldUpdateForEntityState(props, { ...prev, themes: { darkMode: true } }, entity)).toBe(
+      true,
+    );
+    expect(
+      shouldUpdateForEntityState(props, { ...prev, themes: { darkMode: false } }, entity),
+    ).toBe(false);
+  });
+
+  it("updates when only the time zone changed", () => {
+    // "Open now" is judged in HA's zone.
+    const prev = { ...hassWith({ [entity]: stateA }), config: { time_zone: "Europe/Vienna" } };
+    const props = new Map<string, unknown>([["hass", prev]]);
+    expect(
+      shouldUpdateForEntityState(props, { ...prev, config: { time_zone: "Asia/Tokyo" } }, entity),
+    ).toBe(true);
   });
 });
 
