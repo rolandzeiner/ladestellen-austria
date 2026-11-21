@@ -122,13 +122,14 @@ def _build_schema(
         )
     )
     if include_dynamic:
-        # Optional device_tracker picker. An existing value is preserved
-        # in the default (so reconfigure shows the currently-selected
-        # tracker), but the field itself is always optional so users can
-        # clear it back to static mode.
+        # Optional device_tracker picker. The current tracker is a
+        # suggestion, never a `default`: a cleared field arrives as a
+        # missing key, the flow validates the input against this schema,
+        # and a default would put the tracker straight back, so the entry
+        # could never return to a fixed location.
         existing = defaults.get(CONF_DYNAMIC_ENTITY) or None
         key = (
-            vol.Optional(CONF_DYNAMIC_ENTITY, default=existing)
+            vol.Optional(CONF_DYNAMIC_ENTITY, description={"suggested_value": existing})
             if existing
             else vol.Optional(CONF_DYNAMIC_ENTITY)
         )
@@ -305,6 +306,18 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
         """Return the options flow handler."""
         return LadestellenAustriaOptionsFlow()
 
+    def _held_by_another_entry(self, entry: ConfigEntry, unique_id: str) -> bool:
+        """Whether an entry other than `entry` already has `unique_id`.
+
+        Reconfigure and reauth both let their entry move to a new unique_id
+        (the formula is built from things their forms can change) and
+        refuse only a move onto another entry.
+        """
+        return any(
+            other.entry_id != entry.entry_id and other.unique_id == unique_id
+            for other in self._async_current_entries(include_ignore=True)
+        )
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -377,16 +390,18 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                     # Allow THIS entry to change its unique_id (mode
                     # switch / location move) but abort if another
                     # entry already holds the new unique_id.
-                    for other in self._async_current_entries(include_ignore=True):
-                        if (
-                            other.entry_id != entry.entry_id
-                            and other.unique_id == new_unique_id
-                        ):
-                            return self.async_abort(reason="already_configured")
+                    if self._held_by_another_entry(entry, new_unique_id):
+                        return self.async_abort(reason="already_configured")
+                    # options={}: this form shows the interval merged from
+                    # data and options, so what was submitted is the whole
+                    # truth. The options flow stores the interval in
+                    # entry.options, and every reader merges options over
+                    # data, so a copy left there would outrank this write.
                     return self.async_update_and_abort(
                         entry,
                         data=_build_entry_data(cleaned),
                         unique_id=new_unique_id,
+                        options={},
                     )
 
         current = {**entry.data, **entry.options}
@@ -437,13 +452,16 @@ class LadestellenAustriaConfigFlow(ConfigFlow, domain=DOMAIN):
                 if probe_err:
                     errors["base"] = probe_err
                 else:
+                    data = {**entry.data, CONF_API_KEY: api_key, CONF_DOMAIN: domain}
+                    # The registered domain is part of the unique_id, so a
+                    # new domain moves the entry to its new id. Left behind,
+                    # a second entry for the same domain and place would no
+                    # longer be recognised as a duplicate.
+                    new_unique_id = _compute_unique_id(data)
+                    if self._held_by_another_entry(entry, new_unique_id):
+                        return self.async_abort(reason="already_configured")
                     return self.async_update_and_abort(
-                        entry,
-                        data={
-                            **entry.data,
-                            CONF_API_KEY: api_key,
-                            CONF_DOMAIN: domain,
-                        },
+                        entry, data=data, unique_id=new_unique_id
                     )
 
         return self.async_show_form(

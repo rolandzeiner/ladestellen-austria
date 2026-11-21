@@ -51,8 +51,7 @@
     "abort": {
       "already_configured": "This domain and location combination is already configured.",
       "reconfigure_successful": "Reconfigure completed successfully.",
-      "reauth_successful": "Re-authentication completed successfully.",
-      "unique_id_mismatch": "The new credentials point to a different domain/location. Remove the entry and add it fresh instead."
+      "reauth_successful": "Re-authentication completed successfully."
     }
   },
   "options": {

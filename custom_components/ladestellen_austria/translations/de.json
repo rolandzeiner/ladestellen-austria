@@ -51,8 +51,7 @@
     "abort": {
       "already_configured": "Diese Kombination aus Domain und Standort ist bereits konfiguriert.",
       "reconfigure_successful": "Neukonfiguration erfolgreich abgeschlossen.",
-      "reauth_successful": "Neuanmeldung erfolgreich abgeschlossen.",
-      "unique_id_mismatch": "Die neuen Zugangsdaten zeigen auf eine andere Domain bzw. einen anderen Standort. Bitte den Eintrag entfernen und neu anlegen."
+      "reauth_successful": "Neuanmeldung erfolgreich abgeschlossen."
     }
   },
   "options": {

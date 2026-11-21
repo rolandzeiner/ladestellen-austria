@@ -122,3 +122,50 @@ async def test_reauth_success_updates_credentials(
     assert refreshed is not None
     assert refreshed.data[CONF_API_KEY] == "fresh-key"
     assert refreshed.data[CONF_DOMAIN] == "neue-seite.at"
+
+
+async def test_reauth_moves_the_unique_id_with_the_domain(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """The registered domain is part of the unique_id, so it moves with it.
+
+    Left behind, the entry would keep an id that no longer follows the
+    formula, and a second entry for the new domain at the same place would
+    not be recognised as a duplicate.
+    """
+    entry = _entry(hass)
+    flow = await _start_reauth(hass, entry)
+    result = await hass.config_entries.flow.async_configure(
+        flow["flow_id"],
+        {CONF_API_KEY: "fresh-key", CONF_DOMAIN: "neue-seite.at"},
+    )
+    await hass.async_block_till_done()
+    assert result["reason"] == "reauth_successful"
+    refreshed = hass.config_entries.async_get_entry(entry.entry_id)
+    assert refreshed is not None
+    assert refreshed.unique_id == "neue-seite.at:48.21:16.37"
+
+
+async def test_reauth_refuses_a_domain_another_entry_holds(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """Two entries must not end up on the same domain and location."""
+    entry = _entry(hass)
+    other = MockConfigEntry(
+        domain=DOMAIN,
+        data={**BASE_ENTRY_DATA, CONF_DOMAIN: "neue-seite.at"},
+        title="Other",
+        unique_id="neue-seite.at:48.21:16.37",
+    )
+    other.add_to_hass(hass)
+    flow = await _start_reauth(hass, entry)
+    result = await hass.config_entries.flow.async_configure(
+        flow["flow_id"],
+        {CONF_API_KEY: "fresh-key", CONF_DOMAIN: "neue-seite.at"},
+    )
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    unchanged = hass.config_entries.async_get_entry(entry.entry_id)
+    assert unchanged is not None
+    assert unchanged.data[CONF_DOMAIN] == "www.meineseite.at"
+    assert unchanged.unique_id == "www.meineseite.at:48.21:16.37"

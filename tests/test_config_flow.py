@@ -263,3 +263,129 @@ async def test_dynamic_entries_do_not_collide_by_location(
     entry = hass.config_entries.async_get_entry(result["result"].entry_id)
     assert entry is not None
     assert entry.unique_id == "www.meineseite.at:dynamic:device_tracker.tablet"
+
+
+async def _reconfigure(hass: HomeAssistant, entry_id: str, user_input: dict) -> dict:
+    """Open the reconfigure form for an entry and submit it."""
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_RECONFIGURE, "entry_id": entry_id},
+    )
+    result = await hass.config_entries.flow.async_configure(flow["flow_id"], user_input)
+    await hass.async_block_till_done()
+    return result
+
+
+RECONFIGURE_INPUT = {k: v for k, v in VALID_USER_INPUT.items() if k != "name"}
+
+
+async def test_reconfigure_clears_dynamic_tracker(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """An emptied tracker field takes the entry back to its fixed location.
+
+    The frontend sends a cleared field as a missing key. With the stored
+    tracker as the schema's default, validation put it straight back and
+    the entry could never leave dynamic mode again.
+    """
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**VALID_USER_INPUT, CONF_DYNAMIC_ENTITY: "device_tracker.phone"},
+    )
+    entry = hass.config_entries.async_get_entry(result["result"].entry_id)
+    assert entry is not None
+    assert entry.unique_id == "www.meineseite.at:dynamic:device_tracker.phone"
+
+    # No CONF_DYNAMIC_ENTITY key at all: that is what a cleared picker sends.
+    result = await _reconfigure(hass, entry.entry_id, RECONFIGURE_INPUT)
+    assert result["reason"] == "reconfigure_successful"
+
+    refreshed = hass.config_entries.async_get_entry(entry.entry_id)
+    assert refreshed is not None
+    assert refreshed.data[CONF_DYNAMIC_ENTITY] is None
+    assert refreshed.unique_id == "www.meineseite.at:48.21:16.37"
+
+
+async def test_reconfigure_shows_the_tracker_as_a_suggestion(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """The form still shows the stored tracker, as a suggested value."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**VALID_USER_INPUT, CONF_DYNAMIC_ENTITY: "device_tracker.phone"},
+    )
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": result["result"].entry_id,
+        },
+    )
+    key = next(k for k in flow["data_schema"].schema if k == CONF_DYNAMIC_ENTITY)
+    assert key.description == {"suggested_value": "device_tracker.phone"}
+    assert not callable(getattr(key, "default", None))
+
+
+async def test_reconfigure_after_options_save_wins(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """An interval saved under Configure must not outrank a later Reconfigure.
+
+    Readers merge options over data, and both forms show the interval.
+    """
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], VALID_USER_INPUT
+    )
+    entry_id = result["result"].entry_id
+    await hass.async_block_till_done()
+
+    options = await hass.config_entries.options.async_init(entry_id)
+    await hass.config_entries.options.async_configure(
+        options["flow_id"], {CONF_SCAN_INTERVAL: 60}
+    )
+    await hass.async_block_till_done()
+
+    result = await _reconfigure(
+        hass, entry_id, {**RECONFIGURE_INPUT, CONF_SCAN_INTERVAL: 15}
+    )
+    assert result["reason"] == "reconfigure_successful"
+
+    entry = hass.config_entries.async_get_entry(entry_id)
+    assert entry is not None
+    assert {**entry.data, **entry.options}[CONF_SCAN_INTERVAL] == 15
+    assert entry.options == {}
+
+
+async def test_reconfigure_onto_another_entry_aborts(
+    hass: HomeAssistant, mock_fetch: AsyncMock
+) -> None:
+    """Moving an entry onto another entry's location is refused."""
+    entry_ids = []
+    for location in (
+        {"latitude": 48.21, "longitude": 16.37},
+        {"latitude": 47.07, "longitude": 15.44},
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {**VALID_USER_INPUT, "location": location}
+        )
+        entry_ids.append(result["result"].entry_id)
+
+    result = await _reconfigure(hass, entry_ids[1], RECONFIGURE_INPUT)
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    second = hass.config_entries.async_get_entry(entry_ids[1])
+    assert second is not None
+    assert second.unique_id == "www.meineseite.at:47.07:15.44"
+    assert second.data[CONF_LATITUDE] == 47.07
