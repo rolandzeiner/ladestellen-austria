@@ -17,6 +17,7 @@ import { css } from "lit";
 const sharedVersionBanner = css`
   .version-notice {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -52,9 +53,11 @@ const sharedVersionBanner = css`
 const sharedFooter = css`
   .footer {
     display: flex;
+    /* Below about 150 px the logo and the attribution don't fit one row. */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 4px 12px;
     padding: 10px var(--lade-pad-x);
     border-top: 1px solid var(--divider-color);
   }
@@ -249,6 +252,10 @@ const cardOwnStyles = css`
        content; without it overflow-y never engages. */
     min-block-size: 0;
     overflow-y: auto;
+    /* Room for the focus ring of whatever Tab scrolls into view (2 px at
+       an offset of up to 3 px); without it the scroller's edge cuts the
+       ring of a control that lands flush with it. */
+    scroll-padding-block: 6px;
   }
   /* Slotted child of <ha-card>. Reset HA's default 16px padding — every
      region inside .wrap supplies its own spacing tuned to the new tile
@@ -439,10 +446,18 @@ const cardOwnStyles = css`
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 500;
-    line-height: 1;
+    line-height: 1.2;
     background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
     color: var(--lade-muted-text);
     font-variant-numeric: tabular-nums;
+    /* The tracker flag carries an entity id, which has no space to wrap
+       at and is often wider than a six-column cell. */
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .flag span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .flag ha-icon {
     --mdc-icon-size: 14px;
@@ -1038,12 +1053,17 @@ const cardOwnStyles = css`
   @container lscard (inline-size < 360px) {
     /* .station-loc never shrinks, so beside it the name is squeezed to a
        character per line. Give the name the full row and put the
-       location under it. */
+       location under it, where it may wrap: "9220 Velden am Wörther See
+       · 1,84 km" is wider than a six-column cell. */
     .row-secondary {
       flex-wrap: wrap;
     }
     .station-name {
       flex-basis: 100%;
+    }
+    .station-loc {
+      flex-shrink: 1;
+      min-width: 0;
     }
     .metric-num {
       font-size: 2rem;
@@ -1080,6 +1100,27 @@ const cardOwnStyles = css`
     }
     .brand-logo {
       height: 18px;
+    }
+  }
+  /* Half a section on a phone is about 175 px. The row can't hold the
+     map pin there (the open row has "In Karte öffnen"), and a chip
+     longer than the card has to wrap its text. */
+  @container lscard (inline-size < 240px) {
+    .station-actions .icon-action {
+      display: none;
+    }
+    .chip-row {
+      max-width: 100%;
+    }
+    .chip {
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.2;
+    }
+    .title,
+    .subtitle {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
   @container lscard (inline-size > 480px) {
@@ -1526,6 +1567,10 @@ const parkingOwnStyles = css`
        content; without it overflow-y never engages. */
     min-block-size: 0;
     overflow-y: auto;
+    /* Room for the focus ring of whatever Tab scrolls into view (2 px at
+       an offset of up to 3 px); without it the scroller's edge cuts the
+       ring of a control that lands flush with it. */
+    scroll-padding-block: 6px;
   }
   .card-content {
     padding: 0;
@@ -1540,10 +1585,14 @@ const parkingOwnStyles = css`
   /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header (icon-tile + title group) ────────────────────────── */
+  /* The header wraps: with a long station name the counter and the map
+     pin move to a second row instead of squeezing the name down to a
+     few letters, which is what a six-column cell did. */
   .header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 4px 12px;
   }
   .icon-tile {
     width: var(--lade-tile-size);
@@ -1559,7 +1608,8 @@ const parkingOwnStyles = css`
   }
   .header-text {
     min-width: 0;
-    flex: 1;
+    /* The basis is the room a name needs before the row is worth sharing. */
+    flex: 1 1 140px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -1570,9 +1620,13 @@ const parkingOwnStyles = css`
     font-weight: 600;
     line-height: 1.25;
     color: var(--primary-text-color);
+    /* Up to two lines: the station name is what the card is about. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .subtitle {
     margin: 0;
