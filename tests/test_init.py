@@ -9,9 +9,14 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.ladestellen_austria.const import DOMAIN
+from custom_components.ladestellen_austria.const import (
+    CONF_DYNAMIC_ENTITY,
+    DOMAIN,
+    DOMAIN_LAST_API_CALL_KEY,
+)
 
 from .conftest import make_entry
 
@@ -130,3 +135,32 @@ async def test_setup_uses_no_deprecated_ha_api(
     await hass.async_block_till_done()
 
     assert "Detected that custom integration" not in caplog.text
+
+
+async def test_failed_setup_leaves_no_tracker_listener(hass: HomeAssistant) -> None:
+    """A setup that fails its first refresh must drop its tracker listener.
+
+    The coordinator subscribes to the tracker inside the first refresh. HA
+    runs the entry's unload callbacks after a failed setup, so the teardown
+    has to be registered before that refresh. Registered after it, every
+    retry of an outage left one listener behind, and each of those stamped
+    the domain-wide cooldown on the next tracker move, ahead of the live
+    coordinator, which then skipped its own refresh.
+    """
+    entry = make_entry(
+        hass, data_overrides={CONF_DYNAMIC_ENTITY: "device_tracker.phone"}
+    )
+    with patch(
+        "custom_components.ladestellen_austria.coordinator.LadestellenAustriaCoordinator._async_update_data",
+        new_callable=AsyncMock,
+        side_effect=UpdateFailed("down"),
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+
+    hass.states.async_set(
+        "device_tracker.phone", "home", {"latitude": 47.07, "longitude": 15.44}
+    )
+    await hass.async_block_till_done()
+    assert DOMAIN_LAST_API_CALL_KEY not in hass.data.get(DOMAIN, {})
