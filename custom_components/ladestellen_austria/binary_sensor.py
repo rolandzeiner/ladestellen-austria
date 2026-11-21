@@ -41,7 +41,7 @@ async def async_setup_entry(
 class HasFreeSlotBinarySensor(
     CoordinatorEntity[LadestellenAustriaCoordinator], BinarySensorEntity
 ):
-    """ON when at least one EVSE in range reports AVAILABLE."""
+    """ON when an active station in range has an EVSE reporting AVAILABLE."""
 
     _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.PRESENCE
@@ -64,7 +64,7 @@ class HasFreeSlotBinarySensor(
 
     @property
     def is_on(self) -> bool | None:
-        """True when any point across all stations reports AVAILABLE."""
+        """True when any point of an active station reports AVAILABLE."""
         counts = self._counts()
         if counts is None:
             return None
@@ -85,6 +85,12 @@ class HasFreeSlotBinarySensor(
 
         Returns None when the coordinator has never produced a payload —
         the entity then reports `unknown` instead of a misleading False.
+
+        A point is free only on a station whose `stationStatus` is ACTIVE,
+        which is also what the cards require (`hasActivePoint` in
+        src/station-logic.ts): they grey an inactive station out whatever
+        its points report, so an automation waiting for a free charging
+        point must not fire for one. Its points still count in the total.
         """
         data = self.coordinator.data
         if not isinstance(data, dict):
@@ -96,12 +102,13 @@ class HasFreeSlotBinarySensor(
         for station in stations:
             if not isinstance(station, dict):
                 continue
+            active = station.get("stationStatus") == "ACTIVE"
             station_free = 0
             for point in station.get("points") or []:
                 if not isinstance(point, dict):
                     continue
                 total += 1
-                if normalize_status(point.get("status")) == "AVAILABLE":
+                if active and normalize_status(point.get("status")) == "AVAILABLE":
                     station_free += 1
             free += station_free
             if station_free > 0:

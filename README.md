@@ -128,13 +128,13 @@ Each entry in `stations` carries E-Control's fields, among them:
 
 ### Free slot available
 
-On when at least one charging point among the nearby stations reports `AVAILABLE` (device class `presence`).
+On when at least one charging point of an active station nearby reports `AVAILABLE` (device class `presence`). A station E-Control lists as `INACTIVE` never counts as free, whatever its points report; the cards grey it out for the same reason.
 
 | Attribute | Notes |
 |---|---|
 | `attribution` | `Datenquelle: E-Control` |
-| `free_slot_count` | Charging points reporting `AVAILABLE`. |
-| `total_slot_count` | All charging points among the nearby stations. |
+| `free_slot_count` | Charging points reporting `AVAILABLE` at active stations. |
+| `total_slot_count` | All charging points among the nearby stations, inactive ones included. |
 | `stations_with_free` | Stations with at least one free charging point. |
 
 ### Events

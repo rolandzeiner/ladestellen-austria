@@ -39,6 +39,7 @@ def _stations_with(*statuses: str) -> list[dict[str, Any]]:
     return [
         {
             "stationId": "S1",
+            "stationStatus": "ACTIVE",
             "label": "Test Station",
             "distance": 1.0,
             "points": [
@@ -92,6 +93,7 @@ def test_attributes_aggregate_across_stations(hass: HomeAssistant) -> None:
     stations = [
         {
             "stationId": "S1",
+            "stationStatus": "ACTIVE",
             "points": [
                 {"evseId": "E1", "status": "AVAILABLE"},
                 {"evseId": "E2", "status": "AVAILABLE"},
@@ -99,10 +101,12 @@ def test_attributes_aggregate_across_stations(hass: HomeAssistant) -> None:
         },
         {
             "stationId": "S2",
+            "stationStatus": "ACTIVE",
             "points": [{"evseId": "E1", "status": "OCCUPIED"}],
         },
         {
             "stationId": "S3",
+            "stationStatus": "ACTIVE",
             "points": [{"evseId": "E1", "status": "AVAILABLE"}],
         },
     ]
@@ -118,8 +122,79 @@ def test_skips_malformed_entries(hass: HomeAssistant) -> None:
     raised — defensive against stray nulls in the upstream payload."""
     stations = [
         None,
-        {"stationId": "S1", "points": [None, {"evseId": "E1", "status": "AVAILABLE"}]},
+        {
+            "stationId": "S1",
+            "stationStatus": "ACTIVE",
+            "points": [None, {"evseId": "E1", "status": "AVAILABLE"}],
+        },
     ]
     sensor = _build_binary_sensor(hass, {"stations": stations})
     assert sensor.is_on is True
     assert sensor.extra_state_attributes["free_slot_count"] == 1
+
+
+def test_inactive_station_has_no_free_slot(hass: HomeAssistant) -> None:
+    """A point reporting AVAILABLE on a station that isn't ACTIVE is not free.
+
+    The cards grey such a station out and leave it out of "only available",
+    so an automation waiting for a free charging point must not fire for it.
+    Its points still count towards the total.
+    """
+    stations = [
+        {
+            "stationId": "S1",
+            "stationStatus": "INACTIVE",
+            "points": [
+                {"evseId": "E1", "status": "AVAILABLE"},
+                {"evseId": "E2", "status": "AVAILABLE"},
+            ],
+        },
+        {
+            "stationId": "S2",
+            "stationStatus": "ACTIVE",
+            "points": [{"evseId": "E1", "status": "CHARGING"}],
+        },
+    ]
+    sensor = _build_binary_sensor(hass, {"stations": stations})
+    assert sensor.is_on is False
+    assert sensor.extra_state_attributes == {
+        "free_slot_count": 0,
+        "total_slot_count": 3,
+        "stations_with_free": 0,
+    }
+
+
+def test_active_station_beside_an_inactive_one_still_counts(
+    hass: HomeAssistant,
+) -> None:
+    """Only the inactive station's points are left out of the free count."""
+    stations = [
+        {
+            "stationId": "S1",
+            "stationStatus": "INACTIVE",
+            "points": [{"evseId": "E1", "status": "AVAILABLE"}],
+        },
+        {
+            "stationId": "S2",
+            "stationStatus": "ACTIVE",
+            "points": [{"evseId": "E1", "status": "AVAILABLE"}],
+        },
+    ]
+    sensor = _build_binary_sensor(hass, {"stations": stations})
+    assert sensor.is_on is True
+    assert sensor.extra_state_attributes == {
+        "free_slot_count": 1,
+        "total_slot_count": 2,
+        "stations_with_free": 1,
+    }
+
+
+def test_station_without_a_status_is_not_active(hass: HomeAssistant) -> None:
+    """E-Control always sends stationStatus; without it the cards treat the
+    station as inactive, and so does the sensor."""
+    stations = [
+        {"stationId": "S1", "points": [{"evseId": "E1", "status": "AVAILABLE"}]}
+    ]
+    sensor = _build_binary_sensor(hass, {"stations": stations})
+    assert sensor.is_on is False
+    assert sensor.extra_state_attributes["free_slot_count"] == 0
