@@ -8,7 +8,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.core import HomeAssistant
 
-from .const import ATTRIBUTION, CONF_API_KEY, CONF_DOMAIN
+from .const import ATTRIBUTION, CONF_API_KEY, CONF_DOMAIN, CONF_DYNAMIC_ENTITY
 from .coordinator import LadestellenAustriaConfigEntry
 
 # `entry.title` is deliberately NOT redacted, even though it is coarse
@@ -23,6 +23,10 @@ TO_REDACT: set[str] = {
     CONF_DOMAIN,
     CONF_LATITUDE,
     CONF_LONGITUDE,
+    # A tracker's entity id usually names its owner or their phone
+    # ("device_tracker.annas_iphone"). Redaction leaves None as it is, so the
+    # dump still shows whether the entry follows a tracker at all.
+    CONF_DYNAMIC_ENTITY,
     # Defensive future-proofing — diagnostics dumps end up in public GitHub
     # issues, so over-redacting is essentially free. "Referer" matches the
     # outbound header the coordinator builds from CONF_DOMAIN if it ever

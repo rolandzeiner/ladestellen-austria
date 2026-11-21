@@ -51,7 +51,14 @@ class EControlConnectionError(EControlError):
 
 
 class EControlHttpError(EControlError):
-    """E-Control answered with an error status, 401 and 403 included."""
+    """E-Control answered with an error status, 401 and 403 included.
+
+    A 429's ``Retry-After`` is not read. The gateway allows 2,500 requests an
+    hour per key, and one entry asks at most every five minutes (the poll
+    floor, and the tracker cooldown), so a key would need two hundred entries
+    to reach it. Should a 429 come anyway, the coordinator's backoff doubles
+    the interval from the second failure on, up to an hour.
+    """
 
     def __init__(self, status: int, reason: str) -> None:
         super().__init__(f"HTTP {status}: {reason}")

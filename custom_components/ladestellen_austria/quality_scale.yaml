@@ -67,7 +67,7 @@ rules:
     status: done
   log-when-unavailable:
     status: done
-    comment: DataUpdateCoordinator emits WARNING on first failure automatically; coordinator logs INFO on first recovery after a failure.
+    comment: The coordinator warns once per outage with the status code (`_log_unavailable`; setup retries included, which build a fresh coordinator each time) and logs once at INFO when the API answers again (`_log_available`).
   parallel-updates:
     status: done
   reauthentication-flow:
@@ -83,7 +83,7 @@ rules:
     comment: DeviceInfo on entities + explicit dr.async_get_or_create in __init__.py.
   diagnostics:
     status: done
-    comment: diagnostics.py redacts api_key, domain, latitude, longitude, and Referer headers.
+    comment: diagnostics.py redacts api_key, domain, latitude, longitude, the tracker's entity id, and Referer headers.
   discovery:
     status: exempt
     comment: Cloud API; no local device to discover.
@@ -110,13 +110,13 @@ rules:
     comment: Single device per config entry; no runtime device discovery.
   entity-category:
     status: exempt
-    comment: Primary data entity only.
+    comment: Both entities are primary data (the distance to the nearest station, a free charging point in range).
   entity-device-class:
     status: done
     comment: NearestStationSensor uses SensorDeviceClass.DISTANCE.
   entity-disabled-by-default:
     status: exempt
-    comment: Single primary entity; nothing to disable by default.
+    comment: Two primary entities; nothing to disable by default.
   entity-translations:
     status: done
   exception-translations:
