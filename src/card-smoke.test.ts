@@ -727,26 +727,49 @@ describe("ladestellen-austria-parking-card", () => {
   });
 
   it("renders one slot per point", async () => {
-    // Slots are <button class="parking-slot ..."> inside a role="group"
-    // container. They carry no ARIA role of their own: role="listitem"
-    // used to sit here, but it overrode the native button role while
-    // aria-pressed stayed set, which is a contradiction. The class is
-    // the stable selector.
+    // Slots sit inside a role="group" container, as a <button> where
+    // there is a car or an icon to lift and as a labelled image
+    // otherwise. The class is the stable selector.
     const el = await mountParking();
     const slots = el.shadowRoot?.querySelectorAll(".parking-slot") ?? [];
     expect(slots.length).toBe(11);
   });
 
-  it("keeps slot button semantics intact", async () => {
+  it("makes a slot a button only where pressing it does something", async () => {
     const el = await mountParking();
     const slots = Array.from(el.shadowRoot?.querySelectorAll(".parking-slot") ?? []);
-    expect(slots.length).toBeGreaterThan(0);
-    // No slot may re-declare a role that would mask the button.
-    expect(slots.every((s) => !s.hasAttribute("role"))).toBe(true);
-    // Every interactive slot exposes its revealed state.
-    const pressable = slots.filter((s) => s.getAttribute("tabindex") === "0");
-    expect(pressable.length).toBeGreaterThan(0);
-    expect(pressable.every((s) => s.hasAttribute("aria-pressed"))).toBe(true);
+    const buttons = slots.filter((s) => s.tagName === "BUTTON");
+    const plain = slots.filter((s) => s.tagName !== "BUTTON");
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(plain.length).toBeGreaterThan(0);
+    // A slot with a car or an icon over its spec is a real button: no role
+    // that would mask it, no tabindex games, and its revealed state exposed.
+    for (const b of buttons) {
+      expect(b.classList.contains("has-overlay")).toBe(true);
+      expect(b.hasAttribute("role")).toBe(false);
+      expect(b.hasAttribute("tabindex")).toBe(false);
+      expect(b.getAttribute("aria-pressed")).toBe("false");
+    }
+    // A free slot already shows its spec. It is a labelled image, so a
+    // screen reader isn't offered a button that does nothing.
+    for (const d of plain) {
+      expect(d.classList.contains("has-overlay")).toBe(false);
+      expect(d.getAttribute("role")).toBe("img");
+      expect(d.getAttribute("aria-label")).toBeTruthy();
+      expect(d.hasAttribute("aria-pressed")).toBe(false);
+    }
+  });
+
+  it("announces the free count as one sentence", async () => {
+    const el = await mountParking({ show_free_count: true });
+    const count = el.shadowRoot?.querySelector(".header-count");
+    expect(count?.getAttribute("role")).toBe("status");
+    expect(count?.querySelector(".sr-only")?.textContent).toBe(
+      el.shadowRoot?.querySelector(".parking-lot")?.getAttribute("aria-label"),
+    );
+    // The figures are for the eye only, or the count would be read twice.
+    expect(count?.querySelector(".header-count-value")?.getAttribute("aria-hidden")).toBe("true");
+    expect(count?.querySelector(".header-count-label")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("tags each slot with its status bucket", async () => {

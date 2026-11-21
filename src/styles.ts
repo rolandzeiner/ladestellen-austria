@@ -1677,6 +1677,7 @@ const parkingOwnStyles = css`
      turns success-green when at least one slot is free so the
      glance-read is instant. */
   .header-count {
+    position: relative;
     margin-left: auto;
     flex-shrink: 0;
     display: flex;
@@ -1684,6 +1685,19 @@ const parkingOwnStyles = css`
     align-items: flex-end;
     gap: 2px;
     font-variant-numeric: tabular-nums;
+  }
+  /* The counter's sentence for a screen reader; the figures beside it are
+     aria-hidden. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
   .header-count-value {
     display: inline-flex;
@@ -1759,8 +1773,9 @@ const parkingOwnStyles = css`
   /* ── Slot ────────────────────────────────────────────────────────── */
   /* Each slot is a real parking-spot rectangle: sharp corners, solid
      white painted lane-lines on the long sides, asphalt-tinted body
-     between them. Buttons are reset to look like plain divs but stay
-     focusable + clickable for the car-toggle interaction. */
+     between them. A slot with a car or an icon over its spec is a
+     button (pressing it shows the spec), reset to look like the plain
+     div the other slots are. */
   .parking-slot {
     position: relative;
     min-height: var(--lade-slot-height);

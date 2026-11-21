@@ -253,6 +253,10 @@ export class LadestellenAustriaParkingCard extends LitElement {
    * should show, so the show_free_count decision stays at the call site
    * where the counts are already in scope; `map` likewise only when the
    * station has coordinates.
+   *
+   * The counter is a status region that reads as one sentence ("1 of 8
+   * charging points available"): a live region on the bare figure
+   * announced "1" when a spot came free.
    */
   private _renderHeader(
     title: string,
@@ -272,15 +276,14 @@ export class LadestellenAustriaParkingCard extends LitElement {
         count
           ? html`<div
             class=${count.avail > 0 ? "header-count has-free" : "header-count"}
-            aria-label=${count.label}
+            role="status"
           >
-            <div class="header-count-value">
-              <span class="header-count-num" role="status" aria-live="polite"
-                >${count.avail}</span
-              >
+            <span class="sr-only">${count.label}</span>
+            <div class="header-count-value" aria-hidden="true">
+              <span class="header-count-num">${count.avail}</span>
               <span class="header-count-of">/ ${count.total}</span>
             </div>
-            <div class="header-count-label">
+            <div class="header-count-label" aria-hidden="true">
               ${localize("parking.slot_status_free")}
             </div>
           </div>`
@@ -493,25 +496,34 @@ export class LadestellenAustriaParkingCard extends LitElement {
       connector,
       statusLabel: statusText,
     });
+    const title = `${point.evseId ?? ""} · ${statusText}`.trim();
+    // Only a slot with a car or an icon over its spec has something to
+    // reveal. The others already show everything, so they are a labelled
+    // image, not a button that does nothing when pressed.
+    if (!hasOverlay) {
+      return html`
+        <div
+          class=${slotClassList(variant, false, unmatched)}
+          data-status=${statusCat}
+          role="img"
+          aria-label=${aria}
+          title=${title}
+        >
+          ${this._renderSlotInner(point, powerType, kwText, connector, statusLabel)}
+        </div>
+      `;
+    }
     return html`
       <button
         type="button"
         class=${slotClassList(variant, isRevealed, unmatched)}
         data-status=${statusCat}
-        tabindex=${hasOverlay ? "0" : "-1"}
         aria-label=${aria}
-        aria-pressed=${hasOverlay ? (isRevealed ? "true" : "false") : nothing}
-        title=${`${point.evseId ?? ""} · ${statusText}`.trim()}
-        @click=${(ev: Event) => {
-          ev.preventDefault();
-          if (hasOverlay) this._toggleSlot(point.evseId);
-        }}
+        aria-pressed=${isRevealed ? "true" : "false"}
+        title=${title}
+        @click=${() => this._toggleSlot(point.evseId)}
       >
-        ${
-          hasOverlay
-            ? this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)
-            : nothing
-        }
+        ${this._renderSlotOverlays(overlay, showCar ? this._carColor(point.evseId) : null)}
         ${this._renderSlotInner(point, powerType, kwText, connector, statusLabel)}
       </button>
     `;
