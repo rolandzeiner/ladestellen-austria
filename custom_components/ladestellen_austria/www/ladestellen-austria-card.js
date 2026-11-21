@@ -2692,7 +2692,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
       </section>
     `}_heroCity(e){return e.city||e.label||``}_renderRowPrimary(e){return A`<div class="row-primary">
       ${e.maxKw>0?A`<span class=${e.isDC?`metric-kw dc`:`metric-kw`}>
-            <span class="kw-num">${e.maxKw}</span
+            <span class="kw-num">${U(e.maxKw)}</span
             ><span class="kw-unit">kW</span>
           </span>`:M}
       ${e.priceText?A`<span

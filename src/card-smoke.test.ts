@@ -285,6 +285,20 @@ describe("ladestellen-austria-card", () => {
     expect(text).toContain("Testladestelle");
   });
 
+  it("writes the row's kW with a decimal comma, like the rack below it", async () => {
+    const slow = station({
+      points: [{ ...station().points[0]!, capacityKw: 7.4 }],
+    });
+    const el = await mount<LitElement & { setConfig: (c: unknown) => void; hass: HomeAssistant }>(
+      "ladestellen-austria-card",
+      (e) => {
+        e.setConfig({ entity: "sensor.ladestellen_austria" });
+        e.hass = hass([slow]);
+      },
+    );
+    expect(el.shadowRoot?.querySelector(".kw-num")?.textContent).toBe("7,4");
+  });
+
   it("keeps the E-Control attribution in the rendered output (ToU §3d)", async () => {
     // Non-negotiable: removing this is a contract violation, so it gets
     // an assertion rather than a comment.
