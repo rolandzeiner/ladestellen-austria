@@ -170,9 +170,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   }
 `,Ot=c`
   :host {
-    /* color-scheme enables light-dark() and steers forced-colors palette
-       selection (WCAG 1.4.11). HA's active theme drives the resolution. */
-    color-scheme: light dark;
     display: block;
     container-type: inline-size;
     container-name: lscard;
@@ -310,14 +307,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     color: var(--lade-accent);
     --mdc-icon-size: 22px;
   }
-  /* "Inactive" / "unknown" tile variants — hollow ring (no fill) so the
-     state reads at any zoom, in grayscale, in forced-colors mode. */
-  .icon-tile.is-hollow {
-    background: transparent;
-    box-shadow: inset 0 0 0 1.5px
-      color-mix(in srgb, var(--lade-accent) 55%, transparent);
-    color: var(--lade-accent);
-  }
   .header-text {
     min-width: 0;
     flex: 1;
@@ -452,19 +441,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
     color: var(--secondary-text-color);
   }
-  /* Free-of-charge price chip — green domain accent. */
-  .chip.free {
-    background: color-mix(in srgb, var(--lade-rt) 16%, transparent);
-    color: var(--lade-rt);
-  }
-  /* DC fast-charge chip — amber/warning accent at 28% mix. */
-  .chip.dc {
-    background: color-mix(in srgb, var(--lade-warning) 28%, transparent);
-    color: var(--primary-text-color);
-  }
-  .chip.dc ha-icon {
-    color: var(--lade-warning);
-  }
   .chip.pin {
     background: color-mix(in srgb, var(--primary-color) 18%, transparent);
     color: var(--primary-color);
@@ -500,10 +476,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   .flag.warn {
     background: color-mix(in srgb, var(--lade-warning) 16%, transparent);
     color: var(--lade-warning);
-  }
-  .flag.err {
-    background: color-mix(in srgb, var(--lade-error) 16%, transparent);
-    color: var(--lade-error);
   }
 
   /* ── Station list ────────────────────────────────────────────────── */
@@ -1067,11 +1039,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     --mdc-icon-size: 16px;
     color: var(--secondary-text-color);
   }
-  .timestamp {
-    font-size: 0.7rem;
-    color: var(--secondary-text-color);
-    margin-left: auto;
-  }
 
   /* ── Brand footer (§3c logo-link + §3d attribution) ───────────────── */
   /* Footer + brand-logo + attribution-text CSS lives in sharedFooter. */
@@ -1094,14 +1061,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     }
     .station-name {
       flex-basis: 100%;
-    }
-    :host {
-      --lade-pad-x: 14px;
-      --lade-pad-y: 12px;
-      --lade-tile-size: 36px;
-      --lade-slot-size: 60px;
-      --lade-slot-height: 52px;
-      --lade-slot-gap: 6px;
     }
     .metric-num {
       font-size: 2rem;
@@ -1141,14 +1100,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     }
   }
   @container lscard (inline-size > 480px) {
-    :host {
-      --lade-pad-x: 20px;
-      --lade-pad-y: 16px;
-      --lade-tile-size: 44px;
-      --lade-slot-size: 92px;
-      --lade-slot-height: 72px;
-      --lade-slot-gap: 10px;
-    }
     .metric-num {
       font-size: 2.5rem;
     }
@@ -1289,19 +1240,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     color: var(--text-primary-color, #fff);
     border-color: var(--primary-color);
     font-weight: 600;
-  }
-  .filter-chip.icon-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-  }
-  .filter-chip.icon-chip ha-icon {
-    --mdc-icon-size: 15px;
-    color: var(--secondary-text-color);
-  }
-  .filter-chip.icon-chip.active ha-icon {
-    color: var(--text-primary-color, #fff);
   }
 
   .pin-list {
@@ -1471,9 +1409,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
   }
 `],At=c`
   :host {
-    /* color-scheme enables light-dark() and steers forced-colors palette
-       selection (WCAG 1.4.11). HA's active theme drives the resolution. */
-    color-scheme: light dark;
     display: block;
     container-type: inline-size;
     container-name: plcard;
@@ -2155,16 +2090,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     }
   }
   @container plcard (inline-size < 360px) {
-    :host {
-      --lade-pad-x: 14px;
-      --lade-pad-y: 12px;
-      --lade-tile-size: 36px;
-      --lade-slot-size: 84px;
-      --lade-slot-height: 100px;
-    }
-    .metric-num {
-      font-size: 2rem;
-    }
     .icon-tile {
       --mdc-icon-size: 20px;
     }
@@ -2183,16 +2108,6 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     }
   }
   @container plcard (inline-size > 480px) {
-    :host {
-      --lade-pad-x: 20px;
-      --lade-pad-y: 16px;
-      --lade-tile-size: 44px;
-      --lade-slot-size: 110px;
-      --lade-slot-height: 132px;
-    }
-    .metric-num {
-      font-size: 2.5rem;
-    }
     .icon-tile {
       --mdc-icon-size: 24px;
     }
