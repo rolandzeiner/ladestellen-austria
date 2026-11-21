@@ -20,8 +20,9 @@ const sharedVersionBanner = css`
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    /* Dark ink, not white: white on HA's warning amber is 2.0:1. */
     background: var(--lade-warning, #f59e0b);
-    color: #fff;
+    color: #212121;
     padding: 10px 14px;
     margin: calc(var(--lade-pad-y) * -1) calc(var(--lade-pad-x) * -1) 0;
     font-size: 0.8125rem;
@@ -29,8 +30,8 @@ const sharedVersionBanner = css`
   }
   .version-reload-btn {
     flex-shrink: 0;
-    background: #fff;
-    color: var(--lade-warning, #f59e0b);
+    background: #212121;
+    color: #fff;
     border: none;
     border-radius: 999px;
     padding: 6px 14px;
@@ -39,7 +40,7 @@ const sharedVersionBanner = css`
     cursor: pointer;
   }
   .version-reload-btn:hover {
-    background: rgba(255, 255, 255, 0.92);
+    background: #424242;
   }
 `;
 
@@ -84,7 +85,6 @@ const sharedFooter = css`
     font-size: 0.75rem;
     color: var(--secondary-text-color);
     letter-spacing: 0.03em;
-    opacity: 0.85;
   }
 `;
 
@@ -143,6 +143,26 @@ const cardOwnStyles = css`
     --lade-warning: var(--warning-color, #f57c00);
     --lade-error:   var(--error-color,   #ef4444);
     --lade-info:    var(--info-color,    #1565c0);
+
+    /* The same colours as words and as small marks. HA's own values are
+       made for fills: as text on a stock light card the warning amber
+       measures 2.0:1, the success green 3.3:1, the info blue 3.1:1, the
+       error red 4.3:1 and the primary blue 2.6:1, all short of the 4.5:1
+       text needs. Mixed with the body text colour they keep their hue,
+       darken on a light theme and lighten on a dark one. --lade-muted-text
+       is the quiet grey for a tinted surface (a chip, a slot, a pinned
+       row), where the theme's secondary colour drops below 4.5:1. Fills
+       and tints keep the plain tokens. Measured in both stock themes with
+       the card mounted; the lowest is 4.6:1. */
+    --lade-rt-text:      color-mix(in srgb, var(--lade-rt) 60%, var(--primary-text-color));
+    --lade-warning-text: color-mix(in srgb, var(--lade-warning) 40%, var(--primary-text-color));
+    --lade-error-text:   color-mix(in srgb, var(--lade-error) 70%, var(--primary-text-color));
+    --lade-info-text:    color-mix(in srgb, var(--lade-info) 60%, var(--primary-text-color));
+    --lade-accent-text:  color-mix(in srgb, var(--primary-color) 50%, var(--primary-text-color));
+    --lade-muted-text:   color-mix(in srgb, var(--secondary-text-color) 70%, var(--primary-text-color));
+    /* Amber for what needs 3:1, not 4.5:1: the big kW figure and the
+       status dots. 3.5:1 on a light card, and still plainly amber. */
+    --lade-warning-mark: color-mix(in srgb, var(--lade-warning) 70%, var(--primary-text-color));
 
     /* Spacing / radius / sizing — layered over the HA Design System
        so the card moves with HA when tokens evolve. Hard-coded values
@@ -389,7 +409,7 @@ const cardOwnStyles = css`
     font-weight: 600;
     line-height: 1;
     background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-    color: var(--primary-color);
+    color: var(--lade-accent-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -398,11 +418,11 @@ const cardOwnStyles = css`
   }
   .chip.muted {
     background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
   }
   .chip.pin {
     background: color-mix(in srgb, var(--primary-color) 18%, transparent);
-    color: var(--primary-color);
+    color: var(--lade-accent-text);
   }
 
   /* ── Status flags (pill badges, NOT inline text) ──────────────────── */
@@ -421,7 +441,7 @@ const cardOwnStyles = css`
     font-weight: 500;
     line-height: 1;
     background: color-mix(in srgb, var(--secondary-text-color) 12%, transparent);
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
     font-variant-numeric: tabular-nums;
   }
   .flag ha-icon {
@@ -430,11 +450,11 @@ const cardOwnStyles = css`
   }
   .flag.ok {
     background: color-mix(in srgb, var(--lade-rt) 16%, transparent);
-    color: var(--lade-rt);
+    color: var(--lade-rt-text);
   }
   .flag.warn {
     background: color-mix(in srgb, var(--lade-warning) 16%, transparent);
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
 
   /* ── Station list ────────────────────────────────────────────────── */
@@ -467,8 +487,14 @@ const cardOwnStyles = css`
   .station.is-pinned:focus-within {
     background: color-mix(in srgb, var(--primary-color) 8%, transparent);
   }
-  .station.is-inactive .station-body {
-    opacity: 0.65;
+  /* An inactive or closed station is greyed through its text colours.
+     Fading the whole row to 65 % left nothing in it above 2.5:1. */
+  .station.is-inactive .metric-kw,
+  .station.is-inactive .metric-kw.dc,
+  .station.is-inactive .metric-kw.dc .kw-unit,
+  .station.is-inactive .metric-price,
+  .station.is-inactive .metric-price.free {
+    color: var(--lade-muted-text);
   }
 
   .station-body {
@@ -559,7 +585,7 @@ const cardOwnStyles = css`
   }
 
   /* Big kW — primary-text bold number, muted unit. DC swaps both to
-     warning amber (still high-contrast against the card surface). */
+     amber: the figure is large text, the unit is not. */
   .metric-kw {
     display: inline-flex;
     align-items: baseline;
@@ -579,10 +605,10 @@ const cardOwnStyles = css`
     color: var(--secondary-text-color);
   }
   .metric-kw.dc {
-    color: var(--lade-warning);
+    color: var(--lade-warning-mark);
   }
   .metric-kw.dc .kw-unit {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
 
   /* Price — bold companion to kW. Free renders in success green. */
@@ -594,7 +620,7 @@ const cardOwnStyles = css`
     white-space: nowrap;
   }
   .metric-price.free {
-    color: var(--lade-rt);
+    color: var(--lade-rt-text);
     font-weight: var(--ha-font-weight-bold, 700);
   }
 
@@ -616,7 +642,8 @@ const cardOwnStyles = css`
       color-mix(in srgb, var(--lade-rt) 18%, transparent);
   }
   .status-dot.status-partial {
-    color: var(--lade-warning);
+    /* Plain amber is 2.0:1 on a light card, and a mark needs 3:1. */
+    color: var(--lade-warning-mark);
     box-shadow:
       0 0 0 2px
         color-mix(in srgb, var(--lade-warning) 45%, transparent),
@@ -633,20 +660,17 @@ const cardOwnStyles = css`
   .status-dot.status-inactive {
     color: transparent;
     background: transparent;
-    border: 1.5px solid var(--state-unavailable-color, #9ca3af);
-    opacity: 0.7;
+    border: 1.5px solid var(--secondary-text-color);
   }
   .status-dot.status-unknown {
     color: transparent;
     background: transparent;
     border: 1.5px dashed var(--secondary-text-color);
-    opacity: 0.6;
   }
 
   /* ── Orphan-pin row ──────────────────────────────────────────────── */
   .station.is-orphan {
     cursor: default;
-    opacity: 0.85;
   }
   .station.is-orphan:hover {
     background: transparent;
@@ -701,8 +725,7 @@ const cardOwnStyles = css`
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--secondary-text-color);
-    opacity: 0.85;
+    color: var(--lade-muted-text);
   }
   .detail-text {
     font-size: 0.8125rem;
@@ -830,7 +853,7 @@ const cardOwnStyles = css`
   .rack-connector {
     max-width: 100%;
     font-size: 0.7rem;
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -839,14 +862,16 @@ const cardOwnStyles = css`
   .rack-overlay-icon {
     --mdc-icon-size: 28px;
   }
+  /* The icon is all a special-state slot shows, so it takes the text
+     tones: on its own tint the plain colour is under 3:1. */
   .rack-overlay-icon.tone-warning {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
   .rack-overlay-icon.tone-error {
-    color: var(--lade-error);
+    color: var(--lade-error-text);
   }
   .rack-overlay-icon.tone-info {
-    color: var(--info-color, #039be5);
+    color: var(--lade-info-text);
   }
   .rack-overlay-icon.tone-muted {
     color: var(--secondary-text-color);
@@ -854,9 +879,9 @@ const cardOwnStyles = css`
   /* bgTint overrides: PLANNED reads as future-info, REMOVED as error.
      OUT_OF_STOCK reuses the existing warn tint (no override needed). */
   .rack-slot.slot-tint-info {
-    background: color-mix(in srgb, var(--info-color, #039be5) 14%, transparent);
+    background: color-mix(in srgb, var(--lade-info) 14%, transparent);
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--info-color, #039be5) 30%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--lade-info) 30%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 14%, transparent);
   }
   .rack-slot.slot-tint-error {
@@ -880,7 +905,7 @@ const cardOwnStyles = css`
     background: var(--lade-error);
   }
   .rack-dot[data-status="warn"] {
-    background: var(--lade-warning);
+    background: var(--lade-warning-mark);
   }
   .rack-dot[data-status="unknown"] {
     background: transparent;
@@ -895,11 +920,10 @@ const cardOwnStyles = css`
     text-transform: uppercase;
   }
   .power-badge[data-type="dc"] {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
   .power-badge[data-type="ac"] {
-    color: var(--secondary-text-color);
-    opacity: 0.75;
+    color: var(--lade-muted-text);
   }
   .fees-line {
     font-size: 0.75rem;
@@ -1409,6 +1433,18 @@ const parkingOwnStyles = css`
     --lade-error:   var(--error-color,   #ef4444);
     --lade-info:    var(--info-color,    #1565c0);
 
+    /* The same colours as words, mixed with the body text colour so they
+       reach 4.5:1 (see the note in the main cardStyles :host block). The
+       shares are lower than the list card's because the slots' tints are
+       stronger (22 %). The textured asphalt declares them again for its
+       own light text. */
+    --lade-rt-text:      color-mix(in srgb, var(--lade-rt) 50%, var(--primary-text-color));
+    --lade-warning-text: color-mix(in srgb, var(--lade-warning) 40%, var(--primary-text-color));
+    --lade-error-text:   color-mix(in srgb, var(--lade-error) 50%, var(--primary-text-color));
+    --lade-info-text:    color-mix(in srgb, var(--lade-info) 50%, var(--primary-text-color));
+    --lade-accent-text:  color-mix(in srgb, var(--primary-color) 50%, var(--primary-text-color));
+    --lade-muted-text:   color-mix(in srgb, var(--secondary-text-color) 50%, var(--primary-text-color));
+
     /* Spacing / radius / sizing — layered over the HA Design System.
        Token names verified against core.globals.ts; see the note in the
        main cardStyles :host block for why they were wrong before. */
@@ -1722,11 +1758,10 @@ const parkingOwnStyles = css`
     text-transform: uppercase;
   }
   .slot-power-badge[data-type="dc"] {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
   .slot-power-badge[data-type="ac"] {
-    color: var(--secondary-text-color);
-    opacity: 0.75;
+    color: var(--lade-muted-text);
   }
   .slot-kw {
     display: inline-flex;
@@ -1748,7 +1783,7 @@ const parkingOwnStyles = css`
   }
   .slot-connector {
     font-size: 0.7rem;
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1764,16 +1799,16 @@ const parkingOwnStyles = css`
     text-align: center;
   }
   .slot-status-free {
-    color: var(--lade-rt);
+    color: var(--lade-rt-text);
   }
   .slot-status-busy {
-    color: var(--lade-error);
+    color: var(--lade-error-text);
   }
   .slot-status-warn {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
   .slot-status-unknown {
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
   }
 
   /* AVAILABLE slots — empty parking spot. Flat tinted fill (the
@@ -1817,18 +1852,19 @@ const parkingOwnStyles = css`
   .slot-overlay-icon ha-icon {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
   }
+  /* The icon is all such a slot shows until it is revealed, so it takes
+     the text tones: on its own tint the plain colour is under 3:1. */
   .slot-overlay-icon.tone-warning {
-    color: var(--lade-warning);
+    color: var(--lade-warning-text);
   }
   .slot-overlay-icon.tone-error {
-    color: var(--lade-error);
+    color: var(--lade-error-text);
   }
   .slot-overlay-icon.tone-info {
-    color: var(--lade-info);
+    color: var(--lade-info-text);
   }
   .slot-overlay-icon.tone-muted {
-    color: var(--secondary-text-color);
-    opacity: 0.7;
+    color: var(--lade-muted-text);
   }
   .parking-slot.has-overlay .slot-inner {
     opacity: 0;
@@ -1870,9 +1906,6 @@ const parkingOwnStyles = css`
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
       inset 0 -2px 0 color-mix(in srgb, #000 18%, transparent);
-  }
-  .parking-slot.is-unknown {
-    opacity: 0.85;
   }
 
   /* Spots that don't fit the plug and power filter are painted as a
@@ -1921,7 +1954,7 @@ const parkingOwnStyles = css`
     display: none;
   }
   .parking-slot.is-unmatched .slot-kw {
-    color: var(--secondary-text-color);
+    color: var(--lade-muted-text);
   }
 
   /* ── Empty state ─────────────────────────────────────────────────── */
@@ -1997,6 +2030,13 @@ const parkingOwnStyles = css`
   .wrap[data-asphalt-style="textured"] .parking-lot {
     --primary-text-color: #eceff1;
     --secondary-text-color: #cdd2d7;
+    /* Mixed again here: the ones on :host were computed with the theme's
+       text colour, which is dark in a light theme. */
+    --lade-rt-text:      color-mix(in srgb, var(--lade-rt) 40%, #eceff1);
+    --lade-warning-text: color-mix(in srgb, var(--lade-warning) 40%, #eceff1);
+    --lade-error-text:   color-mix(in srgb, var(--lade-error) 50%, #eceff1);
+    --lade-info-text:    color-mix(in srgb, var(--lade-info) 50%, #eceff1);
+    --lade-muted-text:   #cdd2d7;
   }
   /* Per-slot background-position offsets so adjacent slots show
      different windows onto the noise. Seven nth-child buckets cycle
@@ -2034,30 +2074,13 @@ const parkingOwnStyles = css`
   .wrap[data-icon-paint="white"] .slot-status-busy,
   .wrap[data-icon-paint="white"] .slot-status-warn,
   .wrap[data-icon-paint="white"] .slot-status-unknown {
-    /* Force full opacity so .tone-muted (which sets opacity:0.7 in
-       its base rule) reads as proper white paint and not faded grey.
-       The hover-fade rule that sets opacity:0 is re-declared below
-       with higher specificity so it still wins on hover/focus.
-       No mix-blend-mode here — soft-light/overlay both dragged the
+    /* No mix-blend-mode here — soft-light/overlay both dragged the
        white toward grey unevenly across icons (the inner ha-icon
        drop-shadow filter establishes a stacking context that made
        blend application inconsistent). Pure white reads more
        cleanly as paint; the painted-on feel comes from the visible
        grain AROUND the icons. */
     color: rgba(255, 255, 255, 0.95);
-    opacity: 1;
-  }
-  /* Re-declare the hover/focus/revealed fade with higher specificity
-     than the white-paint block above (which sets opacity:1). Without
-     this, opacity:1 wins by source order + equal specificity and the
-     icon never fades. */
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:hover .slot-car,
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:hover .slot-overlay-icon,
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:focus-visible .slot-car,
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay:focus-visible .slot-overlay-icon,
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay.is-revealed .slot-car,
-  .wrap[data-icon-paint="white"] .parking-slot.has-overlay.is-revealed .slot-overlay-icon {
-    opacity: 0;
   }
 
   /* ── Responsive density tiers (container queries) ─────────────────── */
