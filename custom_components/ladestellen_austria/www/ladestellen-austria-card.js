@@ -1361,8 +1361,10 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
+  /* The "nothing to pick yet" hints. In italics, not faded: at 70 %
+     opacity the secondary grey fell to about 3:1. */
   .editor-hint--muted {
-    opacity: 0.7;
+    font-style: italic;
   }
   /* Same treatment as the card's orphan ids. Declared again here because
      cardOwnStyles is a separate shadow scope the editors never load. */
@@ -2314,7 +2316,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
               ${B(`editor.pin_no_stations_yet`)}
             </div>`:A`
               <div class="pin-list">
-                ${n.map(e=>{let t=i.has(e.stationId),n=typeof e.distance==`number`?`${e.distance.toFixed(2)} km`:``;return A`
+                ${n.map(e=>{let t=i.has(e.stationId),n=typeof e.distance==`number`?`${W(e.distance)} km`:``;return A`
                     <button
                       type="button"
                       class=${t?`pin-row pinned`:`pin-row`}
@@ -2450,7 +2452,7 @@ let{kind:r,metadata:i}=n,a=globalThis.litPropertyMetadata.get(i);if(a===void 0&&
       <div class="editor-hint" id="station-picker-hint">
         ${B(`parking.pick_station_hint`)}
       </div>
-    `}_renderStationOption(e,t){let n=typeof e.distance==`number`?`${e.distance.toFixed(2)} km`:``;return A`
+    `}_renderStationOption(e,t){let n=typeof e.distance==`number`?`${W(e.distance)} km`:``;return A`
       <button
         type="button"
         class=${t?`pin-row pinned`:`pin-row`}

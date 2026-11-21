@@ -17,6 +17,7 @@ import {
   type Station,
 } from "./types";
 import { localize } from "./localize/localize";
+import { formatDistanceKm } from "./utils";
 import {
   PanelEditor,
   boxSelector,
@@ -289,7 +290,7 @@ export class LadestellenAustriaCardEditor
                 ${stations.map((s) => {
                   const isPinned = pinnedSet.has(s.stationId);
                   const distanceText =
-                    typeof s.distance === "number" ? `${s.distance.toFixed(2)} km` : "";
+                    typeof s.distance === "number" ? `${formatDistanceKm(s.distance)} km` : "";
                   return html`
                     <button
                       type="button"

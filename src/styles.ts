@@ -1326,8 +1326,10 @@ const editorOwnStyles = css`
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
+  /* The "nothing to pick yet" hints. In italics, not faded: at 70 %
+     opacity the secondary grey fell to about 3:1. */
   .editor-hint--muted {
-    opacity: 0.7;
+    font-style: italic;
   }
   /* Same treatment as the card's orphan ids. Declared again here because
      cardOwnStyles is a separate shadow scope the editors never load. */
