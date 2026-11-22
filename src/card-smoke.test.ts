@@ -343,19 +343,18 @@ describe("edit-dialog preview", () => {
     preview: boolean;
   };
   it.each(["ladestellen-austria-card", "ladestellen-austria-parking-card"])(
-    "%s keeps the version banner out of the preview",
+    "%s puts the version banner first and keeps it out of the preview",
     async (tag) => {
       const el = await mount<Card>(tag, (e) => {
         e.setConfig({ entity: "sensor.ladestellen_austria", station_id: "at-1" });
         e.hass = hass();
       });
-      (el as unknown as { _versionMismatch: string | null })._versionMismatch = "9.9.9";
-      await el.updateComplete;
-      expect(el.shadowRoot!.querySelector(".version-notice")).not.toBeNull();
+      const card = () => el.shadowRoot!.querySelector("ha-card");
+      expect(card()?.firstElementChild?.localName).toBe("rz-version-banner-r1");
 
       el.preview = true;
       await el.updateComplete;
-      expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+      expect(card()?.querySelector("rz-version-banner-r1")).toBeNull();
     },
   );
 });

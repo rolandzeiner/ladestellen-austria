@@ -28,20 +28,16 @@ import {
   type Station,
 } from "./types";
 import { localize } from "./localize/localize";
-import {
-  renderFooter,
-  renderMissingEntity,
-  renderUnreachable,
-  renderVersionBanner,
-} from "./shared-render";
+import { renderFooter, renderMissingEntity, renderUnreachable } from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
   isFixedHeight,
-  runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
 } from "./card-lifecycle";
+import { CARD_VERSION, DOMAIN } from "./const";
+import { versionBanner } from "./version-banner";
 import { cardStyles } from "./styles";
 import {
   filterStations,
@@ -116,11 +112,10 @@ export class LadestellenAustriaCard extends LitElement {
   // cell only when there is one -- see the grid-cell rules in styles.ts.
   @property({ reflect: true }) public layout?: string;
   // Set by HA to true while the card is the live preview in the edit-card
-  // dialog; renderVersionBanner keeps the reload banner out of it.
+  // dialog; the version banner reads it and stays out.
   @property({ type: Boolean }) public preview = false;
   @state() private config!: LadestellenAustriaCardConfig;
   @state() private _expanded: Set<string> = new Set();
-  @state() private _versionMismatch: string | null = null;
 
   public setConfig(config: LadestellenAustriaCardConfig): void {
     if (!config || typeof config !== "object") {
@@ -162,8 +157,7 @@ export class LadestellenAustriaCard extends LitElement {
       changedProps.has("config") ||
       changedProps.has("layout") ||
       changedProps.has("preview") ||
-      changedProps.has("_expanded") ||
-      changedProps.has("_versionMismatch")
+      changedProps.has("_expanded")
     ) {
       return true;
     }
@@ -198,20 +192,14 @@ export class LadestellenAustriaCard extends LitElement {
     syncCardLanguage(changedProps, this.hass);
   }
 
-  protected override firstUpdated(_changedProps: PropertyValues): void {
-    this._runVersionCheck();
-  }
-
-  protected override updated(changedProps: PropertyValues): void {
-    super.updated(changedProps);
-    // Also here, not just firstUpdated, in case `hass` arrives after the
-    // first update; runVersionCheckOnce makes the repeat call a no-op.
-    if (changedProps.has("hass")) this._runVersionCheck();
-  }
-
-  private _runVersionCheck(): void {
-    runVersionCheckOnce(this, (v) => {
-      this._versionMismatch = v;
+  // The portfolio's version banner (src/version-banner.ts), first in every
+  // ha-card but the loading state.
+  private _versionBanner(): TemplateResult | typeof nothing {
+    return versionBanner(this.hass, {
+      domain: DOMAIN,
+      version: CARD_VERSION,
+      name: "Ladestellen Austria",
+      preview: this.preview,
     });
   }
 
@@ -343,6 +331,7 @@ export class LadestellenAustriaCard extends LitElement {
     if (!stateObj) {
       return html`
         <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
+          ${this._versionBanner()}
           <div class="card-content">
             <div class="wrap">
               ${renderMissingEntity(this.config.entity)}
@@ -360,9 +349,9 @@ export class LadestellenAustriaCard extends LitElement {
     if (stateObj.state === "unavailable") {
       return html`
         <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
+          ${this._versionBanner()}
           <div class="card-content">
             <div class="wrap">
-              ${renderVersionBanner(this._versionMismatch, this.preview)}
               ${this._renderCardHeader(undefined)} ${renderUnreachable()}
             </div>
             ${renderFooter(this.hass, undefined, this.config.logo_adapt_to_theme === true)}
@@ -375,9 +364,9 @@ export class LadestellenAustriaCard extends LitElement {
 
     return html`
       <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
+        ${this._versionBanner()}
         <div class="card-content">
           <div class="wrap">
-            ${renderVersionBanner(this._versionMismatch, this.preview)}
             ${this._renderCardHeader(view.nearestByDistance)}
             ${
               this.config.show_hero !== false

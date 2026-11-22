@@ -5,38 +5,12 @@
 // set-the-flag-before-awaiting ordering), so they live once, here: a
 // guard copied per class is a guard that gets fixed in one place and
 // left wrong in the others.
-//
-// `checkCardVersionWS` lives here rather than in shared-render.ts
-// because it is a lifecycle concern, not a render one.
 
 import type { PropertyValues } from "lit";
 
 import type { HomeAssistant } from "./types";
-import { CARD_VERSION } from "./const";
+import { DOMAIN } from "./const";
 import { setLanguage } from "./localize/localize";
-
-/** The integration's domain, as the entity registry reports it. */
-const INTEGRATION_DOMAIN = "ladestellen_austria";
-
-/**
- * Probe the backend's card-version WebSocket command. Returns the
- * server-reported version when it differs from CARD_VERSION (i.e.
- * banner should appear), or null otherwise. Silent on transport error
- * — older HA installs without the handler simply don't surface a
- * mismatch, which is correct (cache-buster URL still applies).
- */
-export async function checkCardVersionWS(hass: HomeAssistant | undefined): Promise<string | null> {
-  if (!hass?.callWS) return null;
-  try {
-    const r = await hass.callWS<{ version?: string }>({
-      type: "ladestellen_austria/card_version",
-    });
-    if (r?.version && r.version !== CARD_VERSION) return r.version;
-  } catch {
-    // Silent: older backend without the WS handler.
-  }
-  return null;
-}
 
 /**
  * Push `hass.language` into the localize() helper when hass changes.
@@ -89,38 +63,6 @@ export function findStubEntity(entities: string[]): string {
   return entities.find((e) => e.startsWith("sensor.") && e.includes("ladestelle")) ?? "";
 }
 
-// Elements whose version probe has already been started. A WeakSet so
-// the entry is collected with the element; it is added *before* the
-// await, so a second call during the in-flight probe is a no-op.
-const versionCheckStarted = new WeakSet();
-
-/**
- * Fire the WS card-version probe at most once per element.
- *
- * Call from both `firstUpdated` and `updated` — the first covers the
- * normal mount, the second covers `hass` arriving after the first
- * update, and the once-guard makes the double call harmless.
- *
- * `isConnected` is checked inside the late callback so the probe can
- * never write state onto an element the user already navigated away
- * from.
- */
-export function runVersionCheckOnce(
-  // `hass` is `?: ... | undefined`, not just `?:`: under
-  // exactOptionalPropertyTypes an optional-only property may be omitted
-  // but may not hold `undefined`, and a card genuinely holds an undefined
-  // `hass` before HA assigns it — which is the case the guard below
-  // exists for.
-  host: { hass?: HomeAssistant | undefined; isConnected: boolean },
-  onMismatch: (version: string) => void,
-): void {
-  if (!host.hass || versionCheckStarted.has(host)) return;
-  versionCheckStarted.add(host);
-  void checkCardVersionWS(host.hass).then((mismatch) => {
-    if (host.isConnected && mismatch) onMismatch(mismatch);
-  });
-}
-
 /**
  * Build the `getEntitySuggestion` callback for a card's
  * `window.customCards` entry (HA 2026.6 entity-first picker).
@@ -139,7 +81,7 @@ export function entitySuggestionFor(cardType: `custom:${string}`): (
 } | null {
   return (hass: HomeAssistant, entityId: string) => {
     if (!entityId.startsWith("sensor.")) return null;
-    if (hass?.entities?.[entityId]?.platform !== INTEGRATION_DOMAIN) {
+    if (hass?.entities?.[entityId]?.platform !== DOMAIN) {
       return null;
     }
     return { config: { type: cardType, entity: entityId } };

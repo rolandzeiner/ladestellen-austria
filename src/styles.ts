@@ -10,42 +10,6 @@ import { css } from "lit";
 // ---------------------------------------------------------------------------
 
 /**
- * Version-mismatch banner. Surfaced when the WS probe reports a different
- * CARD_VERSION than the bundle running in the user's tab. Negative margins
- * span the full card width regardless of .wrap padding.
- */
-const sharedVersionBanner = css`
-  .version-notice {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    /* Dark ink, not white: white on HA's warning amber is 2.0:1. */
-    background: var(--lade-warning, #f59e0b);
-    color: #212121;
-    padding: 10px 14px;
-    margin: calc(var(--lade-pad-y) * -1) calc(var(--lade-pad-x) * -1) 0;
-    font-size: 0.8125rem;
-    font-weight: 500;
-  }
-  .version-reload-btn {
-    flex-shrink: 0;
-    background: #212121;
-    color: #fff;
-    border: none;
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-weight: 600;
-    font-size: 0.75rem;
-    cursor: pointer;
-  }
-  .version-reload-btn:hover {
-    background: #424242;
-  }
-`;
-
-/**
  * Brand-attribution footer (E-Control logo link + "Datenquelle:
  * E-Control" text). Renders identically in both cards. Adaptive logo
  * filter follows hass.themes.darkMode when logo_adapt_to_theme is on.
@@ -270,7 +234,6 @@ const cardOwnStyles = css`
     gap: var(--lade-row-gap);
   }
 
-  /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header ─────────────────────────────────────────────────── */
   .header {
@@ -1584,7 +1547,6 @@ const parkingOwnStyles = css`
     gap: var(--lade-row-gap);
   }
 
-  /* Version-mismatch banner CSS lives in sharedVersionBanner. */
 
   /* ── Card header (icon-tile + title group) ────────────────────────── */
   /* The header wraps: beside a long station name a six-column cell has
@@ -2229,16 +2191,9 @@ const parkingOwnStyles = css`
 // shared baseline.
 // ---------------------------------------------------------------------------
 
-export const cardStyles = [
-  sharedVersionBanner,
-  sharedUnreachable,
-  sharedFooter,
-  sharedReducedMotion,
-  cardOwnStyles,
-];
+export const cardStyles = [sharedUnreachable, sharedFooter, sharedReducedMotion, cardOwnStyles];
 
 export const parkingLotStyles = [
-  sharedVersionBanner,
   sharedUnreachable,
   sharedFooter,
   sharedReducedMotion,

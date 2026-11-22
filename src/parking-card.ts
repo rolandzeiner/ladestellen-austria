@@ -28,20 +28,16 @@ import type {
 } from "./types";
 import { carSvg } from "./car-svg";
 import { localize } from "./localize/localize";
-import {
-  renderFooter,
-  renderMissingEntity,
-  renderUnreachable,
-  renderVersionBanner,
-} from "./shared-render";
+import { renderFooter, renderMissingEntity, renderUnreachable } from "./shared-render";
 import {
   entitySuggestionFor,
   findStubEntity,
   isFixedHeight,
-  runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
 } from "./card-lifecycle";
+import { CARD_VERSION, DOMAIN } from "./const";
+import { versionBanner } from "./version-banner";
 import { parkingLotStyles } from "./styles";
 import {
   hasPointFilters,
@@ -94,7 +90,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // cell only when there is one -- see the grid-cell rules in styles.ts.
   @property({ reflect: true }) public layout?: string;
   // Set by HA to true while the card is the live preview in the edit-card
-  // dialog; renderVersionBanner keeps the reload banner out of it.
+  // dialog; the version banner reads it and stays out.
   @property({ type: Boolean }) public preview = false;
   @state() private config!: ParkingLotCardConfig;
   // Slots whose info-overlay is currently revealed by tap. Hover already
@@ -102,7 +98,6 @@ export class LadestellenAustriaParkingCard extends LitElement {
   // where :hover isn't a reliable interaction model. Toggling adds/
   // removes the slot's evseId; identity comparison in shouldUpdate.
   @state() private _revealedSlots: Set<string> = new Set();
-  @state() private _versionMismatch: string | null = null;
 
   public setConfig(config: ParkingLotCardConfig): void {
     if (!config || typeof config !== "object") {
@@ -141,8 +136,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
       changedProps.has("config") ||
       changedProps.has("layout") ||
       changedProps.has("preview") ||
-      changedProps.has("_revealedSlots") ||
-      changedProps.has("_versionMismatch")
+      changedProps.has("_revealedSlots")
     ) {
       return true;
     }
@@ -195,27 +189,21 @@ export class LadestellenAustriaParkingCard extends LitElement {
     syncCardLanguage(changedProps, this.hass);
   }
 
-  protected override firstUpdated(_changedProps: PropertyValues): void {
-    this._runVersionCheck();
-  }
-
-  protected override updated(changedProps: PropertyValues): void {
-    super.updated(changedProps);
-    // Also here, not just firstUpdated, in case `hass` arrives after the
-    // first update; runVersionCheckOnce makes the repeat call a no-op.
-    if (changedProps.has("hass")) this._runVersionCheck();
-  }
-
-  private _runVersionCheck(): void {
-    runVersionCheckOnce(this, (v) => {
-      this._versionMismatch = v;
+  // The portfolio's version banner (src/version-banner.ts), first in every
+  // ha-card but the loading state.
+  private _versionBanner(): TemplateResult | typeof nothing {
+    return versionBanner(this.hass, {
+      domain: DOMAIN,
+      version: CARD_VERSION,
+      name: "Ladestellen Austria",
+      preview: this.preview,
     });
   }
 
   /**
-   * The chrome every render branch shares: `ha-card > card-content >
-   * .wrap`, the three appearance data-attributes, and the version
-   * banner.
+   * The chrome every render branch shares: the version banner, then
+   * `ha-card > card-content > .wrap` with the three appearance
+   * data-attributes.
    *
    * All four branches used to carry their own copy of this, which is
    * where twelve of render()'s decision points came from — three `??`
@@ -228,6 +216,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
   ): TemplateResult {
     return html`
       <ha-card class=${this._fixedHeight ? "fixed-height" : ""}>
+        ${this._versionBanner()}
         <div class="card-content">
           <div
             class="wrap"
@@ -236,7 +225,7 @@ export class LadestellenAustriaParkingCard extends LitElement {
             data-paint-width=${this.config?.paint_width ?? "medium"}
             data-icon-paint=${this.config?.icon_paint_mode ?? "default"}
           >
-            ${renderVersionBanner(this._versionMismatch, this.preview)} ${body}
+            ${body}
           </div>
           ${opts.footer ?? nothing}
         </div>

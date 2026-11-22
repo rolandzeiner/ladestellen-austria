@@ -9,25 +9,18 @@
 //    (conservative: render rather than risk a stale card)
 //  - ... and TRUE when only hass.language, the light or dark theme or the
 //    time zone changed: none of them touches a state object
-//  - runVersionCheckOnce marks the element BEFORE awaiting, so a second
-//    call during the in-flight probe cannot start a second one
-//  - the isConnected check happens in the late callback, not up front,
-//    so a probe resolving after the user navigated away writes nothing
 //
 // No DOM needed — the helpers take plain objects — so this runs in
 // vitest's default node environment.
 
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import {
-  checkCardVersionWS,
   entitySuggestionFor,
   findStubEntity,
-  runVersionCheckOnce,
   shouldUpdateForEntityState,
   syncCardLanguage,
 } from "./card-lifecycle";
-import { CARD_VERSION } from "./const";
 import { localize, setLanguage } from "./localize/localize";
 import type { HomeAssistant } from "./types";
 
@@ -151,133 +144,6 @@ describe("shouldUpdateForEntityState", () => {
     expect(
       shouldUpdateForEntityState(props, { ...prev, config: { time_zone: "Asia/Tokyo" } }, entity),
     ).toBe(true);
-  });
-});
-
-describe("checkCardVersionWS", () => {
-  it("returns null when hass has no callWS", async () => {
-    await expect(checkCardVersionWS(undefined)).resolves.toBeNull();
-    await expect(checkCardVersionWS({} as HomeAssistant)).resolves.toBeNull();
-  });
-
-  it("reports the backend version when it differs", async () => {
-    const hass = {
-      callWS: vi.fn().mockResolvedValue({ version: "9.9.9" }),
-    } as unknown as HomeAssistant;
-    await expect(checkCardVersionWS(hass)).resolves.toBe("9.9.9");
-  });
-
-  it("reports nothing when the versions agree", async () => {
-    const hass = {
-      callWS: vi.fn().mockResolvedValue({ version: CARD_VERSION }),
-    } as unknown as HomeAssistant;
-    await expect(checkCardVersionWS(hass)).resolves.toBeNull();
-  });
-
-  it("stays silent when the backend has no handler", async () => {
-    // An older backend rejects the command; the cache-buster URL still
-    // applies, so a transport error must not surface as a mismatch.
-    const hass = {
-      callWS: vi.fn().mockRejectedValue(new Error("unknown command")),
-    } as unknown as HomeAssistant;
-    await expect(checkCardVersionWS(hass)).resolves.toBeNull();
-  });
-
-  it("tolerates a response with no version field", async () => {
-    const hass = {
-      callWS: vi.fn().mockResolvedValue({}),
-    } as unknown as HomeAssistant;
-    await expect(checkCardVersionWS(hass)).resolves.toBeNull();
-  });
-});
-
-describe("runVersionCheckOnce", () => {
-  function host(over: Partial<{ hass: HomeAssistant; isConnected: boolean }> = {}) {
-    return {
-      hass: {
-        callWS: vi.fn().mockResolvedValue({ version: "9.9.9" }),
-      } as unknown as HomeAssistant,
-      isConnected: true,
-      ...over,
-    };
-  }
-
-  /** Let the probe's promise chain settle. */
-  const settle = () => new Promise((r) => setTimeout(r, 0));
-
-  it("reports a mismatch through the callback", async () => {
-    const h = host();
-    const onMismatch = vi.fn();
-    runVersionCheckOnce(h, onMismatch);
-    await settle();
-    expect(onMismatch).toHaveBeenCalledWith("9.9.9");
-  });
-
-  it("probes only once per element", async () => {
-    const callWS = vi.fn().mockResolvedValue({ version: "9.9.9" });
-    const h = host({ hass: { callWS } as unknown as HomeAssistant });
-    const onMismatch = vi.fn();
-    runVersionCheckOnce(h, onMismatch);
-    runVersionCheckOnce(h, onMismatch);
-    runVersionCheckOnce(h, onMismatch);
-    await settle();
-    expect(callWS).toHaveBeenCalledTimes(1);
-    expect(onMismatch).toHaveBeenCalledTimes(1);
-  });
-
-  it("guards against a second probe while the first is in flight", async () => {
-    // The element is marked before the await, so a synchronous second
-    // call during the pending probe cannot start another.
-    let release: (v: unknown) => void = () => {};
-    const pending = new Promise((r) => {
-      release = r;
-    });
-    const callWS = vi.fn().mockReturnValue(pending);
-    const h = host({ hass: { callWS } as unknown as HomeAssistant });
-    runVersionCheckOnce(h, vi.fn());
-    runVersionCheckOnce(h, vi.fn());
-    expect(callWS).toHaveBeenCalledTimes(1);
-    release({ version: "9.9.9" });
-    await settle();
-  });
-
-  it("does nothing without hass, and stays retryable once it arrives", async () => {
-    const h = host();
-    const withoutHass = { ...h, hass: undefined };
-    const onMismatch = vi.fn();
-    runVersionCheckOnce(withoutHass, onMismatch);
-    await settle();
-    expect(onMismatch).not.toHaveBeenCalled();
-
-    // The same element later gains hass — the probe must still fire,
-    // which is why the no-hass path returns before marking it.
-    const later = Object.assign(withoutHass, { hass: h.hass });
-    runVersionCheckOnce(later, onMismatch);
-    await settle();
-    expect(onMismatch).toHaveBeenCalledWith("9.9.9");
-  });
-
-  it("does not write state onto a disconnected element", async () => {
-    // The probe resolves after the user navigated away. Writing
-    // _versionMismatch here would be a Lit update on a detached node.
-    const h = host();
-    const onMismatch = vi.fn();
-    runVersionCheckOnce(h, onMismatch);
-    h.isConnected = false;
-    await settle();
-    expect(onMismatch).not.toHaveBeenCalled();
-  });
-
-  it("keeps separate elements independent", async () => {
-    const a = host();
-    const b = host();
-    const onA = vi.fn();
-    const onB = vi.fn();
-    runVersionCheckOnce(a, onA);
-    runVersionCheckOnce(b, onB);
-    await settle();
-    expect(onA).toHaveBeenCalledWith("9.9.9");
-    expect(onB).toHaveBeenCalledWith("9.9.9");
   });
 });
 
